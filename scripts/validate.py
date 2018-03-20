@@ -14,7 +14,7 @@ class SCHMD(object):
     
     def __init__(self):
         self.schema()
-        self.metadata()
+        #self.metadata()
         
     @abstractmethod
     def schema(self):
@@ -56,20 +56,24 @@ class Remote(SCHMD):
         sch_doc = etree.parse(sch_handle)
         self.sch = etree.XMLSchema(sch_doc)    
         
-    def metadata(self):
-        md_name = 'https://data.linz.govt.nz/layer/50772-nz-primary-parcels/metadata/iso/xml/'    
-        md_handle = urllib2.urlopen(md_name)
+    def metadata(self,lid):
+        md_name = 'https://data.linz.govt.nz/layer/{lid}-nz-primary-parcels/metadata/iso/xml/'    
+        md_handle = urllib2.urlopen(md_name.format(lid=lid))
         
         self.md = etree.parse(md_handle)
 
     
 def main():
-    #v1 = Local()
-    v2 = Remote()
-
     
+    #v1 = Local()
     #print(v1.sch.validate(v1.md))
-    print(v2.sch.validate(v2.md))
+    succeed = ('50772',)
+    fail = ('50813','51362','51920')
+    
+    v2 = Remote()
+    for lid in succeed+fail:
+        v2.metadata(lid)
+        print(lid,v2.sch.validate(v2.md))
     
 if __name__ == "__main__":
     main()
