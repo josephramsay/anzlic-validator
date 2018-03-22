@@ -1,15 +1,16 @@
 import os
 import re
-#import urllib2
 import urllib.request as U_LIB
 
-#from urllib2 import HTTPError, ProxyHandler, URLError
 from urllib.request import HTTPError, ProxyHandler, URLError
 from lxml import etree
 from lxml.etree import XMLSyntaxError
 from lxml.isoschematron import _schematron_root
 
 from abc import ABCMeta, abstractmethod
+
+#Shifting from urllib to urllib2 we lost urlretrieve with its caching features. 
+#One solution was to implement a cache solution but no longer sure that its required
 
 #from cache import CacheHandler
 from authenticate import Authentication
@@ -164,6 +165,7 @@ class Remote(SCHMD):
 def conditionalTest(md):
     
     GMD = '{http://www.isotc211.org/2005/gmd}'
+    #GMD = NSX['gmd']
     GCO = '{http://www.isotc211.org/2005/gco}'
     DATASET = False
         
