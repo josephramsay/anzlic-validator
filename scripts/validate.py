@@ -12,7 +12,7 @@ from abc import ABCMeta, abstractmethod
 #Shifting from urllib to urllib2 we lost urlretrieve with its caching features. 
 #One solution was to implement a cache solution but no longer sure that its required
 
-#from cache import CacheHandler
+from cache import CacheHandler
 from authenticate import Authentication
 
 #Raw AS recipe is py2, modified as cache import above
@@ -22,7 +22,6 @@ from authenticate import Authentication
 #spec.loader.exec_module(module)
 
 key = Authentication.apikey('~/.apikey3')
-
 NSX = {'xlink'   : 'http://www.w3.org/1999/xlink',
        'xsi'     : 'http://www.w3.org/2001/XMLSchema-instance',  
        'dc'      : 'http://purl.org/dc/elements/1.1/',
@@ -44,6 +43,16 @@ NSX = {'xlink'   : 'http://www.w3.org/1999/xlink',
        'gml'     : 'http://www.opengis.net/gml/3.2',
        'v'       : 'http://wfs.data.linz.govt.nz',
        'lnz'     : 'http://data.linz.govt.nz'}
+
+class ValidatorException(Exception): pass
+class ValidatorAccessException(ValidatorException): pass
+class ValidatorParseException(ValidatorException): pass
+class ValidatorResponseException(ValidatorException): pass
+class InaccessibleSchemaException(ValidatorAccessException): pass
+class InaccessibleMetadataException(ValidatorAccessException): pass
+class MetadataParseException(ValidatorParseException): pass
+class MetadataConditionalException(ValidatorParseException): pass
+class CapabilitiesAccessException(ValidatorAccessException): pass
 
 class SCHMD(object):
     
@@ -89,7 +98,7 @@ class Local(SCHMD):
         sch_name = 'featureCatalogue.xsd'#metadataEntity?
         sch_path = os.path.abspath(os.path.join(os.path.dirname(__file__),self.SP,sch_name))
         
-        sch_doc = etree.parse(sch_path)
+        sch_doc = etree.fromstring(sch_path)
         self.sch = etree.XMLSchema(sch_doc)
         
     def metadata(self):
@@ -105,9 +114,12 @@ class Remote(SCHMD):
     def schema(self):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = 'http://www.isotc211.org/2005/gmd/metadataEntity.xsd'
-        sch_handle = U_LIB.urlopen(sch_name)
         
-        sch_doc = etree.parse(sch_handle)
+        sch_opener = U_LIB.build_opener(CacheHandler(".validator_cache"))
+        sch_resp = sch_opener.open(sch_name)
+        
+        sch_txt = sch_resp.getvalue().encode('ascii')
+        sch_doc = etree.fromstring(sch_txt,base_url=sch_name)
         self.sch = etree.XMLSchema(sch_doc)    
         
     def metadata(self,lid):
@@ -121,14 +133,14 @@ class Remote(SCHMD):
         except XMLSyntaxError as xse:
             #Private layers are inaccessible
             if 'https://id.koordinates.com/login' in md_handle.url:
-                print ('ERROR inaccessible private layer {}.\n{}'.format(lid,xse))
+                raise InaccessibleMetadataException('Private layer {}.\n{}'.format(lid,xse))
             else:
-                print ('ERROR parsing metadata document {}.\n{}'.format(lid,xse))
+                raise MetadataParseException('Metadata parse error {}.\n{}'.format(lid,xse))
         except HTTPError as he:
-            print ('ERROR layer metadata unavailable {}.\n{}'.format(lid,he))
+            raise InaccessibleMetadataException('Metadata unavailable {}.\n{}'.format(lid,he))
         except Exception as e:
             #catch any other error and continue, may not be what is wanted
-            print ('ERROR processing {}.\n{}'.format(lid,e))
+            raise ValidatorExcption('Processing error {}.\n{}'.format(lid,e))
         return False
 
     def getids(self,wxs):
@@ -136,7 +148,7 @@ class Remote(SCHMD):
 
         #default capabilities url
         cap1 = 'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities'
-        #csw capabilities url
+        #csw capabilities url?
         cap2 = 'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities'
         #wfs/wms feature paths
         ftx = {'wfs':{'p':'//wfs:FeatureType','n':'./wfs:Name','t':'./wfs:Title'},
@@ -144,7 +156,7 @@ class Remote(SCHMD):
                }[wxs]
 
         ret = {'layer':(),'table':()}
-        content = None
+        #content = None
         try:
             content = U_LIB.urlopen(cap1.format(key=key,wxs=wxs))
             tree = etree.parse(content)
@@ -157,15 +169,13 @@ class Remote(SCHMD):
                 title = ft.find(ftx['t'], namespaces=NSX).text
                 ret[lort] += ((name,title),)
         except HTTPError as he:
-            print ('ERROR failed to get {} layer ids {}.\n{}'.format(wxs,he))
-            raise
-        #just return layer for now
+            raise CapabilitiesAccessException('Failed to get {} layer ids {}.\n{}'.format(wxs,he))
+        #just return layer ...for now
         return ret['layer']
     
 def conditionalTest(md):
     
     GMD = '{http://www.isotc211.org/2005/gmd}'
-    #GMD = NSX['gmd']
     GCO = '{http://www.isotc211.org/2005/gco}'
     DATASET = False
         
@@ -221,15 +231,18 @@ def main():
 
     v2 = Remote()
     wfsi = v2.getids('wms')
-    #for lid in _testvals():
-    for lid in wfsi:
-        if v2.metadata(lid):
-            if v2.sch.validate(v2.md):
-                print(lid,'CT',conditionalTest(v2.md))
-            else:
-                print(lid,'Validate',False)
-        else:
-            print(lid,'MD',False)
+    for lid in _testvals():
+    #for lid in wfsi:
+        try:
+            v2.metadata(lid)
+            v2.sch.validate(v2.md)
+            conditionalTest(v2.md)
+            print(lid,True)
+        except ValidatorAccessException as vae:
+            print (lid,vae,False)
+        except ValidatorParseException as vpe:
+            print (lid,vpe,False)
+
     
 if __name__ == "__main__":
     main()
