@@ -1,11 +1,12 @@
 import os
 import re
-import urllib.request as U_LIB
+import urllib.request
 
-from urllib.request import HTTPError, ProxyHandler, URLError
+from urllib.request import ProxyHandler
+from urllib.error import HTTPError, URLError
 from lxml import etree
 from lxml.etree import XMLSyntaxError
-from lxml.isoschematron import _schematron_root
+#from lxml.isoschematron import _schematron_root
 
 from abc import ABCMeta, abstractmethod
 
@@ -115,7 +116,7 @@ class Remote(SCHMD):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = 'http://www.isotc211.org/2005/gmd/metadataEntity.xsd'
         
-        sch_opener = U_LIB.build_opener(CacheHandler(".validator_cache"))
+        sch_opener = urllib.request.build_opener(CacheHandler(".validator_cache"))
         sch_resp = sch_opener.open(sch_name)
         
         sch_txt = sch_resp.getvalue().encode('ascii')
@@ -127,7 +128,7 @@ class Remote(SCHMD):
         md_name = 'https://data.linz.govt.nz/layer/{lid}/metadata/iso/xml/'    
 
         try:
-            md_handle = U_LIB.urlopen(md_name.format(lid=lid[0]))
+            md_handle = urllib.request.urlopen(md_name.format(lid=lid[0]))
             self.md = etree.parse(md_handle)
             return True
         except XMLSyntaxError as xse:
@@ -151,22 +152,22 @@ class Remote(SCHMD):
         #csw capabilities url?
         cap2 = 'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities'
         #wfs/wms feature paths
-        ftx = {'wfs':{'p':'//wfs:FeatureType','n':'./wfs:Name','t':'./wfs:Title'},
-               'wms':{'p':'/Capability/Layer/Layer','n':'./Name','t':'./Title'}
+        ftx = {'wfs':{'path':'//wfs:FeatureType','name':'./wfs:Name','title':'./wfs:Title'},
+               'wms':{'path':'/Capability/Layer/Layer','name':'./Name','title':'./Title'}
                }[wxs]
 
         ret = {'layer':(),'table':()}
         #content = None
         try:
-            content = U_LIB.urlopen(cap1.format(key=key,wxs=wxs))
+            content = urllib.request.urlopen(cap1.format(key=key,wxs=wxs))
             tree = etree.parse(content)
             #find all featuretypes
-            for ft in tree.findall(ftx['p'],namespaces=NSX):
+            for ft in tree.findall(ftx['path'],namespaces=NSX):
                 #regex out id and table/layer type
-                match = re.search('(layer|table)-(\d+)',ft.find(ftx['n'], namespaces=NSX).text)
+                match = re.search('(layer|table)-(\d+)',ft.find(ftx['name'], namespaces=NSX).text)
                 lort = match.group(1)
                 name = int(match.group(2))
-                title = ft.find(ftx['t'], namespaces=NSX).text
+                title = ft.find(ftx['title'], namespaces=NSX).text
                 ret[lort] += ((name,title),)
         except HTTPError as he:
             raise CapabilitiesAccessException('Failed to get {} layer ids {}.\n{}'.format(wxs,he))
@@ -219,10 +220,6 @@ def conditionalTest(md):
     
     return True
 
-def _testvals():  
-    return [(i,'succeed') for i in ('50772','50845','50789')] \
-        + [(i,'fail') for i in ('50813','51362','51920')] \
-        + [(i,'error') for i in ('52552',)]
         
 def main():
     

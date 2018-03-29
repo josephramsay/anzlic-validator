@@ -7,10 +7,14 @@ import http.client
 import unittest
 import hashlib
 import io
+from email import policy,message
+from typing import Dict
 
-__version__ = (0,1)
-__original_author__ = "Staffan Malmgren <staffan@tomtebo.org>"
+#based on activestate recipe 491261 from staffan@tomtebo.org
 
+CACHE_HEADER = 'x-cache-local'
+THROTTLE_HEADER = 'x-throttling'
+DEF_RESP_LEN = 100000
 
 class ThrottlingProcessor(urllib.request.BaseHandler):
     """Prevents overloading the remote web server by delaying requests.
@@ -18,7 +22,9 @@ class ThrottlingProcessor(urllib.request.BaseHandler):
     Causes subsequent requests to the same web server to be delayed
     a specific amount of seconds. The first request to the server
     always gets made immediately"""
-    __shared_state = {}
+    
+    __shared_state = {} # type: Dict[str, int]
+    
     def __init__(self,throttleDelay=5):
         """The number of seconds to wait between subsequent requests"""
         # Using the Borg design pattern to achieve shared state
@@ -42,7 +48,7 @@ class ThrottlingProcessor(urllib.request.BaseHandler):
 
     def http_response(self,request,response):
         if hasattr(self,'throttleTime'):
-            response.info().addheader("x-throttling", "%s seconds" % self.throttleTime)
+            response.info().addheader(THROTTLE_HEADER, "%s seconds" % self.throttleTime)
             del(self.throttleTime)
         return response
 
@@ -50,14 +56,33 @@ class CacheHandler(urllib.request.BaseHandler):
     """Stores responses in a persistant on-disk cache.
 
     If a subsequent GET request is made for the same URL, the stored
-    response is returned, saving time, resources and bandwith"""
+    response is returned, saving time, resources and bandwith"""    
     def __init__(self,cacheLocation):
         """The location of the cache directory"""
-        self.cacheLocation = cacheLocation
-        if not os.path.exists(self.cacheLocation):
-            os.mkdir(self.cacheLocation)
+        self.cacheLocation = CacheHandler._create(cacheLocation)
+        
+    @staticmethod
+    def _getcachepath(cacheLocation):
+        return os.path.abspath(os.path.join(os.path.dirname(__file__),cacheLocation))
+    
+    @staticmethod
+    def _create(cacheLocation):
+        colocated = CacheHandler._getcachepath(cacheLocation)
+        if not os.path.exists(colocated):
+            os.mkdir(colocated)
+        return colocated
+            
+    @staticmethod
+    def _flush(cacheLocation):
+        '''Empty cache contents and the cache directory itself'''
+        colocated = CacheHandler._getcachepath(cacheLocation)
+        if os.path.exists(colocated):
+            for f in os.listdir(colocated):
+                os.unlink('{}/{}'.format(colocated, f))
+            os.rmdir(colocated)
             
     def default_open(self,request):
+        '''Respond to the request by first checking if there is a cached response otherwise defer to http handler'''
         if ((request.get_method() == "GET") and 
             (CachedResponse.ExistsInCache(self.cacheLocation, request.get_full_url()))):
             # print "CacheHandler: Returning CACHED response for %s" % request.get_full_url()
@@ -66,8 +91,12 @@ class CacheHandler(urllib.request.BaseHandler):
             return None # let the next handler try to handle the request
 
     def http_response(self, request, response):
+        '''Post process the response object by seeing if its from the cache or live
+        if live, store a copy then pull that same copy (without the cache-header) to return, 
+        if from cache, pull cached copy again (add a cache-header) and return
+        '''
         if request.get_method() == "GET":
-            if 'x-cache' not in response.info():
+            if CACHE_HEADER not in response.info():
                 CachedResponse.StoreInCache(self.cacheLocation, request.get_full_url(), response)
                 return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=False)
             else:
@@ -83,80 +112,51 @@ class CachedResponse(io.StringIO):
     
     @staticmethod
     def ExistsInCache(cacheLocation, url):
-        hash = hashlib.md5(bytes(url,'utf-8')).hexdigest()
-        return (os.path.exists(cacheLocation + "/" + hash + ".headers") and 
-                os.path.exists(cacheLocation + "/" + hash + ".body")) 
-        
+        hash = CachedResponse._hash(url)
+        return all([os.path.exists('{}/{}.{}'.format(cacheLocation,hash,horb)) for horb in ('headers','body')])
+
     @staticmethod
     def StoreInCache(cacheLocation, url, response):
-        if len(response.info())>0: 
-            resp_len = response.length if hasattr(response,'length') else 10000
-            #print ('SiC Empty Response header!')
-            hash = hashlib.md5(bytes(url,'utf-8')).hexdigest()
-            f = open(cacheLocation + "/" + hash + ".headers", "w")
-            headers = str(response.info()) #str will fail on a bung response with StringIO no attr clone()
-            f.write(headers)
-            f.close()
-            f = open(cacheLocation + "/" + hash + ".body", "w")
+        '''Store the provided response object in the cache. If there is no response.info
+        bypass because trying to str() an empty stringio causes a no clone() attr error
+        '''
+        resp_len = response.length if hasattr(response,'length') else DEF_RESP_LEN
+        hash = CachedResponse._hash(url)
+        #write head
+        with open('{}/{}.headers'.format(cacheLocation,hash), "w") as f:
+            f.write(str(response.info()))
+        #write body
+        with open('{}/{}.body'.format(cacheLocation,hash), "w") as f:
             f.write(response.read(resp_len).decode('utf-8'))
-            f.close()
-        else:
-            pass
-            #print('No response to cache')
 
     
     def __init__(self, cacheLocation,url,setCacheHeader=True):
         self.cacheLocation = cacheLocation
-        hash = hashlib.md5(bytes(url,'utf-8')).hexdigest()
+        hash = self._hash(url)
         cache_body = open(self._path(hash, 'body'),'r').read()
-        #io.StringIO.__init__(self, cache_body)
-        super(CachedResponse,self).__init__(cache_body)
-        self.url, self.code, self.msg = url,200,'OK'
-        headerbuf = open(self._path(hash, 'headers'),'r').read()
+        io.StringIO.__init__(self, cache_body)
+        #super(CachedResponse,self).__init__(cache_body)
+        self.url, self.code, self.msg = url, 200, 'OK'
+        headerbuf = open(self._path(hash, 'headers'),'r').read().strip()
         if setCacheHeader:
-            headerbuf += "x-cache: %s/%s\r\n" % (self.cacheLocation,hash)
-        self.headers = http.client.HTTPMessage(io.StringIO(headerbuf))
+            headerbuf += '\n{}: {}\r\n'.format(CACHE_HEADER,self._path(hash))
+        self.headers = http.client.HTTPMessage(policy.default)
+        for line in headerbuf.splitlines():
+            self.headers.add_header(*line.split(':',1)) if line else None
+           
+    @staticmethod     
+    def _hash(plain):
+        return hashlib.md5(bytes(plain,'utf-8')).hexdigest()
 
-    def _path(self,hash,sfx):
-        return os.path.join(os.path.dirname(__file__),'{}/{}.{}'.format(self.cacheLocation,hash,sfx))
+    def _path(self,hash,sfx=None):
+        return '{}/{}{}'.format(self.cacheLocation,hash,'.'+sfx if sfx else '')
     
     def info(self):
         return self.headers
     def geturl(self):
         return self.url
 
-class Tests(unittest.TestCase):
-    def setUp(self):
-        # Clearing cache
-        if os.path.exists(".urllib2cache"):
-            for f in os.listdir(".urllib2cache"):
-                os.unlink("%s/%s" % (".urllib2cache", f))
-        # Clearing throttling timeouts
-        t = ThrottlingProcessor()
-        t.lastRequestTime.clear()
 
-    def testCache(self):
-        opener = urllib.request.build_opener(CacheHandler(".urllib2cache"))
-        resp = opener.open("http://www.python.org/")
-        self.assert_('x-cache' not in resp.info())
-        resp = opener.open("http://www.python.org/")
-        self.assert_('x-cache' in resp.info())
-        
-    def testThrottle(self):
-        opener = urllib.request.build_opener(ThrottlingProcessor(5))
-        resp = opener.open("http://www.python.org/")
-        self.assert_('x-throttling' not in resp.info())
-        resp = opener.open("http://www.python.org/")
-        self.assert_('x-throttling' in resp.info())
-
-    def testCombined(self):
-        opener = urllib.request.build_opener(CacheHandler(".urllib2cache"), ThrottlingProcessor(10))
-        resp = opener.open("http://www.python.org/")
-        self.assert_('x-cache' not in resp.info())
-        self.assert_('x-throttling' not in resp.info())
-        resp = opener.open("http://www.python.org/")
-        self.assert_('x-cache' in resp.info())
-        self.assert_('x-throttling' not in resp.info())
 
 if __name__ == "__main__":
     unittest.main()
