@@ -14,6 +14,7 @@ from typing import Dict
 
 CACHE_HEADER = 'x-cache-local'
 THROTTLE_HEADER = 'x-throttling'
+THROTTLE_DELAY = 5
 DEF_RESP_LEN = 100000
 
 class ThrottlingProcessor(urllib.request.BaseHandler):
@@ -25,7 +26,7 @@ class ThrottlingProcessor(urllib.request.BaseHandler):
     
     __shared_state = {} # type: Dict[str, int]
     
-    def __init__(self,throttleDelay=5):
+    def __init__(self,throttleDelay=THROTTLE_DELAY):
         """The number of seconds to wait between subsequent requests"""
         # Using the Borg design pattern to achieve shared state
         # between object instances:
@@ -48,7 +49,7 @@ class ThrottlingProcessor(urllib.request.BaseHandler):
 
     def http_response(self,request,response):
         if hasattr(self,'throttleTime'):
-            response.info().addheader(THROTTLE_HEADER, "%s seconds" % self.throttleTime)
+            response.info().add_header(THROTTLE_HEADER, "%s seconds" % self.throttleTime)
             del(self.throttleTime)
         return response
 
@@ -63,6 +64,7 @@ class CacheHandler(urllib.request.BaseHandler):
         
     @staticmethod
     def _getcachepath(cacheLocation):
+        '''Get the cache location relative to this file'''
         return os.path.abspath(os.path.join(os.path.dirname(__file__),cacheLocation))
     
     @staticmethod
@@ -112,14 +114,13 @@ class CachedResponse(io.StringIO):
     
     @staticmethod
     def ExistsInCache(cacheLocation, url):
+        '''Checks if the hashed URL exists in the cache'''
         hash = CachedResponse._hash(url)
         return all([os.path.exists('{}/{}.{}'.format(cacheLocation,hash,horb)) for horb in ('headers','body')])
 
     @staticmethod
     def StoreInCache(cacheLocation, url, response):
-        '''Store the provided response object in the cache. If there is no response.info
-        bypass because trying to str() an empty stringio causes a no clone() attr error
-        '''
+        '''Store the provided response object in the cache.'''
         resp_len = response.length if hasattr(response,'length') else DEF_RESP_LEN
         hash = CachedResponse._hash(url)
         #write head
@@ -146,6 +147,7 @@ class CachedResponse(io.StringIO):
            
     @staticmethod     
     def _hash(plain):
+        '''Hashes URL to encode name in cache'''
         return hashlib.md5(bytes(plain,'utf-8')).hexdigest()
 
     def _path(self,hash,sfx=None):
@@ -156,8 +158,4 @@ class CachedResponse(io.StringIO):
     def geturl(self):
         return self.url
 
-
-
-if __name__ == "__main__":
-    unittest.main()
         

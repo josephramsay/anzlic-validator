@@ -32,9 +32,9 @@ class Test_1_setup(unittest.TestCase):
 class Test_2_canned(unittest.TestCase):
     
     def setUp(self):
-        # Clearing cache
+        # Clear cache
         CacheHandler._flush(TEST_CACHE)
-        # Clearing throttling timeouts
+        # Clear throttling timeouts
         ThrottlingProcessor().lastRequestTime.clear()    
         
     def tearDown(self):
@@ -47,21 +47,21 @@ class Test_2_canned(unittest.TestCase):
         resp = opener.open(TEST_URL)
         self.assertTrue(CACHE_HEADER in resp.info(),'Cannot find header {} in response'.format(CACHE_HEADER))
         
-#     def test_2_throttle(self):
-#         opener = urllib.request.build_opener(ThrottlingProcessor(5))
-#         resp = opener.open(TEST_URL)
-#         self.assertTrue(THROTTLE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(THROTTLE_HEADER))
-#         resp = opener.open(TEST_URL)
-#         self.assertTrue(THROTTLE_HEADER in resp.info(),'Cannot find header {} in response'.format(THROTTLE_HEADER))
-# 
-#     def test_3_combined(self):
-#         opener = urllib.request.build_opener(CacheHandler(TEST_CACHE), ThrottlingProcessor(10))
-#         resp = opener.open(TEST_URL)
-#         self.assertTrue(CACHE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(CACHE_HEADER))
-#         self.assertTrue(THROTTLE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(THROTTLE_HEADER))
-#         resp = opener.open(TEST_URL)
-#         self.assertTrue(CACHE_HEADER in resp.info(),'Cannot find header {} in response'.format(CACHE_HEADER))
-#         self.assertTrue(THROTTLE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(THROTTLE_HEADER))
+    def test_2_throttle(self):
+        opener = urllib.request.build_opener(ThrottlingProcessor(30))
+        resp = opener.open(TEST_URL)
+        self.assertTrue(THROTTLE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(THROTTLE_HEADER))
+        resp = opener.open(TEST_URL)
+        self.assertTrue(THROTTLE_HEADER in resp.info(),'Cannot find header {} in response'.format(THROTTLE_HEADER))
+ 
+    def test_3_combined(self):
+        opener = urllib.request.build_opener(CacheHandler(TEST_CACHE), ThrottlingProcessor(30))
+        resp = opener.open(TEST_URL)
+        self.assertTrue(CACHE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(CACHE_HEADER))
+        self.assertTrue(THROTTLE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(THROTTLE_HEADER))
+        resp = opener.open(TEST_URL)
+        self.assertTrue(CACHE_HEADER in resp.info(),'Cannot find header {} in response'.format(CACHE_HEADER))
+        self.assertTrue(THROTTLE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(THROTTLE_HEADER))
 
 
 

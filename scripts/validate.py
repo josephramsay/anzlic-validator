@@ -87,6 +87,12 @@ class SCHMD(object):
     def metadata(self):
         '''schema init'''
         
+    def validate(self,md = None):
+        '''Wrap schema validation to throw MetadataParseException'''
+        if not self.sch.validate(md or self.md): 
+            raise MetadataParseException('Unable to validate XML')
+        return True
+        
 class Local(SCHMD):
     
     SP = '../../ANZLIC-XML/standards.iso.org/iso/19110/gfc/1.1/'
@@ -141,25 +147,16 @@ class Remote(SCHMD):
             raise InaccessibleMetadataException('Metadata unavailable {}.\n{}'.format(lid,he))
         except Exception as e:
             #catch any other error and continue, may not be what is wanted
-            raise ValidatorExcption('Processing error {}.\n{}'.format(lid,e))
+            raise ValidatorException('Processing error {}.\n{}'.format(lid,e))
         return False
-
+        
     def getids(self,wxs):
         '''Read the layer and table IDS from the getcapabilities for the WFS and WMS service types'''
-
-        #default capabilities url
-        cap1 = 'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities'
-        #csw capabilities url?
-        cap2 = 'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities'
-        #wfs/wms feature paths
-        ftx = {'wfs':{'path':'//wfs:FeatureType','name':'./wfs:Name','title':'./wfs:Title'},
-               'wms':{'path':'/Capability/Layer/Layer','name':'./Name','title':'./Title'}
-               }[wxs]
-
+        cap, ftx = self._geturlset(0, wxs)
         ret = {'layer':(),'table':()}
         #content = None
         try:
-            content = urllib.request.urlopen(cap1.format(key=key,wxs=wxs))
+            content = urllib.request.urlopen(cap.format(key=key,wxs=wxs))
             tree = etree.parse(content)
             #find all featuretypes
             for ft in tree.findall(ftx['path'],namespaces=NSX):
@@ -173,6 +170,19 @@ class Remote(SCHMD):
             raise CapabilitiesAccessException('Failed to get {} layer ids {}.\n{}'.format(wxs,he))
         #just return layer ...for now
         return ret['layer']
+    
+    def _geturlset(self,src,wxs):
+        '''Select where to get layer IDs from; services/feeds. Services are limited to 250 results so have to be paged'''
+        cap = ('http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
+               'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary')
+        #wfs/wms feature paths
+        ftx = ({'wfs':{'path':'//wfs:FeatureType','name':'./wfs:Name','title':'./wfs:Title'},
+                'wms':{'path':'/Capability/Layer/Layer','name':'./Name','title':'./Title'}
+               }[wxs],        
+               {'wfs':{'path':'//csw:SearchResults/csw:SummaryRecord','name':'./dc:identifier','title':'./dc:Title'},
+                'wms':{'path':'//csw:SearchResults/csw:SummaryRecord','name':'./dc:identifier','title':'./dc:Title'}
+               }[wxs])
+        return cap[src],ftx[src]
     
 def conditionalTest(md):
     
