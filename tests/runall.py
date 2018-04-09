@@ -18,10 +18,9 @@ Created on 24/07/2012
 '''
 import unittest
 
-from test_validate import Test_1_setup as T21
 from test_cache import Test_1_setup as T11
 from test_cache import Test_2_canned as T12
-
+from test_validate import Test_1_setup as T21
 
 class FullSuite(unittest.TestSuite):
 
@@ -44,8 +43,8 @@ class FullSuite(unittest.TestSuite):
     
     def suite(self):
         suites = ()
-        suites += unittest.makeSuite(T11)
-        suites += unittest.makeSuite(T12)
+        #suites += unittest.makeSuite(T11)
+        #suites += unittest.makeSuite(T12)
         suites += unittest.makeSuite(T21)
    
         return unittest.TestSuite(suites)

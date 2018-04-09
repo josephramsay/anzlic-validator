@@ -6,6 +6,8 @@ from urllib.request import ProxyHandler
 from urllib.error import HTTPError, URLError
 from lxml import etree
 from lxml.etree import XMLSyntaxError
+
+from bs4 import BeautifulSoup as BS
 #from lxml.isoschematron import _schematron_root
 
 from abc import ABCMeta, abstractmethod
@@ -21,29 +23,36 @@ from authenticate import Authentication
 #spec = importlib.util.spec_from_file_location('CacheHandler','../ActiveStateCode/recipes/Python/491261_Caching_throttling/recipe-491261.py')
 #module = importlib.util.module_from_spec(spec)
 #spec.loader.exec_module(module)
+BORX = 'b'
+ENC = 'utf-8'
+CACHE = '.validator_cache'
+KEY = Authentication.apikey('~/.apikey3')
+NSX = {'xlink'                  : 'http://www.w3.org/1999/xlink',
+       'xs'                     : 'http://www.w3.org/2001/XMLSchema',
+       'xsi'                    : 'http://www.w3.org/2001/XMLSchema-instance',  
+       'dc'                     : 'http://purl.org/dc/elements/1.1/',
+       'g'                      : 'http://data.linz.govt.nz/ns/g', 
+       'r'                      : 'http://data.linz.govt.nz/ns/r', 
+       'ows'                    : 'http://www.opengis.net/ows/1.1', 
+       'csw'                    : 'http://www.opengis.net/cat/csw/2.0.2',
+       'wms'                    : 'http://www.opengis.net/wms',
+       'ogc'                    : 'http://www.opengis.net/ogc',
+       'gco'                    : 'http://www.isotc211.org/2005/gco',
+       'gmd'                    : 'http://www.isotc211.org/2005/gmd',
+       'gmx'                    : 'http://www.isotc211.org/2005/gmx',
+       'gsr'                    : 'http://www.isotc211.org/2005/gsr',
+       'gss'                    : 'http://www.isotc211.org/2005/gss',
+       'gts'                    : 'http://www.isotc211.org/2005/gts',
+       'f'                      : 'http://www.w3.org/2005/Atom',
+       'null'                   : '',
+       'wfs'                    : 'http://www.opengis.net/wfs/2.0',
+       'gml'                    : 'http://www.opengis.net/gml/3.2',
+       'v'                      : 'http://wfs.data.linz.govt.nz',
+       'lnz'                    : 'http://data.linz.govt.nz',
+       'data.linz.govt.nz'      : 'http://data.linz.govt.nz',
+       'fes'                    : 'http://www.opengis.net/fes/2.0'}
 
-key = Authentication.apikey('~/.apikey3')
-NSX = {'xlink'   : 'http://www.w3.org/1999/xlink',
-       'xsi'     : 'http://www.w3.org/2001/XMLSchema-instance',  
-       'dc'      : 'http://purl.org/dc/elements/1.1/',
-       'g'       : 'http://data.linz.govt.nz/ns/g', 
-       'r'       : 'http://data.linz.govt.nz/ns/r', 
-       'ows'     : 'http://www.opengis.net/ows/1.1', 
-       'csw'     : 'http://www.opengis.net/cat/csw/2.0.2',
-       'wms'     : 'http://www.opengis.net/wms',
-       'ogc'     : 'http://www.opengis.net/ogc',
-       'gco'     : 'http://www.isotc211.org/2005/gco',
-       'gmd'     : 'http://www.isotc211.org/2005/gmd',
-       'gmx'     : 'http://www.isotc211.org/2005/gmx',
-       'gsr'     : 'http://www.isotc211.org/2005/gsr',
-       'gss'     : 'http://www.isotc211.org/2005/gss',
-       'gts'     : 'http://www.isotc211.org/2005/gts',
-       'f'       : 'http://www.w3.org/2005/Atom',
-       'null'    : '',
-       'wfs'     : 'http://www.opengis.net/wfs/2.0',
-       'gml'     : 'http://www.opengis.net/gml/3.2',
-       'v'       : 'http://wfs.data.linz.govt.nz',
-       'lnz'     : 'http://data.linz.govt.nz'}
+       #xmlns="http://www.opengis.net/wfs/2.0"
 
 class ValidatorException(Exception): pass
 class ValidatorAccessException(ValidatorException): pass
@@ -54,6 +63,7 @@ class InaccessibleMetadataException(ValidatorAccessException): pass
 class MetadataParseException(ValidatorParseException): pass
 class MetadataConditionalException(ValidatorParseException): pass
 class CapabilitiesAccessException(ValidatorAccessException): pass
+class CapabilitiesParseException(ValidatorAccessException): pass
 
 class SCHMD(object):
     
@@ -89,10 +99,28 @@ class SCHMD(object):
         
     def validate(self,md = None):
         '''Wrap schema validation to throw MetadataParseException'''
+        if not hasattr(self.sch,'validate'): 
+            raise MetadataParseException('XML Schema invalid')
         if not self.sch.validate(md or self.md): 
             raise MetadataParseException('Unable to validate XML')
         return True
-        
+    
+    def bcached(self,url,enc = ENC):
+        '''Wrapper for cached url open with bs'''
+        txt = self._cached(url, enc)
+        return BS(txt,'lxml-xml')    
+    
+    def xcached(self,url,enc = ENC):
+        '''Wrapper for cached url open with lxml'''
+        txt = self._cached(url, enc)
+        xparser = etree.XMLParser(ns_clean=True,recover=True,encoding=enc)
+        return etree.XML(txt, xparser)
+    
+    def _cached(self,url,enc):
+        opener = urllib.request.build_opener(CacheHandler(CACHE))
+        resp = opener.open(url)
+        return resp.getvalue().encode(enc)
+
 class Local(SCHMD):
     
     SP = '../../ANZLIC-XML/standards.iso.org/iso/19110/gfc/1.1/'
@@ -105,7 +133,7 @@ class Local(SCHMD):
         sch_name = 'featureCatalogue.xsd'#metadataEntity?
         sch_path = os.path.abspath(os.path.join(os.path.dirname(__file__),self.SP,sch_name))
         
-        sch_doc = etree.fromstring(sch_path)
+        sch_doc = etree.XML(sch_path)#fromstring
         self.sch = etree.XMLSchema(sch_doc)
         
     def metadata(self):
@@ -121,12 +149,7 @@ class Remote(SCHMD):
     def schema(self):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = 'http://www.isotc211.org/2005/gmd/metadataEntity.xsd'
-        
-        sch_opener = urllib.request.build_opener(CacheHandler(".validator_cache"))
-        sch_resp = sch_opener.open(sch_name)
-        
-        sch_txt = sch_resp.getvalue().encode('ascii')
-        sch_doc = etree.fromstring(sch_txt,base_url=sch_name)
+        sch_doc = self.xcached(sch_name)
         self.sch = etree.XMLSchema(sch_doc)    
         
     def metadata(self,lid):
@@ -150,39 +173,73 @@ class Remote(SCHMD):
             raise ValidatorException('Processing error {}.\n{}'.format(lid,e))
         return False
         
-    def getids(self,wxs):
-        '''Read the layer and table IDS from the getcapabilities for the WFS and WMS service types'''
-        cap, ftx = self._geturlset(0, wxs)
-        ret = {'layer':(),'table':()}
-        #content = None
+    def getids(self,wxs,sorf = 0):
+        '''Read the layer and table IDS from the getcapabilities for the WFS and WMS service types
+        cap: capabilities url template
+        ftx: feature type xpath fragment
+        borx: parser selection, baeutifulsoup or lxml
+        '''
+        cap, ftx, borx = self._geturlset(sorf, wxs)
         try:
-            content = urllib.request.urlopen(cap.format(key=key,wxs=wxs))
-            tree = etree.parse(content)
+            url = cap.format(key=KEY,wxs=wxs)
+            bst = borx[0](url)
             #find all featuretypes
-            for ft in tree.findall(ftx['path'],namespaces=NSX):
-                #regex out id and table/layer type
-                match = re.search('(layer|table)-(\d+)',ft.find(ftx['name'], namespaces=NSX).text)
-                lort = match.group(1)
-                name = int(match.group(2))
-                title = ft.find(ftx['title'], namespaces=NSX).text
-                ret[lort] += ((name,title),)
+            ret = borx[1](bst, ftx)
         except HTTPError as he:
-            raise CapabilitiesAccessException('Failed to get {} layer ids {}.\n{}'.format(wxs,he))
-        #just return layer ...for now
+            raise CapabilitiesAccessException('Failed to get {}/{} layer ids.\n{}'.format(wxs,sorf,he))
+        except ValueError as ve:
+            raise CapabilitiesParseException('Failed to read {}/{} layer ids.\n{}'.format(wxs,sorf,ve))
+        #Catch if no features found
+        try: ret
+        except NameError: raise CapabilitiesParseException('No matching {} features found'.format(wxs))
+            
         return ret['layer']
     
+    def _bextract(self,bst,ftx):
+        '''regex out id and table/layer type using bsoup'''
+        ret = {'layer':(),'table':()}
+        for ft in bst.find_all(ftx['path']):
+            match = re.search('(layer|table)-(\d+)',ft.find(ftx['name']).text)
+            ret[match.group(1)] += ((int(match.group(2)),ft.find(ftx['title']).text),)
+        return ret
+    
+    def _xextract(self,xft,ftx):
+        '''regex out id and table/layer type using lxml'''
+        ret = {'layer':(),'table':()}
+        for ft in xft.findall(ftx['path'],namespaces=NSX):
+            match = re.search('(layer|table)-(\d+)',ft.find(ftx['name'], namespaces=NSX).text)
+            ret[match.group(1)] += ((int(match.group(2)),ft.find(ftx['title'], namespaces=NSX).text),)
+        return ret
+
+        
+    
     def _geturlset(self,src,wxs):
-        '''Select where to get layer IDs from; services/feeds. Services are limited to 250 results so have to be paged'''
+        '''Select where to get layer IDs from; services(0) or feeds(1). 
+        In LDS Services capabilities are limited to 250 results so have to be paged
+        '''
         cap = ('http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
                'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary')
-        #wfs/wms feature paths
-        ftx = ({'wfs':{'path':'//wfs:FeatureType','name':'./wfs:Name','title':'./wfs:Title'},
-                'wms':{'path':'/Capability/Layer/Layer','name':'./Name','title':'./Title'}
+        #wfs/wms feature paths      
+        ftx = ({'wfs':{'path':'FeatureType',
+                       'name':'Name',
+                       'title':'Title',
+                       'lib':'b'},
+                'wms':{'path':'Capability/Layer/Layer',
+                       'name':'Name',
+                       'title':'Title',
+                       'lib':'x'}
                }[wxs],        
-               {'wfs':{'path':'//csw:SearchResults/csw:SummaryRecord','name':'./dc:identifier','title':'./dc:Title'},
-                'wms':{'path':'//csw:SearchResults/csw:SummaryRecord','name':'./dc:identifier','title':'./dc:Title'}
+               {'wfs':{'path':'//csw:SearchResults/csw:SummaryRecord',
+                       'name':'./dc:identifier',
+                       'title':'./dc:Title',
+                       'lib':'b'},
+                'wms':{'path':'//csw:SearchResults/csw:SummaryRecord',
+                       'name':'./dc:identifier',
+                       'title':'./dc:Title',
+                       'lib':'x'}
                }[wxs])
-        return cap[src],ftx[src]
+        borx = {'b':(self.bcached,self._bextract),'x':(self.xcached,self._xextract)}[ftx[src]['lib']]
+        return cap[src],ftx[src],borx
     
 def conditionalTest(md):
     
@@ -242,7 +299,7 @@ def main():
     #for lid in wfsi:
         try:
             v2.metadata(lid)
-            v2.sch.validate(v2.md)
+            v2.validate()
             conditionalTest(v2.md)
             print(lid,True)
         except ValidatorAccessException as vae:
@@ -250,6 +307,9 @@ def main():
         except ValidatorParseException as vpe:
             print (lid,vpe,False)
 
+def main():
+    v2 = Remote()
+    wfsi = v2.getids('wms')
     
 if __name__ == "__main__":
     main()
