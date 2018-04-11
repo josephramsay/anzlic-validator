@@ -1,0 +1,61 @@
+Attribution
+
+Sinergise Ltd - "Contains modified Copernicus Sentinel data 2017, sourced from the LINZ Data Service and licensed by Sinergise Ltd, for re-use under the Creative Commons Attribution 3.0 New Zealand licence.  For details see: https://www.linz.govt.nz/data/licensing-and-using-data/attributing-elevation-or-aerial-imagery-data”
+Marlborough District Council - 
+Marlborough District Council and AAM NZ Limited - 
+Auckland Council -
+BOPLASS Ltd. -
+Christchurch City Council -
+Environment Canterbury Regional Council -
+Environment Southland
+Greater Wellington Regional Council
+Hamilton City Council
+Hastings District Council
+Hawke's Bay Local Authority Shared Services (HB LASS)
+Hurunui District Council
+Invercargill City Council and AAM NZ Limited
+Manawatu-Wanganui LASS Ltd.
+Northland Aerial Imagery Consortium (NAIC)
+NZ Aerial Mapping Limited
+NZ Aerial Mapping Limited and Manawatu-Wanganui LASS Limited
+Palmerston North City Council
+Porirua City Council and AAM NZ Limited
+Selwyn District Council
+Tasman District Council and AAM NZ Limited
+Terralink District Council and Otago Regional Council
+Canterbury Aerial Imagery (CAI) consortium
+Canterbury Aerial Imagery (CAI) consortium (Environment Canterbury Regional Council, EA Networks,  Ashburton District Council, Selwyn District Council,  Timaru District Council, Land Information New Zealand, Ministry for Primary Industries, Department of Conservation, and Alpine Energy Limited)
+Canterbury Aerial Imagery (CAI) consortium (Environment Canterbury Regional Council,  Hurunui District Council, Kaikoura District Council, Land Information New Zealand, Ministry for Primary Industries, and Department of Conservation. )
+Canterbury Aerial Imagery (CAI) consortium (Environment Canterbury Regional Council,  Waimate District Council, Mackenzie District Council,  Waitaki District Council, Land Information New Zealand, Ministry for Primary Industries, Department of Conservation, and Alpine Energy Limited)
+Dunedin City Council
+Northland Regional Council
+NZ Transport Agency
+Palmerston North City Council
+Southland Consortium (Southland District Council, Gore District Council, Environment Southland, and Department of Conservation)
+Wellington City Council
+Whanganui District Council
+Timaru District Council
+Waikato District Council
+Waikato Regional Aerial Photography Service (WRAPS) 2012
+Waikato Regional Council
+Waimakariri District Council
+Wairoa District Council
+West Coast Regional Council
+Land Information New Zealand
+
+--
+"Sourced from the LINZ Data Service (url) and licensed by LINZ for re-use under the Creative Commons Attribution 3.0 New Zealand license."
+--
+"Sourced from the LINZ Data Service (url) and licensed by (licensor), for re-use under the Creative Commons Attribution 3.0 New Zealand license."
+"Sourced from LINZ. CC-By 3.0"
+--
+"Sourced from the LINZ Data Service (url) and licensed by (licensor) for re-use under the Creative Commons Attribution 3.0 New Zealand licence."
+--
+
+"Attribution Required for Copies: "Copyright in this work is owned by (owner) and under license by (licensor). Licensed for re-use under the Creative Commons Attribution 3.0 New Zealand license."
+"Attribution Required for Derivative works: "Copyright in the underlying dataset from which this work has been derived is owned by (owner) and under license by (licensor). Licensed for re-use under the Creative Commons Attribution 3.0 New Zealand license."
+
+"If you publish, distribute or otherwise disseminate this work to the public without adapting it, the following attribution to (licensor) should be used: 'CC-By (licensor)'"
+"If you adapt this work in any way or include it in a collection, and publish, distribute or otherwise disseminate that adaptation or collection to the public, the following attribution to (licensor) should be used: 'Contains data sourced from (licensor) under CC-By.'"
+
+"If 'attribution stacking' problems exist then the requirement to display the above attribution statements is waived and in lieu the attribution statement is to be made in any terms or conditions associated with the work/ product/ application/ etc."
