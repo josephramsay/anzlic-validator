@@ -12,7 +12,7 @@ from cache import CacheHandler,ThrottlingProcessor, CACHE_HEADER,THROTTLE_HEADER
 from authenticate import Authentication
 
 
-TEST_CACHE = '.testcache'
+TEST_CACHE = '.test_cache'
 TEST_URL = 'http://www.internic.net/'
             
 class Test_1_setup(unittest.TestCase):
@@ -62,7 +62,6 @@ class Test_2_canned(unittest.TestCase):
         resp = opener.open(TEST_URL)
         self.assertTrue(CACHE_HEADER in resp.info(),'Cannot find header {} in response'.format(CACHE_HEADER))
         self.assertTrue(THROTTLE_HEADER not in resp.info(),'Unexpectedly found header {} in response'.format(THROTTLE_HEADER))
-
 
 
 if __name__ == "__main__":

@@ -37,16 +37,18 @@ class Test_1_setup(unittest.TestCase):
             
     def test_4_validate_success_metadata(self):
         '''test validation of known successful layers'''
+        self.vdtr.setschema()
         for lid in _testvals('s'):
-            self.vdtr.metadata(lid)
+            self.vdtr.setmetadata(lid)
             self.vdtr.validate()
             self.assertTrue(True)
     
     def test_5_access_failure_metadata(self):
         '''test validation of known successful layers'''
+        self.vdtr.setschema()
         for lid in _testvals('ex'):
             try:
-                self.vdtr.metadata(lid)
+                self.vdtr.setmetadata(lid)
             except ValidatorAccessException as vae:
                 self.assertIsInstance(vae,ValidatorAccessException)
                 continue
@@ -54,9 +56,10 @@ class Test_1_setup(unittest.TestCase):
                 
     def test_6_validate_failure_metadata(self):
         '''test validation of known failing layers'''
+        self.vdtr.setschema()
         for lid in _testvals('f'):
             try:
-                self.vdtr.metadata(lid)
+                self.vdtr.setmetadata(lid)
                 self.vdtr.validate()
             except ValidatorParseException as vpe:
                 self.assertIsInstance(vpe,ValidatorParseException)

@@ -43,8 +43,8 @@ class FullSuite(unittest.TestSuite):
     
     def suite(self):
         suites = ()
-        #suites += unittest.makeSuite(T11)
-        #suites += unittest.makeSuite(T12)
+        suites += unittest.makeSuite(T11)
+        suites += unittest.makeSuite(T12)
         suites += unittest.makeSuite(T21)
    
         return unittest.TestSuite(suites)

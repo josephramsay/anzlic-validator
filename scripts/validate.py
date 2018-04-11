@@ -53,6 +53,11 @@ NSX = {'xlink'                  : 'http://www.w3.org/1999/xlink',
        'fes'                    : 'http://www.opengis.net/fes/2.0'}
 
        #xmlns="http://www.opengis.net/wfs/2.0"
+       
+SL1 = 'http://www.isotc211.org/2005/'  
+SL2 = 'http://schemas.opengis.net/iso/19139/20070417/'
+SL3 = 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/'
+SL = SL3
 
 class ValidatorException(Exception): pass
 class ValidatorAccessException(ValidatorException): pass
@@ -86,18 +91,23 @@ class SCHMD(object):
     md = None
     
     def __init__(self):
-        self.schema()
+        #self.schema()
         #self.metadata()
+        pass
         
     @abstractmethod
     def schema(self):
-        '''schema init'''    
+        '''schema init'''
+    def setschema(self):
+        self.sch = self.schema()
         
     @abstractmethod
     def metadata(self):
         '''schema init'''
+    def setmetadata(self,lid):
+        self.md = self.metadata(lid)
         
-    def validate(self,md = None):
+    def validate(self,md=None):
         '''Wrap schema validation to throw MetadataParseException'''
         if not hasattr(self.sch,'validate'): 
             raise MetadataParseException('XML Schema invalid')
@@ -105,61 +115,81 @@ class SCHMD(object):
             raise MetadataParseException('Unable to validate XML')
         return True
     
-    def bcached(self,url,enc = ENC):
+    @staticmethod
+    def _bcached(url,enc=ENC):
         '''Wrapper for cached url open with bs'''
-        txt = self._cached(url, enc)
+        txt = SCHMD._request(url, enc)
         return BS(txt,'lxml-xml')    
     
-    def xcached(self,url,enc = ENC):
+    @staticmethod
+    def _xcached(url,enc=ENC):
         '''Wrapper for cached url open with lxml'''
-        txt = self._cached(url, enc)
-        xparser = etree.XMLParser(ns_clean=True,recover=True,encoding=enc)
-        return etree.XML(txt, xparser)
+        txt = SCHMD._request(url, enc)
+        if enc: return etree.XML(txt, etree.XMLParser(ns_clean=True,recover=True,encoding=enc))
+        return etree.XML(txt)
     
-    def _cached(self,url,enc):
+    @staticmethod
+    def _request(url,enc):
         opener = urllib.request.build_opener(CacheHandler(CACHE))
         resp = opener.open(url)
-        return resp.getvalue().encode(enc)
+        return SCHMD._hackisotc211(resp.getvalue().encode(enc) if enc else resp.getvalue())
+    
+    @staticmethod
+    def _hackisotc211(txt):
+        '''The isotc211 domain has expired but is still referred to throughout related schemas. This hack replaces that reference'''
+        return txt.replace(bytes(SL1,'utf-8'),bytes(SL,'utf-8'))
+        #return txt.replace(SL1,SL)
+        
 
 class Local(SCHMD):
-    
-    SP = '../../ANZLIC-XML/standards.iso.org/iso/19110/gfc/1.1/'
-    TP = '../tests/data/'
+    '''Parser setup using local data store, user configured'''
+    #SP = '../../ANZLIC-XML/standards.iso.org/iso/19110/gfc/1.1/'
+    SP = '../data/schema/'
+    TP = '../data/metadata'
     
     def __init__(self):
         super(Local,self).__init__()
-    
-    def schema(self):
-        sch_name = 'featureCatalogue.xsd'#metadataEntity?
-        sch_path = os.path.abspath(os.path.join(os.path.dirname(__file__),self.SP,sch_name))
         
-        sch_doc = etree.XML(sch_path)#fromstring
-        self.sch = etree.XMLSchema(sch_doc)
+    @classmethod
+    def schema(cls):
+        sch_name = 'metadataEntity.xsd'
+        sch_path = os.path.abspath(os.path.join(os.path.dirname(__file__),cls.SP,'gmd',sch_name))
+        #sch_doc = ''
+        #with open(sch_path,'rb') as h:
+        #    sch_doc = etree.XML(SCHMD._hackisotc211(h.read()))
+        sch_doc = etree.parse(sch_path)
+        sch = etree.XMLSchema(sch_doc)
+        return sch
         
-    def metadata(self):
-        md_name = 'nz-primary-parcels.iso.xml'    
-        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__),self.TP,md_name))
-        self.md = etree.parse(md_path)
+    @classmethod
+    def metadata(cls,md_name):
+        md_sample = 'nz-primary-parcels.iso.xml'    
+        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__),cls.TP,md_name or md_sample))
+        md = etree.parse(md_path)
+        return md
 
 class Remote(SCHMD):
-    
+    '''Remote parser grabbing remote content but employing caching'''
     def __init__(self):
         super(Remote,self).__init__()  
     
-    def schema(self):
+    @classmethod
+    def schema(cls):
         '''Fetch and parse the ANZLIC metadata schema'''
-        sch_name = 'http://www.isotc211.org/2005/gmd/metadataEntity.xsd'
-        sch_doc = self.xcached(sch_name)
-        self.sch = etree.XMLSchema(sch_doc)    
+        sch_name = '{url}/gmd/metadataEntity.xsd'.format(url=SL)
+        sch_doc = cls._xcached(sch_name)
+        sch = etree.XMLSchema(sch_doc)
+        return sch 
         
-    def metadata(self,lid):
+    @classmethod
+    def metadata(cls,lid):
         '''Get the default metadata for each layer identified by layer id'''
         md_name = 'https://data.linz.govt.nz/layer/{lid}/metadata/iso/xml/'    
 
         try:
             md_handle = urllib.request.urlopen(md_name.format(lid=lid[0]))
-            self.md = etree.parse(md_handle)
-            return True
+            md = etree.parse(md_handle)
+            return md
         except XMLSyntaxError as xse:
             #Private layers are inaccessible
             if 'https://id.koordinates.com/login' in md_handle.url:
@@ -171,7 +201,7 @@ class Remote(SCHMD):
         except Exception as e:
             #catch any other error and continue, may not be what is wanted
             raise ValidatorException('Processing error {}.\n{}'.format(lid,e))
-        return False
+        return None
         
     def getids(self,wxs,sorf = 0):
         '''Read the layer and table IDS from the getcapabilities for the WFS and WMS service types
@@ -214,8 +244,10 @@ class Remote(SCHMD):
         
     
     def _geturlset(self,src,wxs):
-        '''Select where to get layer IDs from; services(0) or feeds(1). 
-        In LDS Services capabilities are limited to 250 results so have to be paged
+        '''Returns capabilities URL, xpath fragment to title/name and parser method
+        wxs: Select xpath for wfs/wms layer types
+        src: Select where to get layer IDs from; services(0) or feeds(1). 
+        (If selecting LDS Services, capabilities are limited to 250 results so will have to be paged)
         '''
         cap = ('http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
                'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary')
@@ -238,8 +270,35 @@ class Remote(SCHMD):
                        'title':'./dc:Title',
                        'lib':'x'}
                }[wxs])
-        borx = {'b':(self.bcached,self._bextract),'x':(self.xcached,self._xextract)}[ftx[src]['lib']]
+        borx = {'b':(self._bcached,self._bextract),'x':(self._xcached,self._xextract)}[ftx[src]['lib']]
         return cap[src],ftx[src],borx
+    
+class Combined(Remote):
+    '''Subclass of the Remote connector but subclassing schema/metadata to attempt local file load first'''
+    
+    def __init__(self):
+        super(Combined,self).__init__()
+        
+    @classmethod
+    def schema(cls):
+        try: return Local.schema()
+        except Exception as lse:
+            msg1 = 'Local SCH failed. {}'.format(lse)
+            try: return Remote.schema()
+            except Exception as rse: 
+                msg2 = 'Remote SCH failed. {}'.format(rse)
+                raise ValidatorException('{}\n{}'.format(msg1,msg2))
+        
+    @classmethod
+    def metadata(cls,md_name): 
+        try: return Local.metadata(md_name)
+        except Exception as lme:
+            msg1 = 'Local MD failed. {}'.format(lme)
+            try: return Remote.metadata(md_name)
+            except Exception as rme: 
+                msg2 = 'Remote MD failed. {}'.format(rme)
+                raise ValidatorException('\n{}\n{}'.format(msg1,msg2))
+
     
 def conditionalTest(md):
     
@@ -290,26 +349,24 @@ def conditionalTest(md):
         
 def main():
     
-    #v1 = Local()
-    #print(v1.sch.validate(v1.md))]
-
-    v2 = Remote()
-    wfsi = v2.getids('wms')
-    for lid in _testvals():
-    #for lid in wfsi:
+    v3 = Combined()
+    v3.setschema()
+    wfsi = v3.getids('wms')
+    
+    for lid in wfsi:
         try:
-            v2.metadata(lid)
-            v2.validate()
-            conditionalTest(v2.md)
+            v3.setmetadata(lid)
+            v3.validate()
+            conditionalTest(v3.md)
             print(lid,True)
         except ValidatorAccessException as vae:
             print (lid,vae,False)
         except ValidatorParseException as vpe:
             print (lid,vpe,False)
 
-def main():
-    v2 = Remote()
-    wfsi = v2.getids('wms')
+#def main():
+#    v2 = Remote()
+#    wfsi = v2.getids('wms')
     
 if __name__ == "__main__":
     main()
