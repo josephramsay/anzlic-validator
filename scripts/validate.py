@@ -140,6 +140,44 @@ class SCHMD(object):
         return txt.replace(bytes(SL1,'utf-8'),bytes(SL,'utf-8'))
         #return txt.replace(SL1,SL)
         
+    def conditional(self):
+        '''Bonus conditional extent checks'''
+        dataset = False
+            
+        for element in self.md.findall('hierarchyLevel',namespaces=NSX):
+            if not element.get('codeListValue'):
+                raise MetadataConditionalException('No Hierarchy Level Declared')
+            elif element.get('codeListValue') == 'dataset':
+                dataset = True
+        
+        if dataset:
+            idin = self.md.find('identificationInfo',namespaces=NSX)
+            for mddid in idin.iter('MD_DataIdentification',namespaces=NSX):
+                if not mddid.find('topicCategory/MD_TopicCategoryCode',namespaces=NSX):
+                    raise MetadataConditionalException('No Topic Category Declared')
+                if not mddid.find('extent',namespaces=NSX):
+                    raise MetadataConditionalException('No Extent Declared')
+                else:
+                    extent = mddid.find('extent/EX_Extent/geographicElement',namespaces=NSX)
+                    if not extent.find('EX_GeographicBoundingBox',namespaces=NSX) \
+                    and not extent.find('EX_GeographicDescription',namespaces=NSX):
+                        raise MetadataConditionalException('No Geographic Bounding Box or Geographic Description Declared')
+    
+        if not self.md.find('language/CharacterString',namespaces=NSX):
+           raise MetadataConditionalException('No language/CS defined')
+       
+        if not self.md.find('characterSet/MD_CharacterSetCode',namespaces=NSX):
+           raise MetadataConditionalException('No CharacterSetCode defined')
+       
+        mddid = self.md.find('identificationInfo/MD_DataIdentification',namespaces=NSX)
+        if not mddid.find('language/CharacterString',namespaces=NSX):
+           raise MetadataConditionalException('No ID Info language/CS defined')
+       
+        if not mddid.find('characterSet/MD_CharacterSetCode',namespaces=NSX):
+           raise MetadataConditionalException('No ID Info CharacterSetCode defined')
+        
+        return True
+        
 
 class Local(SCHMD):
     '''Parser setup using local data store, user configured'''
@@ -298,54 +336,6 @@ class Combined(Remote):
             except Exception as rme: 
                 msg2 = 'Remote MD failed. {}'.format(rme)
                 raise ValidatorException('\n{}\n{}'.format(msg1,msg2))
-
-    
-def conditionalTest(md):
-    
-    GMD = '{http://www.isotc211.org/2005/gmd}'
-    GCO = '{http://www.isotc211.org/2005/gco}'
-    DATASET = False
-        
-    tree = md
-    root = tree.getroot()
-        
-    for element in root.find(GMD+'hierarchyLevel'):
-        if element.get('codeListValue') == None:
-            # 'ERROR: No Hierarchy Level Declared'
-            return False
-        elif element.get('codeListValue') == 'dataset':
-            DATASET = True  
-    
-    if DATASET:
-        IDIN = root.find(GMD+'identificationInfo')
-        for MDDID in IDIN.iter(GMD+'MD_DataIdentification'):
-            if MDDID.find(GMD+'topicCategory/'+GMD+'MD_TopicCategoryCode') is None:
-                # 'ERROR: No Topic Category Declared'
-                return False
-            if MDDID.find(GMD+'extent') is None:
-                # 'ERROR: No Extent Declared'
-                return False
-            else:
-                EX = MDDID.find(GMD+'extent/'+GMD+'EX_Extent/'+GMD+'geographicElement')
-                if EX.find(GMD+'EX_GeographicBoundingBox') is None and EX.find(GMD+'EX_GeographicDescription') is None:
-                    #'ERROR: No Geographic Bounding Box or Geographic Description Declared'
-                    return False
-
-    if root.find(GMD+'language/'+GCO+'CharacterString') is None:
-       return False
-   
-    if root.find(GMD+'characterSet/'+GMD+'MD_CharacterSetCode') is None:
-       return False
-   
-    MDDID = root.find(GMD+'identificationInfo/'+GMD+'MD_DataIdentification')
-    if MDDID.find(GMD+'language/'+GCO+'CharacterString') is None:
-       return False
-   
-    if MDDID.find(GMD+'characterSet/'+GMD+'MD_CharacterSetCode') is None:
-       return False
-    
-    return True
-
         
 def main():
     
@@ -357,7 +347,7 @@ def main():
         try:
             v3.setmetadata(lid)
             v3.validate()
-            conditionalTest(v3.md)
+            v3.conditional()
             print(lid,True)
         except ValidatorAccessException as vae:
             print (lid,vae,False)
