@@ -15,6 +15,7 @@ import urllib2
 from urllib2 import HTTPError, ProxyHandler, URLError
 from lxml import etree
 import koordinates
+#import importlib
 
 # Set LDS API Key
 API_KEY = ''
@@ -127,20 +128,21 @@ layer_text = ""
 layer_url = ""
 
 # Set Default Encoding.
-reload(sys)  
+reload(sys) 
+#importlib.reload(sys)
 sys.setdefaultencoding('utf8')
 
 
-def add_layer_text(layer_text, root, VALUE):
+def add_layer_text(layer_text, root, VALUE):    
     if root.find(VALUE, namespaces=NSX) is not None:
-	for val in root.findall(VALUE, namespaces=NSX):
-	    if val.text is not None:
-		layer_text += ((val.text + ' | ').replace('\n', ' ').replace('\t', ' '))
-	    else:
-		layer_text += ('empty |')
-	layer_text += ('\t') 
+        for val in root.findall(VALUE, namespaces=NSX):
+            if val.text is not None:
+                layer_text += ((val.text + ' | ').replace('\n', ' ').replace('\t', ' '))
+            else:
+                layer_text += ('empty |')
+        layer_text += ('\t') 
     else:
-	layer_text += DEFAULT
+        layer_text += DEFAULT
     return layer_text  
 
 
@@ -167,148 +169,148 @@ current = 0
 for layer_item in client.catalog.list().filter(public='true'):
     current += 1
     if current % 5 == 0:
-	print 'LAYER {}/{}'.format(current, TOTAL)
-	OUTPUT_CSV.write(layer_text)
-	OUTPUT_CSV.flush()
-	layer_text = ""
-	sys.stdout.flush()
+        print ('LAYER {}/{}'.format(current, TOTAL))
+        OUTPUT_CSV.write(layer_text)
+        OUTPUT_CSV.flush()
+        layer_text = ""
+        sys.stdout.flush()
     
     if type(layer_item) == LAYER_TYPE:
-	try:
-	    os.remove(TEMP_FILE)
-	except OSError:
-	    pass
-	layer_id = layer_item.id
-	layer_url = layer_item.url
-	get_attempts = 0
-	while get_attempts <=2:
-	    get_attempts += 1
-	    try:
-		layer = client.layers.get(layer_item.id)
-	    except koordinates.exceptions.ServerError as e:
-		ERROR_LOG.write("Koordinates Server Error: {}\n".format(e))
-	    if layer:
-		break
-	if not layer:
-	    ERROR_LOG.write("Error: {}, THIS LAYER NOT PROCESSED\n".format(layer_id))
-	    continue
-	
-	if layer.metadata is None:
-	    ERROR_LOG.write("Error: {}, THIS LAYER NOT PROCESSED, NO METADATA\n".format(layer_id))
-	    continue
-	
-	layer.metadata.get_xml(TEMP_FILE)
-	tree = etree.parse(TEMP_FILE)
-	root = tree.getroot()
-	layer_text += (str(layer_id) + '\t')
-	
-	layer_text += add_layer_text(layer_text, root, FILEID)
-	layer_text += add_layer_text(layer_text, root, LANGUAGE)
-	layer_text += add_layer_text(layer_text, root, CHARSET)
-	layer_text += add_layer_text(layer_text, root, HIERARCHYLEVEL)  
-	layer_text += add_layer_text(layer_text, root, HIERARCHYLEVELNAME) 
-    
-	layer_text += add_layer_text(layer_text, root, CONTACTM + INAME) 
-	layer_text += add_layer_text(layer_text, root, CONTACTM + ONAME) 
-	layer_text += add_layer_text(layer_text, root, CONTACTM + PNAME)
-	layer_text += add_layer_text(layer_text, root, CONTACTM + VOICE)    
-	layer_text += add_layer_text(layer_text, root, CONTACTM + FACSIMILE)    
-	layer_text += add_layer_text(layer_text, root, CONTACTM + DELIVERYPOINT)  
-	layer_text += add_layer_text(layer_text, root, CONTACTM + CITY)        
-	layer_text += add_layer_text(layer_text, root, CONTACTM + ADMINISTRATIVEAREA)
-	layer_text += add_layer_text(layer_text, root, CONTACTM + POSTALCODE)        
-	layer_text += add_layer_text(layer_text, root, CONTACTM + COUNTRY)   
-	layer_text += add_layer_text(layer_text, root, CONTACTM + EMAIL)        
-	layer_text += add_layer_text(layer_text, root, CONTACTM + ROLE)  
+        try:
+            os.remove(TEMP_FILE)
+        except OSError:
+            pass
+        layer_id = layer_item.id
+        layer_url = layer_item.url
+        get_attempts = 0
+        while get_attempts <=2:
+            get_attempts += 1
+            layer = None
+            try:
+                layer = client.layers.get(layer_item.id)
+            except koordinates.exceptions.ServerError as e:
+                ERROR_LOG.write("Koordinates Server Error: {}\n".format(e))
+            if layer:
+                break
+        if not layer:
+            ERROR_LOG.write("Error: {}, THIS LAYER NOT PROCESSED\n".format(layer_id))
+            continue
+        if layer.metadata is None:
+            ERROR_LOG.write("Error: {}, THIS LAYER NOT PROCESSED, NO METADATA\n".format(layer_id))
+            continue
+        layer.metadata.get_xml(TEMP_FILE)
+        tree = etree.parse(TEMP_FILE)
+        root = tree.getroot()
+        layer_text += (str(layer_id) + '\t')
 
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + INAME) 
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + ONAME) 
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + PNAME)
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + VOICE)    
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + FACSIMILE)    
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + DELIVERYPOINT) 
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + CITY)        
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + ADMINISTRATIVEAREA)
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + POSTALCODE)        
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + COUNTRY)   
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + EMAIL)        
-	layer_text += add_layer_text(layer_text, root, POINTOFCONTACT + ROLE)         
+        layer_text = add_layer_text(layer_text, root, FILEID)
+        layer_text = add_layer_text(layer_text, root, LANGUAGE)
+        layer_text = add_layer_text(layer_text, root, CHARSET)
+        layer_text = add_layer_text(layer_text, root, HIERARCHYLEVEL)  
+        layer_text = add_layer_text(layer_text, root, HIERARCHYLEVELNAME) 
     
-	layer_text += add_layer_text(layer_text, root, DATESTAMP)
-    
-	layer_text += add_layer_text(layer_text, root, METSTANDARDNAME)
-	layer_text += add_layer_text(layer_text, root, METSTANDARDVER)
-	layer_text += add_layer_text(layer_text, root, REFERENCESYSINFO) 
+        layer_text = add_layer_text(layer_text, root, CONTACTM + INAME) 
+        layer_text = add_layer_text(layer_text, root, CONTACTM + ONAME) 
+        layer_text = add_layer_text(layer_text, root, CONTACTM + PNAME)
+        layer_text = add_layer_text(layer_text, root, CONTACTM + VOICE)    
+        layer_text = add_layer_text(layer_text, root, CONTACTM + FACSIMILE)    
+        layer_text = add_layer_text(layer_text, root, CONTACTM + DELIVERYPOINT)  
+        layer_text = add_layer_text(layer_text, root, CONTACTM + CITY)        
+        layer_text = add_layer_text(layer_text, root, CONTACTM + ADMINISTRATIVEAREA)
+        layer_text = add_layer_text(layer_text, root, CONTACTM + POSTALCODE)        
+        layer_text = add_layer_text(layer_text, root, CONTACTM + COUNTRY)   
+        layer_text = add_layer_text(layer_text, root, CONTACTM + EMAIL)        
+        layer_text = add_layer_text(layer_text, root, CONTACTM + ROLE)  
 
-	layer_text += add_layer_text(layer_text, root, TITLE)
-	layer_text += add_layer_text(layer_text, root, ALTTITLE)
-	layer_text += add_layer_text(layer_text, root, DATE)
-	layer_text += add_layer_text(layer_text, root, DATETYPE)
-	layer_text += add_layer_text(layer_text, root, OTHERCITATION)  
-	layer_text += add_layer_text(layer_text, root, ABSTRACT)
-	layer_text += add_layer_text(layer_text, root, PURPOSE)  
-	layer_text += add_layer_text(layer_text, root, STATUS) 
-	layer_text += add_layer_text(layer_text, root, MAINTENANCE)
-	layer_text += add_layer_text(layer_text, root, MAINTENANCEUPDATE)
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + INAME) 
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + ONAME) 
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + PNAME)
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + VOICE)    
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + FACSIMILE)    
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + DELIVERYPOINT) 
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + CITY)        
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + ADMINISTRATIVEAREA)
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + POSTALCODE)        
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + COUNTRY)   
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + EMAIL)        
+        layer_text = add_layer_text(layer_text, root, POINTOFCONTACT + ROLE)         
     
-	layer_text += add_layer_text(layer_text, root, FORMATNAME)
-	layer_text += add_layer_text(layer_text, root, FROMATTYPE)  
+        layer_text = add_layer_text(layer_text, root, DATESTAMP)
     
-	layer_text += add_layer_text(layer_text, root, KEYWORD)
-	layer_text += add_layer_text(layer_text, root, KEYWORDTYPE)
-    
-	layer_text += add_layer_text(layer_text, root, SECURITYUL)
-	layer_text += add_layer_text(layer_text, root, SECURITYC)  
-	layer_text += add_layer_text(layer_text, root, LEGALUL)
-	layer_text += add_layer_text(layer_text, root, LEGALA)       
-	layer_text += add_layer_text(layer_text, root, LEGALUC)
-    
-	layer_text += add_layer_text(layer_text, root, SPATIALREP) 
-	layer_text += add_layer_text(layer_text, root, SCALEDISTANCE)       
-	layer_text += add_layer_text(layer_text, root, SCALEEQUIVALENT)
-    
-	layer_text += add_layer_text(layer_text, root, LANG2)
-	layer_text += add_layer_text(layer_text, root, CHARSET2)
-	layer_text += add_layer_text(layer_text, root, TOPICCATEGORY)
-    
-	hasExtent = False
-	if root.find(BOUNDINGBOX, namespaces=NSX) is not None:
-	    hasExtent = True
-	    layer_text += ('BOUNDING BOX | ')
-	if root.find(DESCRIPTION, namespaces=NSX) is not None:
-	    hasExtent = True
-	    layer_text += ('DESCRIPTION | ')
-	if root.find(TEMPORAL, namespaces=NSX) is not None:
-	    hasExtent = True
-	    layer_text += ('TEMPORAL | ')
-	if root.find(VERTICAL, namespaces=NSX) is not None:
-	    hasExtent = True
-	    layer_text += ('VERTICAL | ') 
-	if hasExtent:
-	    layer_text += ('\t') 
-	else:
-	    layer_text += DEFAULT
+        layer_text = add_layer_text(layer_text, root, METSTANDARDNAME)
+        layer_text = add_layer_text(layer_text, root, METSTANDARDVER)
+        layer_text = add_layer_text(layer_text, root, REFERENCESYSINFO) 
 
-	layer_text += add_layer_text(layer_text, root, SCOPELEVEL)
-	layer_text += add_layer_text(layer_text, root, SCOPELVELDESC)
-	layer_text += add_layer_text(layer_text, root, LINEAGE)
+        layer_text = add_layer_text(layer_text, root, TITLE)
+        layer_text = add_layer_text(layer_text, root, ALTTITLE)
+        layer_text = add_layer_text(layer_text, root, DATE)
+        layer_text = add_layer_text(layer_text, root, DATETYPE)
+        layer_text = add_layer_text(layer_text, root, OTHERCITATION)  
+        layer_text = add_layer_text(layer_text, root, ABSTRACT)
+        layer_text = add_layer_text(layer_text, root, PURPOSE)  
+        layer_text = add_layer_text(layer_text, root, STATUS) 
+        layer_text = add_layer_text(layer_text, root, MAINTENANCE)
+        layer_text = add_layer_text(layer_text, root, MAINTENANCEUPDATE)
     
-	layer_text += add_layer_text(layer_text, root, MSECURITYUL)
-	layer_text += add_layer_text(layer_text, root, MSECURITYC)
-	layer_text += add_layer_text(layer_text, root, MLEGALUL)
-	layer_text += add_layer_text(layer_text, root, MLEGALA)
-	layer_text += add_layer_text(layer_text, root, MLEGALUC)     
+        layer_text = add_layer_text(layer_text, root, FORMATNAME)
+        layer_text = add_layer_text(layer_text, root, FROMATTYPE)  
+    
+        layer_text = add_layer_text(layer_text, root, KEYWORD)
+        layer_text = add_layer_text(layer_text, root, KEYWORDTYPE)
+    
+        layer_text = add_layer_text(layer_text, root, SECURITYUL)
+        layer_text = add_layer_text(layer_text, root, SECURITYC)  
+        layer_text = add_layer_text(layer_text, root, LEGALUL)
+        layer_text = add_layer_text(layer_text, root, LEGALA)       
+        layer_text = add_layer_text(layer_text, root, LEGALUC)
+    
+        layer_text = add_layer_text(layer_text, root, SPATIALREP) 
+        layer_text = add_layer_text(layer_text, root, SCALEDISTANCE)       
+        layer_text = add_layer_text(layer_text, root, SCALEEQUIVALENT)
+    
+        layer_text = add_layer_text(layer_text, root, LANG2)
+        layer_text = add_layer_text(layer_text, root, CHARSET2)
+        layer_text = add_layer_text(layer_text, root, TOPICCATEGORY)
+    
+        hasExtent = False
+        if root.find(BOUNDINGBOX, namespaces=NSX) is not None:
+            hasExtent = True
+            layer_text += ('BOUNDING BOX | ')
+        if root.find(DESCRIPTION, namespaces=NSX) is not None:
+            hasExtent = True
+            layer_text += ('DESCRIPTION | ')
+        if root.find(TEMPORAL, namespaces=NSX) is not None:
+            hasExtent = True
+            layer_text += ('TEMPORAL | ')
+        if root.find(VERTICAL, namespaces=NSX) is not None:
+            hasExtent = True
+            layer_text += ('VERTICAL | ') 
+        if hasExtent:
+            layer_text += ('\t') 
+        else:
+            layer_text += DEFAULT
 
-	layer_text += (layer_url + '\n')
+        layer_text = add_layer_text(layer_text, root, SCOPELEVEL)
+        layer_text = add_layer_text(layer_text, root, SCOPELVELDESC)
+        layer_text = add_layer_text(layer_text, root, LINEAGE)
+    
+        layer_text = add_layer_text(layer_text, root, MSECURITYUL)
+        layer_text = add_layer_text(layer_text, root, MSECURITYC)
+        layer_text = add_layer_text(layer_text, root, MLEGALUL)
+        layer_text = add_layer_text(layer_text, root, MLEGALA)
+        layer_text = add_layer_text(layer_text, root, MLEGALUC)     
+
+        layer_text += (layer_url + '\n')
     else:
-	try:
-	    ERROR_LOG.write('Error: {}, LAYER NOT PROCESSED, NOT LAYER/TABLE\n'.format(layer_item.id))
-	except AttributeError as e:
-	    ERROR_LOG.write('Error: LAYER NOT PROCESSED, NOT LAYER/TABLE AND {}\n'.format(e))   
-	    
+        try:
+            ERROR_LOG.write('Error: {}, LAYER NOT PROCESSED, NOT LAYER/TABLE\n'.format(layer_item.id))
+        except AttributeError as e:
+            ERROR_LOG.write('Error: LAYER NOT PROCESSED, NOT LAYER/TABLE AND {}\n'.format(e))   
+    
 OUTPUT_CSV.write(layer_text)
 OUTPUT_CSV.flush()
 OUTPUT_CSV.close()
+
 
 
 
