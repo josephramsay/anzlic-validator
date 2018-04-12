@@ -1,0 +1,84 @@
+Disclaimer
+
+Antarctic (43)
+    Following Disclaimers: (Majority don't contain 3-8)
+	1. Due to lack of contrast in some images, no feature capture was able to take place on some of the glacier regions.
+	2. Mapping of different areas of the Dry Valleys and Ross Island was undertaken in the 1980s and 1990s. At this time, metadata for the source images of each area of mapping is not available.
+	3. Contours and spot elevations in snow areas may be less accurate
+	4. The location of tracks on sea ice is subject to annual change
+	5. The existance of a road or track does not necessarily indicate permitted access
+	6. Ice shelf and sea extents are from differing data sources and dates
+	7. Absence of crevasse data does not necessarily indicate a crevasse-free area
+	8. Permits may be required to visit some sensitve and special islands and areas.
+	
+
+Department of Conservation (640)
+    Following Disclaimers: ((Some don't contain 2, 3, 4, 5) & Not all in same order.)
+	1. Representation of a road or track does not necessarily indicate public right of access.  For access rights, maps and other information, contact the New Zealand Walking Access Commission - www.walkingaccess.govt.nz
+	2. Closed tracks are defined as being no longer maintained or passable and should not be used by recreationalists. The Department of Conservation or other authorities should be contacted for the latest information on tracks and huts.
+	3. Not all aerial wires, cableways and obstructions that could be hazardous to aircraft are held in the data.
+	4. Contours and spot elevations in forest and snow areas may be less accurate.
+	5. Not all pipelines including both underground and above ground are held in the data or shown on the printed maps. For the latest information please contact the utility and infrastructure agencies
+	6. Permits may be required to visit some sensitive and special islands and areas.  Contact the Department of Conservation to see if you need to apply for a permit.  
+	
+	(1. sometimes as 'The existance of a road or track does not necessarily indicate public right of access')
+	
+	
+Landonline (195)
+    Following Disclaimers:
+	1. This data is made available through the LINZ Data Service and is based on information contained with Landonline (New Zealand's Official Title and Cadastral System)
+	
+	A few others contain:
+	2. Not to be used for defining legal parcel boundaries
+	
+	2. The address points represent known addresses for electoral enrolment purposes. They do not necessarily represent occupied properties.
+	
+	2. The railway centrelines recorded do not represent actual formation, but rather as an indicative guide as to location.
+	
+	2. The road centrelines recorded in Landonline do not represent actual road formation, nor do they represent legal access.
+	3. They should not be considered official nor part of a valid postal address but rather indicative guide as to location.
+	
+	2. Refer to License details
+	
+Quasigeoid (1)
+    Following Disclaimers:
+	1. This data is made available through the LINZ Data Service and is based on LINZ's New Zealand Quasigeoid 2009 (NZGeoid2009)
+
+Vertical Datum (58)
+    Following Disclaimers:
+	1.This data is made available through the LINZ Data Service and is based on LINZ's New Zealand Vertical Datum 2016 (NZVD2016)
+
+Hydrographic (522)
+    Following Disclaimers: (Mix ups between New Zealand Hydrographic Authority, National Hydrographic Authority, NZ Hydrographic Authority)
+	The hydrographic data available through the LINZ Data Service is based on official Electronic Navigational Charts (ENCs) published and maintained by the New Zealand Hydrographic Authority.
+	It should be noted that due to the translation process, some characteristics of the S-57 data may not convert correctly to formats downloaded from this site.
+	This data: does not replace official ENCs; should not be used for navigation; are not corrected for Notices to Mariners.
+	For navigation, mariners should use official New Zealand ENCs as available from chart retailers.
+    
+Hydrographic Raster (325)
+    Following Disclaimers: (Mix ups between Paper Nautical Charts and Paper Navigational Charts
+	The hydrographic raster data available through the LINZ Data Service is based on official Paper Nautical Charts published and maintained by the New Zealand Hydrographic Authority.
+	It should be noted that due to the translation process, some information from the charts may be omitted and positions may be inaccurate due to datum issues.
+	This data: does not replace official Navigational Charts; should not be used for navigation; are not corrected for Notices to Mariners.
+	For navigation, mariners should use official New Zealand Charts as available from chart retailers.
+
+Hydrographic Bathymetric: (5)
+    Following Disclaimers:
+	1. Bathymetric Datasets are provided by LINZ without warranty as their accuracy and veracity
+	2. Users are expected to apply due diligence when using datasets which are provided on an errors and ommissions excepted basis.
+	
+Gazetteer (5)
+    Following Disclaimers:
+	1. This data is made available through the LINZ Data Service and is based on information contained in Land Information New Zealand's (LINZ) 'New Zealand Gazetter of Official Geographic Names', maintained by the NZGB Secretariat
+	2. Some data anomalies may exist in terms of completeness and accuracy. Therefore, feedback on any data anomalies found would be appreciated.
+
+Address, Road & Places (15)
+    Following Disclaimers:
+	1. This data is made available through the LINZ Data Service and is based on information contained within the LINZ Address, road and places database
+    
+Following Disclaimers:
+    Third party funded data may be subject to conditions stipulated by the data owner. You will be required to accept any such conditions before LINZ is able to release the data.
+    
+    1. Whilst reasonable measures have been taken to ensure the accuracy of the data LINZ makes no express or implied warranties as to the accuracy or completeness of the data or information, nor its suitability for any purpose. Errors are inevitably part of any database, and can arise by a number of means, from errors during field data collection, to errors during data entry.
+    2. Care should be taken in deriving conclusions fron any data or information supplied.
+    3. Further use information covered in LINZ's Terms of Use data.linz.govt.nz/terms-of-use/

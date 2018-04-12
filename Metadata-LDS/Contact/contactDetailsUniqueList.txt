@@ -1,0 +1,141 @@
+        CITY
+        - Private
+      1 Lincoln
+      1 Palmerston North
+      2 WellingtonSS
+      2 WellingtonZZZS
+      4 Wellingtonsss
+        - Public
+     30 None 
+   4052 Wellington
+
+        COUNTRY
+        - Private
+      2 Aotearoa
+      2 China
+      2 NZ      
+      - Public
+     30 None 
+   4056 New Zealand
+
+        DELIVERY POINT
+        - Private
+      1 P O Box 69
+      1 Private Bag 11052  
+      2 155A The Terrace
+      2 155 The Road      
+      2 155ZZZ The Terrace
+      4 155AAA The Terrace
+        - Public
+      1 Land Information New Zeland, 155 The Terrace        
+      4 Land Information New Zealand, 155 The Terrace
+      2 Conservation House, 18 -32 Manners Street
+     30 None 
+     38 160 Lambton Quay
+     40 Level 7, Radio New Zealand House, 155 The Terrace, PO Box 5501
+     56 155 the Terrace
+   3909 155 The Terrace
+
+        EMAIL
+        - Private
+      1 newsomep@landcareresearch.co.nz   
+      1 pairmand@landcareresearch.co.nz
+      2 enquiries@doc.govt.nz
+      2 you@linz.govt.nz
+        - Public
+     29 None 
+   1747 customersupport@linz.govt.nz
+   2310 info@linz.govt.nz
+
+        INDIVIDUAL NAME
+        - Private
+      1 David Pairman
+      1 Peter Newsome   
+        - Public
+      1 Data Manager - Crown Property
+      2 Director, Planning Permissions and Land
+     17 Team Manager Addressing      
+     22 Senior Location Data Analyst     
+    553 None
+   1735 Omit    
+   1760 omit
+
+        ORGANISATION NAME
+        - Private
+      1 Landcare Research New Zealand Ltd
+      1 Landcare Research NZ Ltd
+      2 LINZ - Land DATA Aotearoa
+      2 LINZ - Land Information China
+      2 LINZ - Land Information NZ          
+        - Public
+      1 LINZ
+      1 OPUS International Limited
+      2 Department of Conservation Te Papa Atawhai
+     28 None       
+     40 Land Information New Zealand
+   4012 LINZ - Land Information New Zealand
+
+        POSTAL CODE
+        - Private
+      1 4442
+      1 8192
+        - Public
+     30 None      
+   1896 6145      
+   2164 6011 
+
+        PHONE
+        - Private
+      1 +64 3 321 9763      
+      1 +64 6 353 4975     
+        - Public
+      1 0800665463        
+      2 04 471 0126
+     29 None 
+     44 0800 665 463
+    197 +64 4 460 0110
+    848 +64 4 4600110
+   1354 04 4600110
+   1615 0800 665 463 or +64 4 460 0110
+
+        POSITION NAME
+        - Private
+      1 Cadastral / Titles Data Manager - LINZ data service
+      1 Research Leader    
+      1 Scientist / Project Manager         
+      4 Data Manager Customer Systems      
+        - Public
+      1 Cadastral and Titles Data Manager - LINZ data service
+      1 Cadastral/Titles Data Manager - LINZ data service
+      1 Data Manager - Addresing
+      1 Data Manager - Pastoral Team, Crown Property and Investment   
+      1 Data Manager - Topography and Addressing
+      1 Manager Positioning and Resilience
+      1 Tidal Officer
+      2 Cadastral Data Manager (LINZ Data Service)      
+      2 Director, Planning Permissions and Land
+      2 Imagery Data Manager
+      2 Manager Data and Supporting Applications      
+      4 Surveyor-General
+      7 Data Manager - Crown Property
+     10 Secretary, New Zealand Geographic Board Ngā Pou Taunaha o Aotearoa
+     18 Team Manager Addressing
+     22 Senior Location Data Analyst
+     39 Data Manager - Addressing      
+     74 Lidar Coordination Manager
+     90 Chief Geodesist - National Geodetic Office
+    141 Data Manager - Customer Systems
+    189 None 
+    334 National Imagery Manager
+    720 Chief Topographer
+    712 Technical Leader, National Topographic Office
+    852 Nautical Cartographer
+    858 National Hydrographer
+
+        ROLE
+        -Private & Public
+      2 principalInvestigator        
+     28 None      
+     29 author
+   1752 resourceProvider     
+   2281 pointOfContact
