@@ -157,5 +157,9 @@ class CachedResponse(io.StringIO):
         return self.headers
     def geturl(self):
         return self.url
+    
+    def read(self):
+        '''Compatibility wrapper for httpresponse'''
+        return self.getvalue()
 
         

@@ -20,32 +20,27 @@ import unittest
 
 from test_cache import Test_1_setup as T11
 from test_cache import Test_2_canned as T12
-from test_validate import Test_1_setup as T21
+from test_validate import Test_1_init as T21
+from test_validate import Test_2_setuplocal as T22
+from test_validate import Test_3_setupremote as T23
+from test_validate import Test_4_setupcombined as T24
+
 
 class FullSuite(unittest.TestSuite):
 
     def __init__(self):
         pass
     
-    def _suite(self):
-        '''Finer control of which tests to run'''
-        suite = unittest.TestSuite()
-
-        suite.addTest(T1('test_1_flushcache'))
-        suite.addTest(T1('test_2_loadexternal'))
-        suite.addTest(T1('test_3_loadcache'))        
-        
-        suite.addTest(T2('test_1_flushcache'))
-        suite.addTest(T2('test_2_loadexternal'))
-        suite.addTest(T2('test_3_loadcache'))
-        
-        return suite
     
     def suite(self):
         suites = ()
         suites += unittest.makeSuite(T11)
         suites += unittest.makeSuite(T12)
+        
         suites += unittest.makeSuite(T21)
+        suites += unittest.makeSuite(T22)
+        suites += unittest.makeSuite(T23)
+        suites += unittest.makeSuite(T24)
    
         return unittest.TestSuite(suites)
 
