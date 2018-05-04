@@ -4,8 +4,9 @@ import urllib.request   as UR
 import urllib.parse     as UP
 import urllib.error     as UE
 
+from pprint import pprint
 from lxml import etree
-from lxml.etree import XMLSyntaxError, ElementTree, _Element
+from lxml.etree import XMLSyntaxError, XMLSchemaParseError, ElementTree, _Element
 from io import StringIO
 
 from bs4 import BeautifulSoup as BS
@@ -18,6 +19,8 @@ from abc import ABCMeta, abstractmethod
 
 from cache import CacheHandler, CachedResponse
 from authenticate import Authentication
+from builtins import staticmethod
+from numpy.core.defchararray import rstrip
 
 #Raw AS recipe is py2, modified as cache import above
 #import importlib.util
@@ -59,7 +62,7 @@ SL = ['http://www.isotc211.org/2005/',
       'http://schemas.opengis.net/iso/19139/20070417/',
       'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/',
       'https://www.ngdc.noaa.gov/emma/xsd/schema/']
-SLi = 3
+SLi = 0
 
 class ValidatorException(Exception): pass
 class ValidatorAccessException(ValidatorException): pass
@@ -105,7 +108,7 @@ class SCHMD(object):
         
     @abstractmethod
     def metadata(self):
-        '''schema init'''
+        '''meta init'''
     def setmetadata(self,lid):
         self.md = self.metadata(lid)
         
@@ -121,7 +124,7 @@ class SCHMD(object):
     @staticmethod
     def _bcached(url,enc=ENC):
         '''Wrapper for cached url open with bs'''
-        _,txt = SCHMD._request(url, enc)
+        txt = SCHMD._request(url)
         return BS(txt,'lxml-xml')    
     
     @staticmethod
@@ -129,21 +132,32 @@ class SCHMD(object):
         '''Wrapper for cached url open with lxml'''
         resp = SCHMD._request(url)
         txt = SCHMD._extracttxt(resp,enc)
-        parser = RemoteParser(enc)
-        parser.resolvers.add(RemoteResolver(resp,enc))
-        if enc: return etree.XML(txt, parser)
-        return etree.XML(txt)
+        xml = SCHMD._parsetxt(txt,resp,enc)
+        return xml
     
+    @staticmethod
+    def _parsetxt(txt,resp=None,enc=None,history={}):
+        '''Parse provided text into XML doc'''
+        if enc and resp: 
+            resolver = RemoteResolver(resp,enc,history)
+            parser = RemoteParser(enc)
+            parser.resolvers.add(resolver)
+            return etree.XML(txt, parser)
+        return etree.XML(txt)
+        
     @staticmethod
     def _extracttxt(resp,enc):
         '''Get the bytes text from the response if it hasn't already been done and if encoding is specified'''
-        txt = resp.read().encode(enc) if enc and not isinstance(resp,bytes) else resp.read()
+        txt = resp.read().encode(enc) if (enc and not isinstance(resp,bytes)) else resp.read()
         return txt
         #return SCHMD._hackisotc211(txt)
     
     @staticmethod
     def _request(url):
+        '''Add cachehandler as additional opener and open'''
         opener = UR.build_opener(CacheHandler(CACHE))
+        #UR.install_opener(opener)
+        #return UR.urlopen(url)
         return opener.open(url)
     
     @staticmethod
@@ -205,6 +219,8 @@ class Local(SCHMD):
         sch_name = 'metadataEntity.xsd'
         sch_pr = UP.urlparse(SL[SLi])
         sch_path = os.path.abspath(os.path.join(os.path.dirname(__file__),cls.SP,sch_pr.netloc,sch_pr.path[1:],'gmd',sch_name))
+        if not os.path.exists(sch_path):
+            cls._copyschemas(sch_pr)
         #sch_doc = ''
         #with open(sch_path,'rb') as h:
         #    sch_doc = etree.XML(SCHMD._hackisotc211(h.read()))
@@ -219,11 +235,11 @@ class Local(SCHMD):
         md = etree.parse(md_path)
         return md
     
-    def _copyschemas(self):
-        '''for testing...'''
-        for u in SL:
-            os.chdir(os.path.abspath(os.path.join(SP,u)))
-            os.system('wget -r -np -R "index.html*" {}'.format(u))
+    @classmethod
+    def _copyschemas(cls,pr):
+        '''Pull an entire URL tree of schemas...'''
+        os.chdir(os.path.abspath(os.path.join(os.path.dirname(__file__),cls.SP)))
+        os.system('wget -r -np -R "index.html*" {}://{}{}'.format(pr.scheme,pr.netloc,pr.path))
             
 class Remote(SCHMD):
     '''Remote parser grabbing remote content but employing caching'''
@@ -235,8 +251,12 @@ class Remote(SCHMD):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = '{url}gmd/metadataEntity.xsd'.format(url=SL[SLi])
         sch_doc = cls._xcached(sch_name)
-        sch = etree.XMLSchema(sch_doc)
-        return sch 
+        try:
+            sch = etree.XMLSchema(sch_doc)
+            return sch
+        except XMLSchemaParseError as xspe:
+            print(xspe)
+            raise
         
     @classmethod
     def metadata(cls,lid):
@@ -368,28 +388,82 @@ class RemoteParser(etree.XMLParser):
         
 class RemoteResolver(etree.Resolver):
     '''Custom resolver to redirect resolution of cached resources back through the cache'''
-    def __init__(self,response,encoding):
+    def __init__(self,response,encoding,history):
+        self.history = history or {'cache':[],'fail':[]}
         self.encoding = encoding
         self.response = response
-        #self.up = UP.urlparse(response.url)
-        #self.tns = response.url.rsplit('/',1)[0]
-        ##UP.urljoin(self.up.scheme,self.up.netloc,self.up.path)
+        self.doc = etree.XML(SCHMD._extracttxt(self.response,self.encoding))
+        self.target = self.doc.attrib['targetNamespace']
+        self.source = self.response.url
+        #precache imports
+        self._precache()
      
+    def _precache(self):
+        '''Precache imports and includes'''
+        for incl in self.doc.findall('xs:include',namespaces=NSX):
+            ul = [UR.urljoin(self._slash(u),incl.attrib['schemaLocation']) for u in (self.target,self.source)]
+            self._getimports(set(ul))
+        for impt in self.doc.findall('xs:import',namespaces=NSX):
+            ul = [UR.urljoin(self._slash(u),impt.attrib['schemaLocation']) for u in (impt.attrib['namespace'],self.target,self.source)]
+            self._getimports(set(ul))
+
+    def _getimports(self,ul):
+        '''import xsd using selectio of urls including targetNamespace, namespace and url of source'''
+        for i,url in enumerate(ul):
+            #hasn't been fetched already or in failed list
+            if url not in self.history['cache'] and url not in self.history['fail']:
+                try:
+                    print ('Precaching url {}. {}'.format(i,url))
+                    self._getXMLResponse(url)
+                    break
+                except (Exception,XMLSyntaxError) as xse:
+                    print ('Cannot parse url {}, {}'.format(i,url))
+                    self.history = RemoteResolver._merge(self.history,{'fail':[url,]})
+                    CachedResponse.RemoveFromCache(self.response.cacheLocation,url)
+                    continue
+        return
+                    
+                
+    def _getXMLResponse(self,url):
+        resp = SCHMD._request(url)
+        harg = RemoteResolver._merge(self.history,{'cache':[url,]})
+        resolver = RemoteResolver(resp,self.encoding,harg)
+  
+    @staticmethod        
+    def _merge(a,b):
+        c = {}
+        for k in a.keys():
+            c[k] = a[k]
+            if k in b: c[k] += b[k]
+        return c
+
+    @staticmethod
+    def _slash(u):
+        return os.path.join(u,'') if u.rfind('/')>u.rfind('.') else u
+
+    def _cached(self,frag):
+        for u in [h for h in self.history['cache'] if h not in self.history['fail']]:
+            if frag.lstrip('.') in u: return u
+        
     def resolve(self, system_url, public_id, context):
-        '''Resolve the schema resolution query through the cache if the original query has taken that route'''
-        resp = SCHMD._request(system_url)
+        #pprint (self.history)
+        cached_url = self._cached(system_url)
+        print (system_url,'->',cached_url)
+        resp = SCHMD._request(cached_url)
         txt = SCHMD._extracttxt(resp,self.encoding)
-        #parser = RemoteParser(enc)
-        #parser.resolvers.add(RemoteResolver(resp,enc))
-        #if enc: return etree.XML(txt, parser)
-        #return etree.XML(txt)
-        rv = None
-        if txt: rv = self.resolve_string(txt.decode(self.encoding),context)
-        return rv
+        try:
+            rstr = self.resolve_string(txt.decode(self.encoding),context) if txt else None
+            return rstr
+        except Exception as e:
+            pass
+        
+#     def _getpath(self,url):
+#         pr = UP.urlparse(url)
+#         return '{}://{}{}/'.format(pr.scheme,pr.netloc,'/'.join(pr.path.split('/')[:-1]))
 
-
+        
 def main():
-    
+    '''Validate all layers'''
     v3 = Combined()
     v3.setschema()
     wfsi = v3.getids('wms')
@@ -403,9 +477,6 @@ def main():
         except ValidatorException as ve:
             print (lid,ve,False)
 
-#def main():
-#    v2 = Remote()
-#    wfsi = v2.getids('wms')
-    
+
 if __name__ == "__main__":
     main()
