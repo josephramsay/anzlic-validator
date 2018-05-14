@@ -18,12 +18,13 @@ Created on 24/07/2012
 '''
 import unittest
 
-from test_cache import Test_1_setup as T11
-from test_cache import Test_2_canned as T12
-from test_validate import Test_1_init as T21
-from test_validate import Test_2_setuplocal as T22
-from test_validate import Test_3_setupremote as T23
-from test_validate import Test_4_setupcombined as T24
+from test_cache     import Test_1_setup         as T11
+from test_cache     import Test_2_canned        as T12
+from test_validate  import Test_1_init          as T21
+from test_validate  import Test_2_setuplocal    as T22
+from test_validate  import Test_3_setupremote   as T23
+from test_validate  import Test_4_setupcombined as T24
+#from test_resolve   import Test_1_init          as T31
 
 
 class FullSuite(unittest.TestSuite):
@@ -41,6 +42,8 @@ class FullSuite(unittest.TestSuite):
         suites += unittest.makeSuite(T22)
         suites += unittest.makeSuite(T23)
         suites += unittest.makeSuite(T24)
+        
+        #suites += unittest.makeSuite(T31)
    
         return unittest.TestSuite(suites)
 

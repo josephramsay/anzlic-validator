@@ -5,7 +5,8 @@ import sys
 
 sys.path.append('../scripts/')
 
-from validate import Remote, Local,Combined,ValidatorParseException,ValidatorAccessException,NSX
+from validate import Remote, Local, Combined, NSX
+from validate import ValidatorParseException, ValidatorAccessException
 from cache import CacheHandler
 from authenticate import Authentication
 

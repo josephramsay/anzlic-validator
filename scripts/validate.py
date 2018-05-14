@@ -5,8 +5,10 @@ import urllib.parse     as UP
 import urllib.error     as UE
 
 from pprint import pprint
+from typing import List, Dict, Set
 from lxml import etree
-from lxml.etree import XMLSyntaxError, XMLSchemaParseError, ElementTree, _Element
+from lxml.etree import XMLParser, XML, ElementTree, _Element
+from lxml.etree import XMLSyntaxError, XMLSchemaParseError
 from io import StringIO
 
 from bs4 import BeautifulSoup as BS
@@ -18,9 +20,9 @@ from abc import ABCMeta, abstractmethod
 #One solution was to implement a cache solution but no longer sure that its required
 
 from cache import CacheHandler, CachedResponse
+from resolve import RemoteResolver
 from authenticate import Authentication
-from builtins import staticmethod
-from numpy.core.defchararray import rstrip
+
 
 #Raw AS recipe is py2, modified as cache import above
 #import importlib.util
@@ -136,7 +138,7 @@ class SCHMD(object):
         return xml
     
     @staticmethod
-    def _parsetxt(txt,resp=None,enc=None,history={}):
+    def _parsetxt(txt,resp=None,enc=None,history=None):#{'cache':[],'fail':[]}):
         '''Parse provided text into XML doc'''
         if enc and resp: 
             resolver = RemoteResolver(resp,enc,history)
@@ -318,7 +320,6 @@ class Remote(SCHMD):
             ret[match.group(1)] += ((int(match.group(2)),ft.find(ftx['title'], namespaces=NSX).text),)
         return ret
 
-        
     
     def _geturlset(self,src,wxs):
         '''Returns capabilities URL, xpath fragment to title/name and parser method
@@ -367,11 +368,11 @@ class Combined(Remote):
                 raise ValidatorException('{}\n{}'.format(msg1,msg2))
         
     @classmethod
-    def metadata(cls,id=None,name=None):
+    def metadata(cls,id=None,name=None) -> _Element:
         '''Wrapper attempting local metadata load. 
         NB. Uses Filename or layer_id which determines fetch method'''
         if name:
-            try: return Local.metadata(md_name)
+            try: return Local.metadata(name)
             except Exception as lme:
                 raise ValidatorException('Local MD failed. {}'.format(lme))
         if id:
@@ -381,87 +382,12 @@ class Combined(Remote):
             
         raise ValidatorException('No Layer Id or filename specified')
         
-class RemoteParser(etree.XMLParser):
+class RemoteParser(XMLParser):
     '''Simple custom parser wrapper overrodes init with encoding spec'''
-    def __init__(self,enc):
+    def __init__(self,enc) -> None:
         super(RemoteParser,self).__init__(ns_clean=True,recover=True,encoding=enc)
-        
-class RemoteResolver(etree.Resolver):
-    '''Custom resolver to redirect resolution of cached resources back through the cache'''
-    def __init__(self,response,encoding,history):
-        self.history = history or {'cache':[],'fail':[]}
-        self.encoding = encoding
-        self.response = response
-        self.doc = etree.XML(SCHMD._extracttxt(self.response,self.encoding))
-        self.target = self.doc.attrib['targetNamespace']
-        self.source = self.response.url
-        #precache imports
-        self._precache()
-     
-    def _precache(self):
-        '''Precache imports and includes'''
-        for incl in self.doc.findall('xs:include',namespaces=NSX):
-            ul = [UR.urljoin(self._slash(u),incl.attrib['schemaLocation']) for u in (self.target,self.source)]
-            self._getimports(set(ul))
-        for impt in self.doc.findall('xs:import',namespaces=NSX):
-            ul = [UR.urljoin(self._slash(u),impt.attrib['schemaLocation']) for u in (impt.attrib['namespace'],self.target,self.source)]
-            self._getimports(set(ul))
-
-    def _getimports(self,ul):
-        '''import xsd using selectio of urls including targetNamespace, namespace and url of source'''
-        for i,url in enumerate(ul):
-            #hasn't been fetched already or in failed list
-            if url not in self.history['cache'] and url not in self.history['fail']:
-                try:
-                    print ('Precaching url {}. {}'.format(i,url))
-                    self._getXMLResponse(url)
-                    break
-                except (Exception,XMLSyntaxError) as xse:
-                    print ('Cannot parse url {}, {}'.format(i,url))
-                    self.history = RemoteResolver._merge(self.history,{'fail':[url,]})
-                    CachedResponse.RemoveFromCache(self.response.cacheLocation,url)
-                    continue
-        return
-                    
-                
-    def _getXMLResponse(self,url):
-        resp = SCHMD._request(url)
-        harg = RemoteResolver._merge(self.history,{'cache':[url,]})
-        resolver = RemoteResolver(resp,self.encoding,harg)
-  
-    @staticmethod        
-    def _merge(a,b):
-        c = {}
-        for k in a.keys():
-            c[k] = a[k]
-            if k in b: c[k] += b[k]
-        return c
-
-    @staticmethod
-    def _slash(u):
-        return os.path.join(u,'') if u.rfind('/')>u.rfind('.') else u
-
-    def _cached(self,frag):
-        for u in [h for h in self.history['cache'] if h not in self.history['fail']]:
-            if frag.lstrip('.') in u: return u
-        
-    def resolve(self, system_url, public_id, context):
-        #pprint (self.history)
-        cached_url = self._cached(system_url)
-        print (system_url,'->',cached_url)
-        resp = SCHMD._request(cached_url)
-        txt = SCHMD._extracttxt(resp,self.encoding)
-        try:
-            rstr = self.resolve_string(txt.decode(self.encoding),context) if txt else None
-            return rstr
-        except Exception as e:
-            pass
-        
-#     def _getpath(self,url):
-#         pr = UP.urlparse(url)
-#         return '{}://{}{}/'.format(pr.scheme,pr.netloc,'/'.join(pr.path.split('/')[:-1]))
-
-        
+       
+    
 def main():
     '''Validate all layers'''
     v3 = Combined()
