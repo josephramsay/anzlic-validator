@@ -91,7 +91,11 @@ class CacheHandler(urllib.request.BaseHandler):
             return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=True)    
         else:
             return None # let the next handler try to handle the request
-
+        
+    def https_response(self, request, response):
+        '''Call http_response from https_response'''
+        return self.http_response(request, response)
+        
     def http_response(self, request, response):
         '''Post process the response object by seeing if its from the cache or live
         if live, store a copy then pull that same copy (without the cache-header) to return, 
@@ -129,6 +133,15 @@ class CachedResponse(io.StringIO):
         #write body
         with open('{}/{}.body'.format(cacheLocation,hash), "w") as f:
             f.write(response.read(resp_len).decode('utf-8'))
+    
+    @staticmethod
+    def RemoveFromCache(cacheLocation, url):
+        '''Delete hash in the cache'''
+        hash = CachedResponse._hash(url)
+        try:
+            os.remove('{}/{}.headers'.format(cacheLocation,hash))
+            os.remove('{}/{}.body'.format(cacheLocation,hash))
+        except FileNotFoundError: pass
 
     
     def __init__(self, cacheLocation,url,setCacheHeader=True):
@@ -157,5 +170,9 @@ class CachedResponse(io.StringIO):
         return self.headers
     def geturl(self):
         return self.url
+    
+    def read(self):
+        '''Compatibility wrapper for httpresponse'''
+        return self.getvalue()
 
         
