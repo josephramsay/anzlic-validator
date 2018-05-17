@@ -1,19 +1,14 @@
 import os
 #import re
 import urllib.request   as UR
-import urllib.parse     as UP
-import urllib.error     as UE
 import pickle
 
 #from validate import NSX, SCHMD, InaccessibleSchemaException
 import validate
 
 from pprint import pprint
-from typing import List, Dict, Set
-from lxml import etree
-from lxml.etree import Resolver, XMLParser, XML, ElementTree, _Element
-from lxml.etree import XMLSyntaxError, XMLSchemaParseError
-from io import StringIO
+from typing import Dict, Set
+from lxml.etree import Resolver, XML
 from functools import wraps, partial
 
 from bs4 import BeautifulSoup as BS
@@ -21,18 +16,7 @@ from bs4 import BeautifulSoup as BS
 
 from abc import ABCMeta, abstractmethod
 
-#Shifting from urllib to urllib2 we lost urlretrieve with its caching features. 
-#One solution was to implement a cache solution but no longer sure that its required
-
 from cache import CacheHandler, CachedResponse
-
-#http://schemas.opengis.net/gml/3.1.1/base/topology.xsd
-SL = ['http://www.isotc211.org/2005/',  
-      'http://schemas.opengis.net/iso/19139/20070417/',
-      'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/',
-      'https://www.ngdc.noaa.gov/emma/xsd/schema/']
-SLi = 1
-
 
 # class ResolverHistory():
 #     BLANKHIST = {'cache':[],'fail':[]}
@@ -48,11 +32,16 @@ SLi = 1
 #         self.history[c][i] = val
         
 DEPTH = 0
+LOGGER = None
 
 class DisplayWrapper(object):
-    '''Simple wrapper function to display schema call stack'''
+    '''Simple wrapper function to display schema resolution call stack'''
+    logger = None
     @classmethod
-    def show(cls,func=None):
+    def show(cls,func=None,logger=None):
+        if logger:
+            global LOGGER
+            LOGGER = logger
         if func is None:
             return partial(cls.show)
 
@@ -60,7 +49,11 @@ class DisplayWrapper(object):
         def wrapper(*args, **kwargs):
             global DEPTH
             DEPTH += 1
-            print('#{}# {} - {}'.format(DEPTH,'--'*DEPTH,args[1]))
+            msg = '#{}# {} - {}'.format(DEPTH,'--'*DEPTH,args[1])
+            if LOGGER:
+                LOGGER.info(msg)
+            else:
+                print(msg)
             res = func(*args, **kwargs)
             DEPTH -= 1
             return res
@@ -186,36 +179,6 @@ class RemoteResolver(Resolver):
         except Exception as e:
             print ('resolve_string failed with {}, defaulting'.format(system_url))
         return rstr
-        
-        
-        
 
-    
-    
-# class ExclusiveList(Set):
-#     def __init__(self,list):
-#         self._list = list
-#         
-#     def append(self,item):
-#         '''Emulates set but denying addition of duplicate items'''
-#         if item not in self._list: self._list.append(item)
-#         
-#     def __len__(self): return len(self._list)
-# 
-#     def __getitem__(self, i): return self._list[i]
-# 
-#     def __delitem__(self, i): del self._list[i]
-# 
-#     def __setitem__(self, i, v):
-#         self._list[i] = v
-# 
-#     def __repr__(self):
-#         return str(self._list)
-
-        
-        
-#     def _getpath(self,url):
-#         pr = UP.urlparse(url)
-#         return '{}://{}{}/'.format(pr.scheme,pr.netloc,'/'.join(pr.path.split('/')[:-1]))
 
     

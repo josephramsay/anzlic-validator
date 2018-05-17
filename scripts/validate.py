@@ -5,9 +5,8 @@ import urllib.parse     as UP
 import urllib.error     as UE
 
 from pprint import pprint
-from typing import List, Dict, Set
 from lxml import etree
-from lxml.etree import XMLParser, XML, ElementTree, _Element
+from lxml.etree import XMLParser, XML, _Element
 from lxml.etree import XMLSyntaxError, XMLSchemaParseError
 from io import StringIO
 
@@ -20,18 +19,21 @@ from abc import ABCMeta, abstractmethod
 #One solution was to implement a cache solution but no longer sure that its required
 
 from cache import CacheHandler, CachedResponse
-from resolve import RemoteResolver
+#from resolve import RemoteResolver
 from authenticate import Authentication
-
+import resolve
 
 #Raw AS recipe is py2, modified as cache import above
 #import importlib.util
 #spec = importlib.util.spec_from_file_location('CacheHandler','../ActiveStateCode/recipes/Python/491261_Caching_throttling/recipe-491261.py')
 #module = importlib.util.module_from_spec(spec)
 #spec.loader.exec_module(module)
+
 BORX = 'b'
 ENC = 'utf-8'
 CACHE = '.validator_cache'
+USE_CACHE = False
+REQUEST = None    
 KEY = Authentication.apikey('~/.apikey3')
 NSX = {'xlink'                  : 'http://www.w3.org/1999/xlink',
        'xs'                     : 'http://www.w3.org/2001/XMLSchema',
@@ -77,6 +79,13 @@ class MetadataConditionalException(ValidatorParseException): pass
 class CapabilitiesAccessException(ValidatorAccessException): pass
 class CapabilitiesParseException(ValidatorAccessException): pass
 
+class abstractstatic(staticmethod):
+    __slots__ = ()
+    def __init__(self, function):
+        super(abstractstatic, self).__init__(function)
+        function.__isabstractmethod__ = True
+    __isabstractmethod__ = True
+
 class SCHMD(object):
     
     __metaclass__ = ABCMeta
@@ -97,10 +106,15 @@ class SCHMD(object):
     sch = None
     md = None
     
-    def __init__(self):
+    
+    
+    
+    def __init__(self,uc=USE_CACHE):
         #self.schema()
         #self.metadata()
-        pass
+        global REQUEST
+        if uc: self.access = AccessCache
+        else: self.access = AccessDirect
         
     @abstractmethod
     def schema(self):
@@ -123,16 +137,16 @@ class SCHMD(object):
         #self.sch.assertValid(md or self.md)
         return True
     
-    @staticmethod
-    def _bcached(url,enc=ENC):
+    # @staticmethod
+    def _bcached(self,url,enc=ENC):
         '''Wrapper for cached url open with bs'''
-        txt = SCHMD._request(url)
+        txt = self._request(url)
         return BS(txt,'lxml-xml')    
     
-    @staticmethod
-    def _xcached(url,enc=ENC):
+    # @staticmethod
+    def _xcached(self,url,enc=ENC):
         '''Wrapper for cached url open with lxml'''
-        resp = SCHMD._request(url)
+        resp = self._request(url)
         txt = SCHMD._extracttxt(resp,enc)
         xml = SCHMD._parsetxt(txt,resp,enc)
         return xml
@@ -141,7 +155,7 @@ class SCHMD(object):
     def _parsetxt(txt,resp=None,enc=None,history=None):#{'cache':[],'fail':[]}):
         '''Parse provided text into XML doc'''
         if enc and resp: 
-            resolver = RemoteResolver(resp,enc,history)
+            resolver = resolve.RemoteResolver(resp,enc,history)
             parser = RemoteParser(enc)
             parser.resolvers.add(resolver)
             return etree.XML(txt, parser)
@@ -150,17 +164,22 @@ class SCHMD(object):
     @staticmethod
     def _extracttxt(resp,enc):
         '''Get the bytes text from the response if it hasn't already been done and if encoding is specified'''
+        txt = resp.read()
+        if enc and not isinstance(resp,bytes) and not isinstance(txt,bytes):pass
         txt = resp.read().encode(enc) if (enc and not isinstance(resp,bytes)) else resp.read()
         return txt
         #return SCHMD._hackisotc211(txt)
     
-    @staticmethod
-    def _request(url):
-        '''Add cachehandler as additional opener and open'''
-        opener = UR.build_opener(CacheHandler(CACHE))
-        #UR.install_opener(opener)
-        #return UR.urlopen(url)
-        return opener.open(url)
+#     @staticmethod
+#     def _request(url):
+#         '''Add cachehandler as additional opener and open'''
+#         opener = UR.build_opener(CacheHandler(CACHE))
+#         #UR.install_opener(opener)
+#         #return UR.urlopen(url)
+#         return opener.open(url)
+    
+    def _request(self,url):
+        return self.access.request(url)
     
     @staticmethod
     def _hackisotc211(txt):
@@ -205,8 +224,27 @@ class SCHMD(object):
            raise MetadataConditionalException('No ID Info CharacterSetCode defined')
         
         return True
-        
-
+    
+class Access():
+    
+    __metaclass__ = ABCMeta
+     
+    @abstractstatic
+    def request(url):pass
+    
+class AccessCache(Access):
+    @staticmethod
+    def request(url):
+        opener = UR.build_opener(CacheHandler(CACHE))
+        #UR.install_opener(opener)
+        #return UR.urlopen(url)
+        return opener.open(url)
+    
+class AccessDirect(Access):
+    @staticmethod
+    def request(url):
+        return UR.urlopen(url)
+    
 class Local(SCHMD):
     '''Parser setup using local data store, user configured'''
     #SP = '../../ANZLIC-XML/standards.iso.org/iso/19110/gfc/1.1/'
@@ -252,7 +290,7 @@ class Remote(SCHMD):
     def schema(cls):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = '{url}gmd/metadataEntity.xsd'.format(url=SL[SLi])
-        sch_doc = cls._xcached(sch_name)
+        sch_doc = cls._xcached(cls,sch_name)
         try:
             sch = etree.XMLSchema(sch_doc)
             return sch
@@ -390,6 +428,10 @@ class RemoteParser(XMLParser):
     
 def main():
     '''Validate all layers'''
+    v1 = Remote()
+    v1.setschema()
+    v2 = Local()
+    v2.setschems()
     v3 = Combined()
     v3.setschema()
     wfsi = v3.getids('wms')
