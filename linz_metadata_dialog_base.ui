@@ -1,0 +1,4260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LINZ_METADATA</class>
+ <widget class="QTabWidget" name="LINZ_METADATA">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>855</width>
+    <height>755</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>855</width>
+    <height>755</height>
+   </size>
+  </property>
+  <property name="palette">
+   <palette>
+    <active>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>252</red>
+        <green>252</green>
+        <blue>252</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>239</red>
+        <green>240</green>
+        <blue>241</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </active>
+    <inactive>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>252</red>
+        <green>252</green>
+        <blue>252</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>239</red>
+        <green>240</green>
+        <blue>241</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </inactive>
+    <disabled>
+     <colorrole role="Base">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>203</red>
+        <green>203</green>
+        <blue>203</blue>
+       </color>
+      </brush>
+     </colorrole>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>216</red>
+        <green>216</green>
+        <blue>217</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </disabled>
+   </palette>
+  </property>
+  <property name="font">
+   <font>
+    <weight>75</weight>
+    <bold>true</bold>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>LINZ ANZLIC METADATA</string>
+  </property>
+  <property name="layoutDirection">
+   <enum>Qt::LeftToRight</enum>
+  </property>
+  <property name="tabPosition">
+   <enum>QTabWidget::West</enum>
+  </property>
+  <property name="currentIndex">
+   <number>5</number>
+  </property>
+  <widget class="QWidget" name="homeTab">
+   <attribute name="title">
+    <string>Home</string>
+   </attribute>
+   <widget class="QPushButton" name="loadTemplate">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>420</y>
+      <width>171</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Load Template</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="selectTemplate">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>290</y>
+      <width>91</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="templateFile">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>290</y>
+      <width>611</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextEditorInteraction</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="defaultButton">
+    <property name="geometry">
+     <rect>
+      <x>730</x>
+      <y>290</y>
+      <width>71</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Default</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="linzMetadataTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>50</y>
+      <width>761</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>36</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>LINZ Metadata</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="outputFile">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>360</y>
+      <width>691</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextEditorInteraction</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="selectOutputFile">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>360</y>
+      <width>91</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="loadMetadata">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>690</y>
+      <width>171</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Load Metadata</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="selectMetadata">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>630</y>
+      <width>91</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="metadataFile">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>630</y>
+      <width>691</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::TextEditorInteraction</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="templateInstuctions">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>180</y>
+      <width>771</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Select either a template to edit and create a new metadata file, or Select an existing metadata file to edit.</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="outputNoteLabel">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>340</y>
+      <width>601</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <italic>true</italic>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>(Note this file needs to have the same name as the layer)</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="EditMetadataNoteLabel">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>610</y>
+      <width>511</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <italic>true</italic>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>(Note this will overwrite the exisiting file)</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="templateLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>270</y>
+      <width>521</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Template</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="outputFileLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>340</y>
+      <width>81</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Output File</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="editMetadataLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>610</y>
+      <width>151</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Edit Existing Metadata</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="loadError">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>670</y>
+      <width>611</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="palette">
+     <palette>
+      <active>
+       <colorrole role="WindowText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
+        </brush>
+       </colorrole>
+      </active>
+      <inactive>
+       <colorrole role="WindowText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
+        </brush>
+       </colorrole>
+      </inactive>
+      <disabled>
+       <colorrole role="WindowText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>49</red>
+          <green>54</green>
+          <blue>59</blue>
+         </color>
+        </brush>
+       </colorrole>
+      </disabled>
+     </palette>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="layerInfoTab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <attribute name="title">
+    <string>Basic Layer Info</string>
+   </attribute>
+   <widget class="QLabel" name="hierarchyLevelLabel">
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>50</y>
+      <width>291</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Hierarchy Level</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="titleLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>110</y>
+      <width>781</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Title</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="addTitleLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>190</y>
+      <width>521</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Additional Title</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="abstractLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>270</y>
+      <width>521</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Abstract</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="purposeLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>530</y>
+      <width>781</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Purpose</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="basicLayerTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Basic Layer Information</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="hlName">
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>70</y>
+      <width>291</width>
+      <height>32</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="atitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>210</y>
+      <width>781</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="abs">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>290</y>
+      <width>731</width>
+      <height>231</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;The abstract is what is displayed in the LDS layer ‘About’ tab so put all of the key information you want the user to read in here. Try to keep it short and to the point. Put yourself in the customers' shoes when writing this content. What is the most important information you can include here to customers understand the purpose, scope, intent, and quality of the data. Also include links to related datasets or resources, such as a data dictionay, if your dataset has one.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;If you have any upfront warnings of restrictions you want the user to be aware of or want to create headings to break up your content, put them here in bold. Text can be made bold in LDS by enclosing double asterisks:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;**&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; color:#333333;&quot;&gt;My Bold Text&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;**&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;Create italicised text by using single asterisks:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;*&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; font-style:italic; color:#333333;&quot;&gt;My Italic Text&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;*&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;Create URL link text by using the following format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;[my link](http://www.linz.govt.nz/my/link)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;You can also create a bulleted list by using the following format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;- list item 1&lt;/span&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;- list item 2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;The abstract is what is displayed in the LDS layer ‘About’ tab so put all of the key information you want the user to read in here. Try to keep it short and to the point. Put yourself in the customers' shoes when writing this content. What is the most important information you can include here to customers understand the purpose, scope, intent, and quality of the data. Also include links to related datasets or resources, such as a data dictionay, if your dataset has one.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;If you have any upfront warnings of restrictions you want the user to be aware of or want to create headings to break up your content, put them here in bold. Text can be made bold in LDS by enclosing double asterisks:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;**&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; color:#333333;&quot;&gt;My Bold Text&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;**&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;Create italicised text by using single asterisks:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;*&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; font-style:italic; color:#333333;&quot;&gt;My Italic Text&lt;/span&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;*&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;Create URL link text by using the following format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;[my link](http://www.linz.govt.nz/my/link)&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;You can also create a bulleted list by using the following format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;- list item 1&lt;/span&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Helvetica Neue,Helvetica,Arial,sans-serif'; font-size:14px; font-weight:400; color:#333333;&quot;&gt;- list item 2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="autoFormatting">
+     <set>QTextEdit::AutoNone</set>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="purpose">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>550</y>
+      <width>781</width>
+      <height>171</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="title">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>130</y>
+      <width>781</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;NOTE: This is one of the most important parts of the metadata. Really spend some time getting this title clear, simple and concise. Please seek advise if you are unsure.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;What you enter here will be the title of the layer or set. When you choose your title it's very important that it be simple but clear. The title is the key data that Google uses for searches. Rather than using internal jargon, system names or a long complicated description, use a title that includes keywords customers are likely to Google for. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;LDS convention is to prefix the title with the relevant country or region e.g. &amp;quot;NZ Topo50 Maps&amp;quot;. Also where data is or may be available in multiple geometry types or scales, you will need to include this information in the title to create a unique name e.g. “Depth area polygon (Hydro, 1:22k-1:90k)” and “Depth area polygon (Hydro, 1:90k-1:350k)”, and “NZ Place Names – Lines (NZGB)”. The Koordinates Support site has some helpful information on layer titles.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;NOTE: This is one of the most important parts of the metadata. Really spend some time getting this title clear, simple and concise. Please seek advise if you are unsure.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;What you enter here will be the title of the layer or set. When you choose your title it's very important that it be simple but clear. The title is the key data that Google uses for searches. Rather than using internal jargon, system names or a long complicated description, use a title that includes keywords customers are likely to Google for. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;LDS convention is to prefix the title with the relevant country or region e.g. &amp;quot;NZ Topo50 Maps&amp;quot;. Also where data is or may be available in multiple geometry types or scales, you will need to include this information in the title to create a unique name e.g. “Depth area polygon (Hydro, 1:22k-1:90k)” and “Depth area polygon (Hydro, 1:90k-1:350k)”, and “NZ Place Names – Lines (NZGB)”. The Koordinates Support site has some helpful information on layer titles.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>290</y>
+      <width>51</width>
+      <height>231</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QPushButton" name="boldText">
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>B</string>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
+       </property>
+       <property name="default">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="italicText">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>50</weight>
+         <italic>true</italic>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>I</string>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
+       </property>
+       <property name="default">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="linkText">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+         <underline>true</underline>
+        </font>
+       </property>
+       <property name="text">
+        <string>LINK</string>
+       </property>
+       <property name="autoDefault">
+        <bool>true</bool>
+       </property>
+       <property name="default">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <zorder>hierarchyLevelLabel</zorder>
+   <zorder>titleLabel</zorder>
+   <zorder>addTitleLabel</zorder>
+   <zorder>abstractLabel</zorder>
+   <zorder>purposeLabel</zorder>
+   <zorder>basicLayerTitle</zorder>
+   <zorder>hlName</zorder>
+   <zorder>atitle</zorder>
+   <zorder>abs</zorder>
+   <zorder>purpose</zorder>
+   <zorder>title</zorder>
+   <zorder>boldText</zorder>
+   <zorder>italicText</zorder>
+   <zorder>linkText</zorder>
+   <zorder>linkText</zorder>
+   <zorder>boldText</zorder>
+   <zorder>boldText</zorder>
+  </widget>
+  <widget class="QWidget" name="contactTab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <attribute name="title">
+    <string>Contact</string>
+   </attribute>
+   <widget class="QLabel" name="individualLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>90</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Individual Name</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="organisationLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>160</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Organisation Name</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="positionLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>230</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Position Name</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="delAddLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>310</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Delivery Address</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="cityLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>360</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>City</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="pCodeLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>410</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Postal Code</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="countryLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>460</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Country</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="facsimileLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>610</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Facsimile Number</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="phoneLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>560</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Telephone Number</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="emailLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>510</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Email Address</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="roleLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>660</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Role</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="metadataTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Metadata Contact</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="phoneLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>560</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Telephone Number</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="delAddLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>310</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Delivery Address</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="pCodeLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>410</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Postal Code</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="facsimileLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>610</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Facsimile Number</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="roleLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>660</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Role</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="countryLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>460</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Country</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="organisationLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>160</y>
+      <width>381</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Organisation Name</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="individualLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>90</y>
+      <width>381</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Individual Name</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="resourceTitle">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Resource Contact</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="cityLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>360</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>City</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="positionLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>230</y>
+      <width>381</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Position Name</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="emailLabel2">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>510</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Email Address</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="iName1">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>110</y>
+      <width>371</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::WheelFocus</enum>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="oName1">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>180</y>
+      <width>371</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::WheelFocus</enum>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="pName1">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>250</y>
+      <width>371</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="iName2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>110</y>
+      <width>371</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::WheelFocus</enum>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="oName2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>180</y>
+      <width>371</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::WheelFocus</enum>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="pName2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>250</y>
+      <width>371</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;The position of the metadata author in the organisation: To maintain consistency and account for people changes over time, please use the title of the Data Owner for your area. Enter the job title of the Data Owner, not their name. E.g. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;Chief Geodesist - National Geodetic Office&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;National Hydrographer&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;Data Manager - Property Rights&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;Chief Topographer&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;The position of the metadata author in the organisation: To maintain consistency and account for people changes over time, please use the title of the Data Owner for your area. Enter the job title of the Data Owner, not their name. E.g. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;Chief Geodesist - National Geodetic Office&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;National Hydrographer&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;Data Manager - Property Rights&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;&amp;quot;Chief Topographer&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="dadd1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>310</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="city1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>360</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="postCode1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>410</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="country1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>460</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="email1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>510</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="inputMethodHints">
+     <set>Qt::ImhEmailCharactersOnly</set>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="voice1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>560</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="fas1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>610</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="dadd2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>310</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="city2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>360</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="postCode2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>410</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="country2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>460</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="email2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>510</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="inputMethodHints">
+     <set>Qt::ImhEmailCharactersOnly</set>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="voice2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>560</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="fas2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>610</y>
+      <width>241</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="role1">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>660</y>
+      <width>241</width>
+      <height>32</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="role2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>660</y>
+      <width>241</width>
+      <height>32</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="autofillMetadata">
+    <property name="geometry">
+     <rect>
+      <x>300</x>
+      <y>700</y>
+      <width>88</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&lt; Auto Fill</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="autofillResource">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>700</y>
+      <width>88</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Auto Fill &gt;</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>false</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="identInfoTab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <attribute name="title">
+    <string>Identification</string>
+   </attribute>
+   <widget class="QTextEdit" name="lineage">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>90</y>
+      <width>781</width>
+      <height>251</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;A description about where the data comes from and the prcoesses used to create and manage it.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;A description about where the data comes from and the prcoesses used to create and manage it.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="historyLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>70</y>
+      <width>361</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>History</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="topicCategoryLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>390</y>
+      <width>291</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Topic Category</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="statusLabel">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>390</y>
+      <width>361</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Status</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="maintenanceLabel">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>460</y>
+      <width>461</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Maintenance</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="referenceSysLabel">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>580</y>
+      <width>461</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Reference System</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="spatialRepLabel">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>660</y>
+      <width>361</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Spatial Representation Type</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="identificationTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Identification</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="status">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>410</y>
+      <width>461</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;As appropriate, usually the resource status will be 'onGoing'.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;As appropriate, usually the resource status will be 'onGoing'.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="maintenance">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>480</y>
+      <width>461</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="contextMenuPolicy">
+     <enum>Qt::DefaultContextMenu</enum>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;How often the resource is updated.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="spatialrep">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>680</y>
+      <width>461</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;As appropriate, use 'grid' for rasters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;As appropriate, use 'grid' for rasters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="dONUCheck">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>530</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>When the resource is next due to be updated.</string>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Date of Next Update</string>
+    </property>
+   </widget>
+   <widget class="QListWidget" name="topicCategory">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>410</y>
+      <width>291</width>
+      <height>301</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Choose from the list the relevant topics that apply to the data.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Choose from the list the relevant topics that apply to the data.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="editTriggers">
+     <set>QAbstractItemView::NoEditTriggers</set>
+    </property>
+    <property name="selectionMode">
+     <enum>QAbstractItemView::MultiSelection</enum>
+    </property>
+   </widget>
+   <widget class="QgsProjectionSelectionWidget" name="referenceSys">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>600</y>
+      <width>461</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Specifiy the reference system used to represent the data.</string>
+    </property>
+   </widget>
+   <widget class="QDateEdit" name="date">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>690</x>
+      <y>530</y>
+      <width>110</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="palette">
+     <palette>
+      <active>
+       <colorrole role="Button">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>239</red>
+          <green>240</green>
+          <blue>241</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Light">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>255</red>
+          <green>255</green>
+          <blue>255</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Midlight">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>247</red>
+          <green>247</green>
+          <blue>248</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="BrightText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>255</red>
+          <green>255</green>
+          <blue>255</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Base">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>252</red>
+          <green>252</green>
+          <blue>252</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="HighlightedText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>239</red>
+          <green>240</green>
+          <blue>241</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="AlternateBase">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>239</red>
+          <green>240</green>
+          <blue>241</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="NoRole">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>0</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
+        </brush>
+       </colorrole>
+      </active>
+      <inactive>
+       <colorrole role="Button">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Light">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Midlight">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="BrightText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Base">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="HighlightedText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>239</red>
+          <green>240</green>
+          <blue>241</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="AlternateBase">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="NoRole">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>0</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
+        </brush>
+       </colorrole>
+      </inactive>
+      <disabled>
+       <colorrole role="Button">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>213</red>
+          <green>213</green>
+          <blue>214</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Light">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Midlight">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="BrightText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="Base">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>203</red>
+          <green>203</green>
+          <blue>203</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="HighlightedText">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>217</red>
+          <green>217</green>
+          <blue>218</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="AlternateBase">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>206</red>
+          <green>206</green>
+          <blue>207</blue>
+         </color>
+        </brush>
+       </colorrole>
+       <colorrole role="NoRole">
+        <brush brushstyle="SolidPattern">
+         <color alpha="255">
+          <red>216</red>
+          <green>216</green>
+          <blue>217</blue>
+         </color>
+        </brush>
+       </colorrole>
+      </disabled>
+     </palette>
+    </property>
+    <property name="dateTime">
+     <datetime>
+      <hour>0</hour>
+      <minute>0</minute>
+      <second>0</second>
+      <year>2018</year>
+      <month>1</month>
+      <day>1</day>
+     </datetime>
+    </property>
+    <property name="maximumDateTime">
+     <datetime>
+      <hour>23</hour>
+      <minute>59</minute>
+      <second>59</second>
+      <year>7999</year>
+      <month>12</month>
+      <day>31</day>
+     </datetime>
+    </property>
+    <property name="displayFormat">
+     <string>yyyy/MM</string>
+    </property>
+    <property name="calendarPopup">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="Line" name="line_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>360</y>
+      <width>781</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="tab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <attribute name="title">
+    <string>Other Fields</string>
+   </attribute>
+   <widget class="QDateEdit" name="resourceCreate">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>120</y>
+      <width>101</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="calendarPopup">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QDateEdit" name="resourcePublish">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>190</y>
+      <width>101</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="calendarPopup">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QDateEdit" name="resourceUpdate">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>260</y>
+      <width>101</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="calendarPopup">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_58">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Key Dates</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="resourceCreateCheck">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>251</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>When Was The Resource Created?</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="resourcePublishCheck">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>170</y>
+      <width>261</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>When Was The Resource Published?</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="resourceUpdateCheck">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>240</y>
+      <width>281</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>When Was The Resource Last Updated?</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_52">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>341</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>At least one of the following dates must be entered.</string>
+    </property>
+   </widget>
+   <widget class="QListWidget" name="keywordList">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>390</y>
+      <width>361</width>
+      <height>341</height>
+     </rect>
+    </property>
+    <property name="editTriggers">
+     <set>QAbstractItemView::NoEditTriggers</set>
+    </property>
+    <property name="selectionMode">
+     <enum>QAbstractItemView::MultiSelection</enum>
+    </property>
+    <item>
+     <property name="text">
+      <string>AGRICULTURE non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>AGRICULTURE Crops</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>AGRICULTURE Horticulture</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>AGRICULTURE Irrigation</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>AGRICULTURE Livestock</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ATMOSPHERE non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ATMOSPHERE Air Quality</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ATMOSPHERE Greenhouse</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ATMOSPHERE Ozone</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ATMOSPHERE Pressure</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>BOUNDARIES non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>BOUNDARIES Administrative</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>BOUNDARIES Biophysical</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>BOUNDARIES Cultural</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER Climate Change</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER Drought</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER El Nino</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER Extreme Weather  Events</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER Meteorology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER Radiation</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER Rainfall</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>CLIMATE AND WEATHER Temperature</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>DEMOGRAPHY non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>DISEASE non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ECOLOGY non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ECOLOGY Community</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ECOLOGY Ecosystem</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ECOLOGY Habitat</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ECOLOGY Landscape</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ENERGY non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ENERGY Coal</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ENERGY Electricity</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ENERGY Petroleum</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ENERGY Renewable</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>ENERGY Use</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FAUNA non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FAUNA Exotic</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FAUNA Insects</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FAUNA Invertebrates</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FAUNA Native</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FAUNA Vertebrates</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FISHERIES non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FISHERIES Aquaculture</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FISHERIES Freshwater</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FISHERIES Marine</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FISHERIES Recreational</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FLORA non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FLORA Exotic</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FLORA Native</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FORESTS non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FORESTS Agriforestry</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FORESTS Natural</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>FORESTS Plantation</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>GEOSCIENCES non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>GEOSCIENCES Geochemistry</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>GEOSCIENCES Geology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>GEOSCIENCES Geomorphology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>GEOSCIENCES Geophysics</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>GEOSCIENCES Hydrogeology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Cyclone</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Drought</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Earthquake</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Fire</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Flood</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Landslip</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Manmade</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Pests</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Severe Local Storms</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HAZARDS Tsunamis</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HEALTH non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HERITAGE non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HERITAGE Aboriginal</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HERITAGE Architectural</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HERITAGE Natural</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HERITAGE World</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HUMAN ENVIRONMENT</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HUMAN ENVIRONMENT Economics</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HUMAN ENVIRONMENT Housing</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HUMAN ENVIRONMENT Livability</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HUMAN ENVIRONMENT Planning</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HUMAN ENVIRONMENT Structures and Facilities</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>HUMAN ENVIRONMENT Urban Design</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>INDUSTRY non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>INDUSTRY Manufacturing</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>INDUSTRY Mining</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>INDUSTRY Other</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>INDUSTRY Primary</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>INDUSTRY Service</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Cadastre</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Cover</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Geodesy</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Geography</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Ownership</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Topography</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Use</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>LAND Valuation</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE Biology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE Coasts</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE Estuaries</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE Geology and Geophysics</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE Human Impacts</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE Meteorology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MARINE Reefs</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MINERALS non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MOLECULAR BIOLOGY</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>MOLECULAR BIOLOGY Genetics</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>OCEANOGRAPHY non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>OCEANOGRAPHY Chemical</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>OCEANOGRAPHY Physical</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>PHOTOGRAPHY AND IMAGERY</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>PHOTOGRAPHY AND IMAGERY Aerial</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>PHOTOGRAPHY AND IMAGERY Remote Sensing</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>PHOTOGRAPHY AND IMAGERY Satellite</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>POLLUTION non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>POLLUTION Air</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>POLLUTION Noise</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>POLLUTION Soil</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>POLLUTION Water</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>SOIL non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>SOIL Biology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>SOIL Chemistry</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>SOIL Erosion</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>SOIL Physics</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>TRANSPORTATION non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>TRANSPORTATION Air</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>TRANSPORTATION Land</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>TRANSPORTATION Marine</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>UTILITIES non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>VEGETATION non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>VEGETATION Floristic</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>VEGETATION Structural</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WASTE non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WASTE Greenhouse Gas</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WASTE Heat</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WASTE Liquid</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WASTE Sewage</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WASTE Solid</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WASTE Toxic</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER non-specific</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Groundwater</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Hydrochemistry</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Hydrology</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Lakes</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Quality</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Rivers</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Salinity</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Surface</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>WATER Wetlands</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QLabel" name="label_59">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>340</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Keywords</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_53">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>370</y>
+      <width>431</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>None/ Multiple keywords may be selected.</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="extentTab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <attribute name="title">
+    <string>Exent</string>
+   </attribute>
+   <widget class="QLabel" name="extentTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Extent</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="geoBBLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>60</y>
+      <width>181</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Geographic Bounding Box</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="geoDescLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>240</y>
+      <width>181</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Geographic Description</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="temporalCheck">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>240</y>
+      <width>171</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Temporal Information</string>
+    </property>
+   </widget>
+   <widget class="QFrame" name="geoBBFrame">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>781</width>
+      <height>141</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QLineEdit" name="northExtent">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>10</y>
+       <width>201</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="southExtent">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>90</y>
+       <width>201</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="westExtent">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>50</y>
+       <width>201</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="eastExtent">
+     <property name="geometry">
+      <rect>
+       <x>570</x>
+       <y>50</y>
+       <width>201</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="geoBBWestLabel">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>50</y>
+       <width>41</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>West</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="geoBBSouthLabel">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>90</y>
+       <width>41</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>South</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="geoBBNorthLabel">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>10</y>
+       <width>41</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>North</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="geoBBEastLabel">
+     <property name="geometry">
+      <rect>
+       <x>540</x>
+       <y>50</y>
+       <width>31</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>East</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QFrame" name="scaleFrame">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>420</y>
+      <width>321</width>
+      <height>121</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+    <widget class="QComboBox" name="resolutionUnits">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>70</y>
+       <width>101</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <item>
+      <property name="text">
+       <string/>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string comment="m" extracomment="m">metre</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>kilometre</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>degree</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>foot</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>fathom</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>mile</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>nautical mile</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>yard</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>radian</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>unknown</string>
+      </property>
+     </item>
+    </widget>
+    <widget class="QTextEdit" name="resolutionText">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>70</y>
+       <width>91</width>
+       <height>31</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QgsScaleWidget" name="scaleWidget">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>20</y>
+       <width>231</width>
+       <height>32</height>
+      </rect>
+     </property>
+     <property name="palette">
+      <palette>
+       <active>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>227</red>
+           <green>227</green>
+           <blue>228</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>99</red>
+           <green>100</green>
+           <blue>100</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>133</red>
+           <green>133</green>
+           <blue>134</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>227</red>
+           <green>227</green>
+           <blue>228</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </active>
+       <inactive>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>227</red>
+           <green>227</green>
+           <blue>228</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>99</red>
+           <green>100</green>
+           <blue>100</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>133</red>
+           <green>133</green>
+           <blue>134</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>227</red>
+           <green>227</green>
+           <blue>228</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </inactive>
+       <disabled>
+        <colorrole role="WindowText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>99</red>
+           <green>100</green>
+           <blue>100</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Button">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Light">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Midlight">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>227</red>
+           <green>227</green>
+           <blue>228</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Dark">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>99</red>
+           <green>100</green>
+           <blue>100</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Mid">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>133</red>
+           <green>133</green>
+           <blue>134</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Text">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>99</red>
+           <green>100</green>
+           <blue>100</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="BrightText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>255</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ButtonText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>99</red>
+           <green>100</green>
+           <blue>100</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Base">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Window">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="Shadow">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="AlternateBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>199</red>
+           <green>200</green>
+           <blue>201</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipBase">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>255</red>
+           <green>255</green>
+           <blue>220</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="ToolTipText">
+         <brush brushstyle="SolidPattern">
+          <color alpha="255">
+           <red>0</red>
+           <green>0</green>
+           <blue>0</blue>
+          </color>
+         </brush>
+        </colorrole>
+       </disabled>
+      </palette>
+     </property>
+     <property name="showCurrentScaleButton">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="resolutionRadioButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>70</y>
+       <width>101</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Resolution</string>
+     </property>
+     <property name="autoRepeat">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="scaleRadioButton">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>71</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Scale</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <property name="autoRepeat">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QCheckBox" name="scale">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>400</y>
+      <width>88</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Scale</string>
+    </property>
+   </widget>
+   <widget class="QSplitter" name="splitter_2">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>310</y>
+      <width>330</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+    <widget class="QCheckBox" name="checkBox_3">
+     <property name="text">
+      <string>End</string>
+     </property>
+    </widget>
+    <widget class="QDateEdit" name="dateEdit_2"/>
+    <widget class="QCheckBox" name="checkBox_4">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QTimeEdit" name="timeEdit_2"/>
+   </widget>
+   <widget class="Line" name="line">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>360</y>
+      <width>781</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>60</y>
+      <width>601</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <italic>true</italic>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>(Note will be created from layer on upload to LDS)</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="geoDescCombo">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>260</y>
+      <width>351</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string/>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>nzl</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>NZ_MAINLAND_AND_CHATHAMS</string>
+     </property>
+    </item>
+   </widget>
+   <widget class="QSplitter" name="splitter">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>270</y>
+      <width>311</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Start</string>
+     </property>
+    </widget>
+    <widget class="QDateEdit" name="dateEdit"/>
+    <widget class="QCheckBox" name="checkBox_2">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QTimeEdit" name="timeEdit"/>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="securityTab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <attribute name="title">
+    <string>Security/ Legal</string>
+   </attribute>
+   <widget class="QLabel" name="securityTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Security</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="resourceSecLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Resource Security Classification</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="legalTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>160</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;NOTE: This is one of the most important fields of information to complete&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;NOTE: This is one of the most important fields of information to complete&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Legal</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="resourceConCopyright">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>230</y>
+      <width>371</width>
+      <height>221</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Use the standard Crown copyright statement provided below, unless otherwise required. If you wish you can include the year at which the datasets was first published, or omit the date.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Copyright of this work is owned by Land Information New Zealand &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;© LINZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Use the standard Crown copyright statement provided below, unless otherwise required. If you wish you can include the year at which the datasets was first published, or omit the date.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Copyright of this work is owned by Land Information New Zealand &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;© LINZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="resourceConLicense">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>490</y>
+      <width>371</width>
+      <height>221</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;This is where you specify the reuse license type, how to attribute, and enter any disclaimers you may have. Any disclaimers or restrictions can be added here with the same format as Attributions below. Our standard text for specifying the license type and attribution requirements is:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Released by LINZ under Creative Commins Attribution 4.0 International (CC BY 4.0) with:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Following Attribution:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;&amp;quot;Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;For details see &lt;/span&gt;&lt;a href=&quot;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&quot;&gt;&lt;span style=&quot; font-weight:400; text-decoration: underline; color:#2980b9;&quot;&gt;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;In instances where copyright for data is owned by a third party, a statement like below can be used. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Released by LINZ under Creative Commins Attribution 4.0 International (CC BY 4.0) with:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Following Attribution:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;&amp;quot;Sourced from the LINZ Data Service and licensed by Marlborough District Council for reuse under CC BY 4.0&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;For details see &lt;/span&gt;&lt;a href=&quot;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&quot;&gt;&lt;span style=&quot; font-weight:400; text-decoration: underline; color:#2980b9;&quot;&gt;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-elevation-or-aerial-imagery-data&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;This is where you specify the reuse license type, how to attribute, and enter any disclaimers you may have. Any disclaimers or restrictions can be added here with the same format as Attributions below. Our standard text for specifying the license type and attribution requirements is:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Released by LINZ under Creative Commins Attribution 4.0 International (CC BY 4.0) with:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Following Attribution:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;&amp;quot;Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;For details see &lt;/span&gt;&lt;a href=&quot;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&quot;&gt;&lt;span style=&quot; font-weight:400; text-decoration: underline; color:#2980b9;&quot;&gt;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;In instances where copyright for data is owned by a third party, a statement like below can be used. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Released by LINZ under Creative Commins Attribution 4.0 International (CC BY 4.0) with:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Following Attribution:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;&amp;quot;Sourced from the LINZ Data Service and licensed by Marlborough District Council for reuse under CC BY 4.0&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;For details see &lt;/span&gt;&lt;a href=&quot;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&quot;&gt;&lt;span style=&quot; font-weight:400; text-decoration: underline; color:#2980b9;&quot;&gt;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-elevation-or-aerial-imagery-data&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="metadataConCopyright">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>230</y>
+      <width>371</width>
+      <height>221</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Use the standard Crown copyright statement provided below, unless otherwise required. If you wish you can include the year at which the datasets was first published, or omit the date. LINZ should be the owner of the metadata file in all cases.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Copyright of this work is owned by Land Information New Zealand &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;© LINZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Use the standard Crown copyright statement provided below, unless otherwise required. If you wish you can include the year at which the datasets was first published, or omit the date. LINZ should be the owner of the metadata file in all cases.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Copyright of this work is owned by Land Information New Zealand &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;© LINZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="metadataConLicense">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>490</y>
+      <width>371</width>
+      <height>221</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;This is where you specify the reuse license type, how to attribute, and enter any disclaimers you may have. Any disclaimers or restrictions can be added here with the same format as Attributions below. Our standard text for specifying the license type and attribution requirements is:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Released by LINZ under Creative Commins Attribution 4.0 International (CC BY 4.0) with:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Following Attribution:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;&amp;quot;Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;For details see &lt;/span&gt;&lt;a href=&quot;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&quot;&gt;&lt;span style=&quot; font-weight:400; text-decoration: underline; color:#2980b9;&quot;&gt;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Resource Use relates to reuse of the dataset. Metadata Use relates to the reuse of the metadata file. &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;This is where you specify the reuse license type, how to attribute, and enter any disclaimers you may have. Any disclaimers or restrictions can be added here with the same format as Attributions below. Our standard text for specifying the license type and attribution requirements is:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Released by LINZ under Creative Commins Attribution 4.0 International (CC BY 4.0) with:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;Following Attribution:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;&amp;quot;Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400; font-style:italic;&quot;&gt;For details see &lt;/span&gt;&lt;a href=&quot;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&quot;&gt;&lt;span style=&quot; font-weight:400; text-decoration: underline; color:#2980b9;&quot;&gt;https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="tabChangesFocus">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="resUseCLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>210</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Resource Use Copyright</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="metUseCLabel">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>210</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Metadata Use Copyright</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="metUseLLabel">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>470</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Metadata Use License</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="resUseLLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>470</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Resource Use License</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="metadataSecLabel">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>80</y>
+      <width>371</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Metadata Security Classification</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="resSecClass">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>100</y>
+      <width>371</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Classification for the dataset.</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="metSecClass">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>100</y>
+      <width>371</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Classification for the dataset.</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="summaryTab">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <attribute name="title">
+    <string>Summary</string>
+   </attribute>
+   <widget class="QPushButton" name="validateErrorCheck">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>650</y>
+      <width>151</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Validate-Error Check</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="createMetadata">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>690</y>
+      <width>151</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Create Metadata</string>
+    </property>
+    <property name="autoDefault">
+     <bool>true</bool>
+    </property>
+    <property name="default">
+     <bool>false</bool>
+    </property>
+    <property name="flat">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="validationLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>640</y>
+      <width>281</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Validation Log</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="summaryTitle">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>351</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="text">
+     <string>Summary</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="validationLog">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>660</y>
+      <width>621</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+    </property>
+   </widget>
+   <widget class="QTabWidget" name="summaryMainTab">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>70</y>
+      <width>781</width>
+      <height>571</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>1</number>
+    </property>
+    <widget class="QWidget" name="summaryTab1">
+     <attribute name="title">
+      <string>Raw XML</string>
+     </attribute>
+     <widget class="QTextEdit" name="summary">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>771</width>
+        <height>531</height>
+       </rect>
+      </property>
+      <property name="lineWrapMode">
+       <enum>QTextEdit::NoWrap</enum>
+      </property>
+      <property name="textInteractionFlags">
+       <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="summaryTab2">
+     <attribute name="title">
+      <string>Formated Metadata</string>
+     </attribute>
+     <widget class="QTableWidget" name="metadataTable">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>771</width>
+        <height>531</height>
+       </rect>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="dragDropOverwriteMode">
+       <bool>false</bool>
+      </property>
+      <property name="textElideMode">
+       <enum>Qt::ElideNone</enum>
+      </property>
+      <property name="gridStyle">
+       <enum>Qt::NoPen</enum>
+      </property>
+      <attribute name="horizontalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderCascadingSectionResizes">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="horizontalHeaderDefaultSectionSize">
+       <number>150</number>
+      </attribute>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="verticalHeaderCascadingSectionResizes">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="verticalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QgsProjectionSelectionWidget</class>
+   <extends>QWidget</extends>
+   <header>qgsprojectionselectionwidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QgsScaleWidget</class>
+   <extends>QWidget</extends>
+   <header>qgsscalewidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>templateFile</tabstop>
+  <tabstop>selectTemplate</tabstop>
+  <tabstop>defaultButton</tabstop>
+  <tabstop>outputFile</tabstop>
+  <tabstop>selectOutputFile</tabstop>
+  <tabstop>loadTemplate</tabstop>
+  <tabstop>metadataFile</tabstop>
+  <tabstop>selectMetadata</tabstop>
+  <tabstop>loadMetadata</tabstop>
+  <tabstop>hlName</tabstop>
+  <tabstop>title</tabstop>
+  <tabstop>atitle</tabstop>
+  <tabstop>boldText</tabstop>
+  <tabstop>italicText</tabstop>
+  <tabstop>linkText</tabstop>
+  <tabstop>abs</tabstop>
+  <tabstop>purpose</tabstop>
+  <tabstop>iName2</tabstop>
+  <tabstop>oName2</tabstop>
+  <tabstop>pName2</tabstop>
+  <tabstop>dadd2</tabstop>
+  <tabstop>city2</tabstop>
+  <tabstop>postCode2</tabstop>
+  <tabstop>country2</tabstop>
+  <tabstop>email2</tabstop>
+  <tabstop>voice2</tabstop>
+  <tabstop>fas2</tabstop>
+  <tabstop>role2</tabstop>
+  <tabstop>autofillMetadata</tabstop>
+  <tabstop>iName1</tabstop>
+  <tabstop>oName1</tabstop>
+  <tabstop>pName1</tabstop>
+  <tabstop>dadd1</tabstop>
+  <tabstop>city1</tabstop>
+  <tabstop>postCode1</tabstop>
+  <tabstop>country1</tabstop>
+  <tabstop>email1</tabstop>
+  <tabstop>voice1</tabstop>
+  <tabstop>fas1</tabstop>
+  <tabstop>role1</tabstop>
+  <tabstop>autofillResource</tabstop>
+  <tabstop>lineage</tabstop>
+  <tabstop>topicCategory</tabstop>
+  <tabstop>status</tabstop>
+  <tabstop>maintenance</tabstop>
+  <tabstop>dONUCheck</tabstop>
+  <tabstop>date</tabstop>
+  <tabstop>referenceSys</tabstop>
+  <tabstop>spatialrep</tabstop>
+  <tabstop>resSecClass</tabstop>
+  <tabstop>metSecClass</tabstop>
+  <tabstop>resourceConCopyright</tabstop>
+  <tabstop>resourceConLicense</tabstop>
+  <tabstop>metadataConCopyright</tabstop>
+  <tabstop>metadataConLicense</tabstop>
+  <tabstop>northExtent</tabstop>
+  <tabstop>westExtent</tabstop>
+  <tabstop>eastExtent</tabstop>
+  <tabstop>southExtent</tabstop>
+  <tabstop>scale</tabstop>
+  <tabstop>scaleRadioButton</tabstop>
+  <tabstop>resolutionRadioButton</tabstop>
+  <tabstop>resolutionText</tabstop>
+  <tabstop>resolutionUnits</tabstop>
+  <tabstop>temporalCheck</tabstop>
+  <tabstop>resourceCreateCheck</tabstop>
+  <tabstop>resourceCreate</tabstop>
+  <tabstop>resourcePublishCheck</tabstop>
+  <tabstop>resourcePublish</tabstop>
+  <tabstop>resourceUpdateCheck</tabstop>
+  <tabstop>resourceUpdate</tabstop>
+  <tabstop>summaryMainTab</tabstop>
+  <tabstop>summary</tabstop>
+  <tabstop>validationLog</tabstop>
+  <tabstop>validateErrorCheck</tabstop>
+  <tabstop>createMetadata</tabstop>
+  <tabstop>metadataTable</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
