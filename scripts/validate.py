@@ -5,7 +5,7 @@ import urllib.parse     as UP
 import urllib.error     as UE
 
 from pprint import pprint
-#from typing import List, Dict, Set
+from typing import List, Dict, Set
 from lxml import etree
 from lxml.etree import XMLParser, XML, ElementTree, _Element
 from lxml.etree import XMLSyntaxError, XMLSchemaParseError
@@ -368,7 +368,7 @@ class Combined(Remote):
                 raise ValidatorException('{}\n{}'.format(msg1,msg2))
         
     @classmethod
-    def metadata(cls,id=None,name=None): #-> _Element:
+    def metadata(cls,id=None,name=None) -> _Element:
         '''Wrapper attempting local metadata load. 
         NB. Uses Filename or layer_id which determines fetch method'''
         if name:
@@ -384,7 +384,7 @@ class Combined(Remote):
         
 class RemoteParser(XMLParser):
     '''Simple custom parser wrapper overrodes init with encoding spec'''
-    def __init__(self,enc):# -> None:
+    def __init__(self,enc) -> None:
         super(RemoteParser,self).__init__(ns_clean=True,recover=True,encoding=enc)
        
     

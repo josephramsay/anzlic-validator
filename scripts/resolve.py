@@ -9,7 +9,7 @@ import pickle
 import validate
 
 from pprint import pprint
-#from typing import List, Dict, Set
+from typing import List, Dict, Set
 from lxml import etree
 from lxml.etree import Resolver, XMLParser, XML, ElementTree, _Element
 from lxml.etree import XMLSyntaxError, XMLSchemaParseError
@@ -72,7 +72,7 @@ class RemoteResolver(Resolver):
     PICKLESFX = '.history'   # type: str
     BLANKHIST = {'cache':set([]),'fail':set([])}   # type: Dict[str,Set[str]]
     
-    def __init__(self,response,encoding,history):# -> None:
+ def __init__(self,response,encoding,history) -> None:
         self.response = response          
         self.encoding = encoding      
         self.source = self.response.url
@@ -86,7 +86,7 @@ class RemoteResolver(Resolver):
         #if not history: # ensures saving only at end of resolve init
         self._save_hist()
      
-    def _precache(self):# -> None:
+    def _precache(self) -> None:
         '''Precache imports and includes'''
         for incl in self.doc.findall('xs:include',namespaces=validate.NSX):
             for i,ns in enumerate([self.source,self.target]):
@@ -97,7 +97,7 @@ class RemoteResolver(Resolver):
                 if self._getimports(UR.urljoin(self._slash(ns),impt.attrib['schemaLocation']),'import-{}'.format(i)):
                     break
 
-    def _getimports(self,url,i):# -> None:
+    def _getimports(self,url,i) -> None:
         '''import xsd using selectio of urls including targetNamespace, namespace and url of source'''
         #for i,url in enumerate(ul):
         #hasn't been fetched already or in failed list
@@ -126,7 +126,7 @@ class RemoteResolver(Resolver):
         return True
     
   
-    def _load_hist(self,src=None):# -> Dict:
+    def _load_hist(self,src=None) -> Dict:
         '''Return fetch/fail history from file or touch/init a new picklefile if reqd'''
         hist = self.BLANKHIST
         if src:
@@ -141,7 +141,8 @@ class RemoteResolver(Resolver):
                 pass
         return hist
            
-    def _save_hist(self):# -> None:
+
+    def _save_hist(self) -> None:
         '''Save the fetched/failed url list into picklefile, merging with existing'''
         if hasattr(self,'picklefile'):
             hist = self._merge(self.history,self._load_hist())
@@ -149,14 +150,14 @@ class RemoteResolver(Resolver):
                 pickle.dump(hist,f)
     
     @DisplayWrapper.show()
-    def _getXMLResponse(self,url):# -> None:
+    def _getXMLResponse(self,url) -> None:
         resp = validate.SCHMD._request(url)
         merge_hist = RemoteResolver._merge(self.history,{'cache':set([url,])})
         resolver = RemoteResolver(resp,self.encoding,merge_hist)
         self.history = RemoteResolver._merge(self.history,resolver.history)
   
     @staticmethod        
-    def _merge(a,b):# -> Dict:
+    def _merge(a,b) -> Dict:
         '''Unidirectional merge from a<-b'''
         c = a.copy()
         for k in c:
@@ -165,15 +166,15 @@ class RemoteResolver(Resolver):
         #return {k:a[k].copy().update(b[k]) if k in b else a[k].copy() for k in a.keys()}
 
     @staticmethod
-    def _slash(u):# -> str:
+    def _slash(u) -> str:
         return os.path.join(u,'') if u.rfind('/')>u.rfind('.') else u
 
-    def _cached(self,frag):# -> str:
+    def _cached(self,frag) -> str:
         for u in [h for h in self.history['cache'] if h not in self.history['fail']]:
             if frag.lstrip('.') in u: return u
         return None
         
-    def resolve(self, system_url, public_id, context):# -> str:
+    def resolve(self, system_url, public_id, context) -> str:
         '''Override of resolver resolve method that fetches and read cached page using that in a resolve_string call'''
         #pprint (self.history)
         rstr = None
@@ -218,4 +219,4 @@ class RemoteResolver(Resolver):
 #         pr = UP.urlparse(url)
 #         return '{}://{}{}/'.format(pr.scheme,pr.netloc,'/'.join(pr.path.split('/')[:-1]))
 
-    
+

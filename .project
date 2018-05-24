@@ -3,6 +3,7 @@
 	<name>anzlic-validator</name>
 	<comment></comment>
 	<projects>
+		<project>lxml</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
