@@ -1,2 +1,2 @@
 # anzlic-validator
-ANZLIC Metadata validation 
+ANZLIC Metadata validation

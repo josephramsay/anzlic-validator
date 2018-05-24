@@ -7,8 +7,8 @@ import http.client
 import unittest
 import hashlib
 import io
-from email import policy,message
-from typing import Dict
+#from email import policy,message
+#from typing import Dict
 
 #based on activestate recipe 491261 from staffan@tomtebo.org
 
@@ -19,7 +19,6 @@ DEF_RESP_LEN = 100000
 
 class ThrottlingProcessor(urllib.request.BaseHandler):
     """Prevents overloading the remote web server by delaying requests.
-
     Causes subsequent requests to the same web server to be delayed
     a specific amount of seconds. The first request to the server
     always gets made immediately"""
@@ -55,7 +54,6 @@ class ThrottlingProcessor(urllib.request.BaseHandler):
 
 class CacheHandler(urllib.request.BaseHandler):
     """Stores responses in a persistant on-disk cache.
-
     If a subsequent GET request is made for the same URL, the stored
     response is returned, saving time, resources and bandwith"""    
     def __init__(self,cacheLocation):
@@ -112,7 +110,6 @@ class CacheHandler(urllib.request.BaseHandler):
     
 class CachedResponse(io.StringIO):
     """An urllib2.response-like object for cached responses.
-
     To determine wheter a response is cached or coming directly from
     the network, check the x-cache header rather than the object type."""
     

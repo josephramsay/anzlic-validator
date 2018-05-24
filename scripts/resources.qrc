@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/LINZ_Metadata" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>

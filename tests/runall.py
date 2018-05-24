@@ -1,19 +1,13 @@
 '''
 v.0.0.9
-
 anzlic-validator
-
 Copyright 2011 Crown copyright (c)
 Land Information New Zealand and the New Zealand Government.
 All rights reserved
-
 This program is released under the terms of the new BSD license. See the 
 LICENSE file for more information.
-
 Test Suite runner
-
 Created on 24/07/2012
-
 @author: jramsay
 '''
 import unittest
@@ -25,6 +19,7 @@ from test_validate  import Test_2_setuplocal    as T22
 from test_validate  import Test_3_setupremote   as T23
 from test_validate  import Test_4_setupcombined as T24
 #from test_resolve   import Test_1_init          as T31
+from test_errorCheck import Test_1_setup        as T41
 
 
 class FullSuite(unittest.TestSuite):
@@ -44,6 +39,8 @@ class FullSuite(unittest.TestSuite):
         suites += unittest.makeSuite(T24)
         
         #suites += unittest.makeSuite(T31)
+        
+        suites += unittest.makeSuite(T41)
    
         return unittest.TestSuite(suites)
 

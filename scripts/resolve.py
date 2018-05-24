@@ -72,7 +72,7 @@ class RemoteResolver(Resolver):
     PICKLESFX = '.history'   # type: str
     BLANKHIST = {'cache':set([]),'fail':set([])}   # type: Dict[str,Set[str]]
     
-    def __init__(self,response,encoding,history) -> None:
+ def __init__(self,response,encoding,history) -> None:
         self.response = response          
         self.encoding = encoding      
         self.source = self.response.url
@@ -141,6 +141,7 @@ class RemoteResolver(Resolver):
                 pass
         return hist
            
+
     def _save_hist(self) -> None:
         '''Save the fetched/failed url list into picklefile, merging with existing'''
         if hasattr(self,'picklefile'):
@@ -218,4 +219,4 @@ class RemoteResolver(Resolver):
 #         pr = UP.urlparse(url)
 #         return '{}://{}{}/'.format(pr.scheme,pr.netloc,'/'.join(pr.path.split('/')[:-1]))
 
-    
+
