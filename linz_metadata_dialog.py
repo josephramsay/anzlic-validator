@@ -24,7 +24,7 @@
 import os
 from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtGui import QApplication
-from PyQt4.QtCore import QDate
+from PyQt4.QtCore import QDate, QTime
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'linz_metadata_dialog_base.ui'))
@@ -42,6 +42,9 @@ class LINZ_MetadataDialog(QtGui.QTabWidget, FORM_CLASS):
 
     def closeEvent(self, event):
         self.hide()
+        self.outputFile.clear()
+        self.metadataFile.clear()
+        self.templateFile.clear()
         self.reset_form()
         self.updateDefaults()
 
@@ -56,58 +59,79 @@ class LINZ_MetadataDialog(QtGui.QTabWidget, FORM_CLASS):
         
 
     def reset_form(self):
-        self.layerInfoFields = [self.abs, self.atitle, self.hlName,            \
-                                self.purpose, self.title]
+        self.check = 0
+        self.home = [self.loadError, self.autoFillError]
         
-        self.contactFields = [self.city1, self.city2, self.country1,           \
-                              self.country2, self.dadd1, self.dadd2,           \
-                              self.email1, self.email2, self.fas1, self.fas2,  \
-                              self.iName1, self.iName2, self.oName1,           \
-                              self.oName2, self.pName1,self.pName2,            \
-                              self.postCode1, self.postCode2, self.role1,      \
-                              self.role2, self.voice1, self.voice2]
+        self.layInfo = [self.abs, self.atitle, self.hlName, self.purpose,      \
+                        self.title]
         
-        self.identInfoFields = [self.date, self.lineage, self.maintenance,     \
-                                self.spatialrep, self.status,     \
-                                self.topicCategory, self.geoDescCombo]
+        self.contact = [self.city1, self.city2, self.country1, self.country2,  \
+                        self.dadd1, self.dadd2, self.email1, self.email2,      \
+                        self.fas1, self.fas2, self.iName1, self.iName2,        \
+                        self.oName1, self.oName2, self.pName1,self.pName2,     \
+                        self.postCode1, self.postCode2, self.role1, self.role2,\
+                        self.voice1, self.voice2]
         
-        self.securityFields = [self.metSecClass, self.metadataConCopyright,    \
-                               self.metadataConLicense, self.resSecClass,      \
-                               self.resourceConCopyright,                      \
-                               self.resourceConLicense]
+        self.idenInfo = [self.date, self.lineage, self.maintenance,self.status,\
+                         self.spatialrep, self.topicCategory,self.geoDescCombo,\
+                         self.resolutionText, self.westExtent,self.northExtent,\
+                         self.southExtent,self.eastExtent]
+        
+        self.security = [self.metSecClass, self.metadataConCopyright,          \
+                         self.metadataConLicense, self.resSecClass,            \
+                         self.resourceConCopyright, self.resourceConLicense]
 
-        self.summaryFields = [self.validationLog, self.summary, self.metadataTable]
-        for field in (self.layerInfoFields + self.contactFields + self.identInfoFields + self.securityFields + self.summaryFields):
+        self.summaryF = [self.validationLog, self.summary, self.metadataTable]
+
+
+        self.clear = (self.layInfo+ self.contact+ self.idenInfo+ self.security+\
+                      self.summaryF + self.home)
+
+        self.checked = [self.dONUCheck, self.scale, self.resourceCreateCheck,  \
+                        self.resourcePublishCheck, self.resourceUpdateCheck,   \
+                        self.temporalCheck,self.endDateCheck,self.endTimeCheck,\
+                        self.startTimeCheck]
+        
+        self.enabled = [self.createMetadata, self.date, self.resolutionText,   \
+                        self.resolutionUnits, self.scaleFrame,                 \
+                        self.resourceCreate, self.resourcePublish,             \
+                        self.resourceUpdate, self.startDate, self.startTime,   \
+                        self.endDate, self.endTime, self.startTimeCheck,       \
+                        self.endDateCheck, self.endTimeCheck]
+        
+        self.curDate = [self.date, self.resourceCreate, self.resourcePublish,  \
+                        self.resourceUpdate, self.startDate, self.endDate]
+        
+        self.curTime = [self.startTime, self.endTime]
+        
+        self.curIndex = [self, self.resolutionUnits]
+        self.fixError.hide()
+        
+        for field in self.clear:
             field.clear()
-        # Del temp file
-        # self.extentFields
-        # self.otherFields
-        self.createMetadata.setEnabled(False)
-        self.setCurrentIndex(0)
-        self.date.setEnabled(False)
-        self.dONUCheck.setChecked(False)
-        self.resolutionText.setEnabled(False)
-        self.resolutionUnits.setEnabled(False)
-        self.scaleFrame.setEnabled(False)
-        self.resolutionUnits.setCurrentIndex(0)
-        self.resolutionText.clear()
-        self.scale.setChecked(False)
+
+        for field in self.curIndex:
+            field.setCurrentIndex(0)
+
+        for field in self.enabled:
+            field.setEnabled(False)
+
+        for field in self.checked:
+            field.setChecked(False)
+
+        for field in self.curDate:
+            field.setDate(QDate.currentDate())
+
+        for field in self.curTime:
+            field.setTime(QTime.currentTime())
+
         self.scaleWidget.setScaleString("0")
-        self.date.setDate(QDate.currentDate())
-        self.resourceCreate.setDate(QDate.currentDate())
-        self.resourceCreate.setEnabled(False)
-        self.resourcePublish.setDate(QDate.currentDate())
-        self.resourcePublish.setEnabled(False)
-        self.resourceUpdate.setDate(QDate.currentDate())
-        self.resourceUpdate.setEnabled(False)
-        self.resourceCreateCheck.setChecked(False)
-        self.resourcePublishCheck.setChecked(False)
-        self.resourceUpdateCheck.setChecked(False)
+        
         for i in range(self.keywordList.count()):
             item = self.keywordList.item(i)
             self.keywordList.setItemSelected(item, False)
-        c = self.count()
-        for i in range(1, c):
+
+        for i in range(1, self.count()):
             self.setTabEnabled(i, False)
         
     def changeTemplate(self, file):

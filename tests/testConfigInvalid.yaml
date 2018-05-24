@@ -15,28 +15,39 @@
 
 #------------------------
 
-# Address Fields
-INDIVIDUALNAME: ["Omit", "omit"]
+# Address Fields (1 - Metadata 'Contact',  2 - Resource 'PointOfContact'.)
+INDIVIDUALNAME1: ["Omit", "omit"]
+INDIVIDUALNAME2: ["Omit", "omit"]
 
-ORGANISATIONNAME: "LINZ - Land Information New Zealand"
+ORGANISATIONNAME1: "LINZ - Land Information New Zealand"
+ORGANISATIONNAME2: "LINZ - Land Information New Zealand"
 
-POSITIONNAME: True
+POSITIONNAME1: True
+POSITIONNAME2: True
 
-VOICE: ["0800 665 463 or +64 4 460 0110", "04 4600110"]
+VOICE1: ["0800 665 463 or +64 4 460 0110", "04 4600110"]
+VOICE2: ["0800 665 463 or +64 4 460 0110", "04 4600110"]
 
-FACSIMILE: True
+FACSIMILE1: True
+FACSIMILE2: True
 
-DELIVERYADDRESS: "155 The Terrace"
+DELIVERYADDRESS1: "155 The Terrace"
+DELIVERYADDRESS2: "155 The Terrace"
 
-ADDRESS: "155"
+ADDRESS1: "155"
+ADDRESS2: "155"
 
-CITY: "Wellington"
+CITY1: "Wellington"
+CITY2: "Wellington"
 
-COUNTRY: "New Zealand"
+COUNTRY1: "New Zealand"
+COUNTRY2: "New Zealand"
 
-POSTALCODE: ["6011", "6145"]
+POSTALCODE1: ["6011", "6145"]
+POSTALCODE2: ["6011", "6145"]
 
-EMAIL: ["info@linz.govt.nz", "customersupport@linz.govt.nz"]
+EMAIL1: ["info@linz.govt.nz", "customersupport@linz.govt.nz"]
+EMAIL2: ["info@linz.govt.nz", "customersupport@linz.govt.nz"]
 
 # Role 1 is Metadata 'Contact' role, Role 2 is Resource 'PointOfContact' role.
 ROLE1: "resourceProvider"

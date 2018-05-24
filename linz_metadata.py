@@ -21,25 +21,27 @@
  ***************************************************************************/
 """
 from qgis.core import QgsRectangle, QgsCoordinateReferenceSystem
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4.QtCore import QSettings, QCoreApplication, QDate, QTime, Qt
+from PyQt4.QtGui import QIcon, QAction, QFileDialog, QItemSelectionModel, \
+     QTextCursor, QFont, QTableWidgetItem, QComboBox, QPalette, QColor
 # Initialize Qt resources from file resources.py
 import scripts.resources
 # Import the code for the dialog
 from linz_metadata_dialog import LINZ_MetadataDialog
-from scripts.testCodeList import *
+from scripts.codeList import codeList
 import os.path
 from lxml import etree
 import re
 import os
 import uuid
 from shutil import copyfile
+import yaml
 
 import sys
 sys.path.append('../')
 
-from scripts.validate import Local
-from scripts.errorChecker import *
+from scripts.validate import Local, ValidatorException
+from scripts.errorChecker import runChecks
 
 # Set Namespaces
 NSX = {'xlink'  : 'http://www.w3.org/1999/xlink',
@@ -158,6 +160,13 @@ EXTENTBBE = EXTENTBB + '/gmd:eastBoundLongitude' + DE
 EXTENTBBN = EXTENTBB + '/gmd:northBoundLatitude' + DE
 EXTENTBBS = EXTENTBB + '/gmd:southBoundLatitude' + DE
 
+TEMPORALSINGLE = EXTENT + '/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:'  + \
+                 'extent/gml:TimeInstant/gml:timePosition'
+TEMPORALBEGIN = EXTENT + '/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:'   + \
+                'extent/gml:TimePeriod/gml:beginPosition'
+TEMPORALEND = EXTENT + '/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:'     + \
+              'extent/gml:TimePeriod/gml:endPosition'
+
 
 LINKAGE = MD+'/gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions' + \
           '/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource/' + \
@@ -173,29 +182,29 @@ METAUSE = MD + '/gmd:metadataConstraints' + USECONST
 
 # FIELDS, all metadata fields
 FIELDS = (FID, LAN, CHSET, HLEVEL, HLEVELNAME, INAME, ONAME, PNAME, VOICE, FACS,
-          DELIVERYPOINT, CITY, POSTALCODE, COUNTRY, EMAIL, ROLE, DSTAMP, MSN,
-          MSV, RS, TITLE, ALTTITLE, CITDATE, CITDATETYPE, ABSTRACT, PURPOSE,
-          STATUS, POCINAME, POCONAME, POCPNAME, POCVOICE, POCFACS,
-          POCDELIVERYPOINT, POCCITY, POCPOSTALCODE, POCCOUNTRY, POCEMAIL,
-          POCROLE, RMAINTCODE, RMAINTDATE, RFORMATN, RFORMATV, KEYWORDS,
-          KEYWORDSTYPE, CLASSIFCODE, RESOURCELIMIT, RESOURCEUSE, SPATIALREP,
-          SCALE, RESOLUTION, IDENTLAN, IDENTCS, TOPIC, EXTENTDES, EXTENTBBW,
-          EXTENTBBE, EXTENTBBN, EXTENTBBS,LINKAGE, SCOPE, SCOPEDESC, LINEAGE,
-          MCLASSIFCODE, METALIMIT, METAUSE)
+          DELIVERYPOINT, CITY, POSTALCODE, COUNTRY, EMAIL, ROLE, DSTAMP,MSN,MSV,
+          RS, TITLE, ALTTITLE, CITDATE, CITDATETYPE, ABSTRACT, PURPOSE, STATUS,
+          POCINAME, POCONAME, POCPNAME, POCVOICE, POCFACS, POCDELIVERYPOINT,
+          POCCITY, POCPOSTALCODE, POCCOUNTRY, POCEMAIL, POCROLE, RMAINTCODE,
+          RMAINTDATE, RFORMATN, RFORMATV, KEYWORDS, KEYWORDSTYPE, CLASSIFCODE,
+          RESOURCELIMIT, RESOURCEUSE, SPATIALREP, SCALE, RESOLUTION, IDENTLAN,
+          IDENTCS, TOPIC, EXTENTDES, EXTENTBBW, EXTENTBBE, EXTENTBBN, EXTENTBBS,
+          TEMPORALSINGLE, TEMPORALBEGIN, TEMPORALEND, LINKAGE, SCOPE, SCOPEDESC,
+          LINEAGE, MCLASSIFCODE, METALIMIT, METAUSE)
 
 # SETFIELDS, all metadata fields set in LINZ METADATA PLUGIN
 SETFIELDS= (HLEVEL, HLEVELNAME, INAME, ONAME, PNAME, VOICE, FACS, DELIVERYPOINT,
             CITY, POSTALCODE, COUNTRY, EMAIL, ROLE, RS, TITLE, ALTTITLE,
-            ABSTRACT, PURPOSE, STATUS, POCINAME, POCONAME, POCPNAME, POCVOICE,
-            POCFACS, POCDELIVERYPOINT, POCCITY, POCPOSTALCODE, POCCOUNTRY,
-            POCEMAIL, POCROLE, RMAINTCODE, RMAINTDATE, CLASSIFCODE,
-            RESOURCELIMIT, RESOURCEUSE, SPATIALREP, SCALE, RESOLUTION, TOPIC,
-            EXTENTDES, SCOPE, SCOPEDESC, LINEAGE, MCLASSIFCODE, METALIMIT,
-            METAUSE)
+            CITDATE, CITDATETYPE, ABSTRACT, PURPOSE, STATUS, POCINAME, POCONAME,
+            POCPNAME, POCVOICE, POCFACS, POCDELIVERYPOINT, POCCITY,
+            POCPOSTALCODE, POCCOUNTRY, POCEMAIL, POCROLE, RMAINTCODE,RMAINTDATE,
+            KEYWORDS, KEYWORDSTYPE, CLASSIFCODE, RESOURCELIMIT, RESOURCEUSE,
+            SPATIALREP, SCALE, RESOLUTION, TOPIC, EXTENTDES, TEMPORALSINGLE,
+            TEMPORALBEGIN, TEMPORALEND, SCOPE, SCOPEDESC, LINEAGE, MCLASSIFCODE,
+            METALIMIT, METAUSE)
 
 TEMPLATEFID = 'C6BCE1F1-AFA7-42DB-B9CF-29C59333A173'
 
-# TODO: add temp directory
 TEMPFILE = 'outputXML.xml'
 
 class LINZ_Metadata:
@@ -269,8 +278,7 @@ class LINZ_Metadata:
         :rtype: QAction
         """
         self.dlg = LINZ_MetadataDialog()
-        self.dlg.changeTemplate(
-            r'anzlic_validator/templates/linz-anzlic-template.xml')
+        self.dlg.changeTemplate(r'templates/linz-anzlic-template.xml')
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
@@ -300,26 +308,10 @@ class LINZ_Metadata:
         self.dlg.OUTPUTFILE = TEMPFILE
         self.dlg.loadError.hide()
         # Set Text Fields
-        self.tF={POCINAME           : self.dlg.iName1,
-                 INAME              : self.dlg.iName2,
-                 POCONAME           : self.dlg.oName1,
-                 ONAME              : self.dlg.oName2,
-                 POCPNAME           : self.dlg.pName1,
+        self.tF={POCPNAME           : self.dlg.pName1,
                  PNAME              : self.dlg.pName2,
-                 POCDELIVERYPOINT   : self.dlg.dadd1,
-                 DELIVERYPOINT      : self.dlg.dadd2,
-                 POCCITY            : self.dlg.city1,
-                 CITY               : self.dlg.city2,
-                 POCEMAIL           : self.dlg.email1,
-                 EMAIL              : self.dlg.email2,
-                 POCVOICE           : self.dlg.voice1,
-                 VOICE              : self.dlg.voice2,
                  POCFACS            : self.dlg.fas1,
                  FACS               : self.dlg.fas2,
-                 POCPOSTALCODE      : self.dlg.postCode1,
-                 POSTALCODE         : self.dlg.postCode2,
-                 POCCOUNTRY         : self.dlg.country1,
-                 COUNTRY            : self.dlg.country2,
                  TITLE              : self.dlg.title,
                  ALTTITLE           : self.dlg.atitle,
                  ABSTRACT           : self.dlg.abs,
@@ -339,7 +331,26 @@ class LINZ_Metadata:
                                  codeList('MD_ClassificationCode')],
                  MCLASSIFCODE : [self.dlg.metSecClass,
                                  codeList('MD_ClassificationCode')],
-                 EXTENTDES    : [self.dlg.geoDescCombo, ('nzl', 'NZ_MAINLAND_AND_CHATHAMS')]}
+                 EXTENTDES    : [self.dlg.geoDescCombo,
+                                 ('nzl', 'NZ_MAINLAND_AND_CHATHAMS')]}
+
+        # COULD ADD FACS/ POCFACS
+        self.cFS={VOICE       : self.dlg.voice2,
+                  ONAME       : self.dlg.oName2,
+                  INAME       : self.dlg.iName2,
+                  POCVOICE    : self.dlg.voice1,
+                  POCONAME    : self.dlg.oName1,
+                  POCINAME    : self.dlg.iName1,
+                  POCDELIVERYPOINT  : self.dlg.dadd1,
+                  DELIVERYPOINT     : self.dlg.dadd2,
+                  POCCITY           : self.dlg.city1,
+                  CITY              : self.dlg.city2,
+                  POCEMAIL          : self.dlg.email1,
+                  EMAIL             : self.dlg.email2,
+                  POCPOSTALCODE     : self.dlg.postCode1,
+                  POSTALCODE        : self.dlg.postCode2,
+                  POCCOUNTRY        : self.dlg.country1,
+                  COUNTRY           : self.dlg.country2}
         
         # Set Resolution Code -> Units
         self.resolutionCode={
@@ -355,6 +366,44 @@ class LINZ_Metadata:
             'u'         :   'unknown'}
 
         self.MDTEXT = {}
+        
+        # Select Template Clicked
+        self.dlg.selectTemplate.clicked.connect(lambda: self.setFile(1))
+        self.dlg.selectOutputFile.clicked.connect(lambda: self.setFile(2))
+        self.dlg.selectMetadata.clicked.connect(lambda: self.setFile(3))
+        # Default Template Clicked
+        self.dlg.defaultButton.clicked.connect(self.updateFileText)
+        # Load Metadata Clicked
+        self.dlg.loadTemplate.clicked.connect(lambda: self.loadMetadata(1))
+        self.dlg.loadMetadata.clicked.connect(lambda: self.loadMetadata(2))
+        
+        # State Changed Of Date of Next Update Check Box
+        self.dlg.dONUCheck.stateChanged.connect(self.toggleDate)
+        self.dlg.scale.stateChanged.connect(self.toggleState)
+        self.dlg.scaleRadioButton.toggled.connect(self.toggleRadio)
+
+        self.dlg.temporalCheck.stateChanged.connect(self.toggleTemporal)
+        self.dlg.startTimeCheck.stateChanged.connect(self.toggleStartTime)
+        self.dlg.endDateCheck.stateChanged.connect(self.toggleEndDate)
+        self.dlg.endTimeCheck.stateChanged.connect(self.toggleEndTime)
+
+        self.dlg.resourceCreateCheck.stateChanged.connect(self.toggleCreateDate)
+        self.dlg.resourcePublishCheck.stateChanged.connect(self.togglePublishDate)
+        self.dlg.resourceUpdateCheck.stateChanged.connect(self.toggleUpdateDate)
+
+        # Create Metadata Clicked
+        self.dlg.createMetadata.clicked.connect(self.done)
+        # Validate/ Error Check Clicked 
+        self.dlg.validateErrorCheck.clicked.connect(self.check)
+
+        self.dlg.autofillResource.clicked.connect(lambda: self.autoFill(1))
+        self.dlg.autofillMetadata.clicked.connect(lambda: self.autoFill(2))
+
+        self.dlg.boldText.clicked.connect(lambda: self.textStyle(1))
+        self.dlg.italicText.clicked.connect(lambda: self.textStyle(2))
+        self.dlg.linkText.clicked.connect(lambda: self.textStyle(3))
+
+        self.dlg.fixError.clicked.connect(self.fixError)
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -366,35 +415,348 @@ class LINZ_Metadata:
     def loadMetadata(self, button):
         ''' load metadata template or existing metadata file
             into associated fields.'''
-        self.resolutionUnits = None
-        lice, copy, metlice, metcopy, meta, res = None,None,None,None,None,None
-        crsList = {'NZGD2000/New Zealand Transverse Mercator 2000'  : 2193,
-                   'WGS 84'                                         : 4326}
-        topicCategoryValues = codeList('MD_TopicCategoryCode')
-        self.MDTEXT = {}
-        if button == 1:
-            if self.dlg.templateFile.toPlainText() == '' or self.dlg.outputFile.toPlainText() == '':
-                self.dlg.loadError.setText("Metadata Load Error, No File Selected")
-                self.dlg.loadError.show()
-                return
-            self.dlg.changeTemplate(self.dlg.templateFile.toPlainText())
-            self.dlg.OUTPUTFILE = self.dlg.outputFile.toPlainText()
-        elif button == 2:
-            if self.dlg.metadataFile.toPlainText() == '':
-                self.dlg.loadError.setText("Metadata Load Error, No File Selected")
-                self.dlg.loadError.show()
-                return
-            self.dlg.changeTemplate(self.dlg.metadataFile.toPlainText())
-            self.dlg.OUTPUTFILE = self.dlg.metadataFile.toPlainText()
         try:
-            md = etree.parse(os.path.abspath(
-                os.path.join(os.path.dirname(__file__),self.dlg.TEMPLATEPATH)))
+            self.resolutionUnits = None
+            lice, copy, metlice, metcopy, meta, res = None,None,None,None,None,None
+            crsList = {'NZGD2000/New Zealand Transverse Mercator 2000'  : 2193,
+                       'WGS 84'                                         : 4326}
+            topicCategoryValues = codeList('MD_TopicCategoryCode')
+            self.MDTEXT = {}
+            if button == 1:
+                if self.dlg.templateFile.toPlainText() == '' or \
+                   self.dlg.outputFile.toPlainText() == '':
+                    raise Exception("Metadata Load Error, No File Selected")
+                self.dlg.changeTemplate(self.dlg.templateFile.toPlainText())
+                self.dlg.OUTPUTFILE = self.dlg.outputFile.toPlainText()
+            elif button == 2:
+                if self.dlg.metadataFile.toPlainText() == '':
+                    raise Exception("Metadata Load Error, No File Selected")
+                self.dlg.changeTemplate(self.dlg.metadataFile.toPlainText())
+                self.dlg.OUTPUTFILE = self.dlg.metadataFile.toPlainText()
+            try:
+                md = etree.parse(os.path.abspath(os.path.join(os.path.dirname(__file__),self.dlg.TEMPLATEPATH)))
+            except Exception as e:
+                raise Exception("Metadata Load Error: {}".format(e))
+            file = r'{}/config.yaml'.format(os.path.abspath(os.path.join(__file__, '../')))
+            if not os.path.exists(file):
+                raise Exception("Cannot Find Config File {}".format(file))
+            with open(file, 'r') as f:
+                config = yaml.load(f)
+            if 'Metadata' not in md.getroot().tag:
+                raise Exception('Metadata Load Error, not ISO Metadata')
+            
+            self.dlg.reset_form()
+            self.dlg.referenceSys.setCrs(QgsCoordinateReferenceSystem())
+            # Read through metadata file and set path, text in MDTEXT
+            for m in md.iter():
+                if m.text:
+                    key = re.sub('\[+.+?\]', '', md.getpath(m))
+                    if key in self.MDTEXT:
+                        if type(self.MDTEXT[key]) == tuple:
+                            self.MDTEXT[key] = self.MDTEXT[key] + (m.text,)
+                        else: self.MDTEXT[key] = (self.MDTEXT[key], m.text)
+                    else:
+                        self.MDTEXT[key] = m.text
+
+            # Add Topic Category Selection Values to UI List.
+            for val in topicCategoryValues:
+                self.dlg.topicCategory.addItem(val.strip())
+            self.dlg.topicCategory.sortItems()
+
+            configDict = {VOICE     : 'VOICE1',
+                          POCVOICE  : 'VOICE2',
+                          ONAME     : 'ORGANISATIONNAME1',
+                          POCONAME  : 'ORGANISATIONNAME2',
+                          INAME     : 'INDIVIDUALNAME1',
+                          POCINAME  : 'INDIVIDUALNAME2',
+                          DELIVERYPOINT     : 'DELIVERYADDRESS1',
+                          POCDELIVERYPOINT  : 'DELIVERYADDRESS2',
+                          CITY              : 'CITY1',
+                          POCCITY           : 'CITY2',
+                          POSTALCODE        : 'POSTALCODE1',
+                          POCPOSTALCODE     : 'POSTALCODE2',
+                          COUNTRY           : 'COUNTRY1',
+                          POCCOUNTRY        : 'COUNTRY2',
+                          EMAIL             : 'EMAIL1',
+                          POCEMAIL          : 'EMAIL2'}
+            
+            for i in FIELDS:
+                if i in self.cFS:
+                    if i in configDict:
+                        self.cFS[i].addItem('')
+                        if type(config[configDict[i]]) == list:
+                            self.cFS[i].addItems(config[configDict[i]])
+                            for v in range(self.cFS[i].count()):
+                                if self.cFS[i].itemText(v) == 'NONE' or self.cFS[i].itemText(v) == 'EMPTY':
+                                    self.cFS[i].removeItem(v)
+                        elif type(config[configDict[i]]) == str:
+                            self.cFS[i].addItem(config[configDict[i]])
+                        else:
+                            print ("TRUE/ FALSE VALUE {}, needs set enabled/text entered".format(configDict[i]))
+
+
+            # Add Combo Box Selection Values to UI Combo Fields.
+            for i in FIELDS:
+                if i in self.cF:
+                    self.cF[i][0].addItem('')
+                    self.cF[i][0].addItems(self.cF[i][1])
+
+            # Update UI Fields based on fields found in Metadata
+            for i in FIELDS:
+                if i in self.MDTEXT:
+                    # Update Scale Fields
+                    if i == SCALE:
+                        self.dlg.scale.setChecked(True)
+                        self.dlg.scaleRadioButton.setChecked(True)
+                        if ':' in self.MDTEXT[i]:
+                            self.MDTEXT[i] = self.MDTEXT[i].split(':')[1]
+                        self.dlg.scaleWidget.setScaleString("1:" + self.MDTEXT[i])
+
+                    elif i == TEMPORALSINGLE or \
+                         i == TEMPORALBEGIN  or \
+                         i == TEMPORALEND:
+                        self.dlg.temporalCheck.setChecked(True)
+                        date, time = self.MDTEXT[i], None
+                        y, M, d = None, None, None
+                        h, m, s = None, None, None
+                        if self.MDTEXT[i].find('T') != -1:
+                            date = self.MDTEXT[i].split('T')[0]
+                            time = self.MDTEXT[i].split('T')[1]
+
+                        date = date.split('-')
+                        if len(date) == 1:
+                            y = date[0]
+                        elif len(date) == 2:
+                            y, M = date[0], date[1]
+                        else:
+                            y, M, d = date[0], date[1], date[2]
+                        if time is not None:
+                            time = time.split(':')
+                            if len(time) == 1:
+                                h = time[0]
+                            elif len(time) == 2:
+                                h, m = time[0], time[1]
+                            else:
+                                h, m, s = time[0], time[1], time[2]
+                        if M is None: M = 1
+                        if d is None: d = 1
+                        date = QDate(int(y), int(M), int(d))
+                        if i == TEMPORALSINGLE or i == TEMPORALBEGIN:
+                            self.dlg.startDate.setDate(date)
+                        else:
+                            self.dlg.endDateCheck.setChecked(True)
+                            self.dlg.endDate.setDate(date)
+                        if time is not None:
+                            if m is None: m = 1
+                            if s is None: s = 0
+                            time = QTime(int(h), int(m), int(s))
+                            if i == TEMPORALSINGLE or i == TEMPORALBEGIN:
+                                self.dlg.startTimeCheck.setChecked(True)
+                                self.dlg.startTime.setTime(time)
+                            if i == TEMPORALEND:
+                                self.dlg.endTimeCheck.setChecked(True)
+                                self.dlg.endTime.setTime(time)
+
+                    elif i == KEYWORDS:
+                        if type(self.MDTEXT[i]) == tuple:
+                            selection = ()
+                            for val in self.MDTEXT[i]:
+                                val = val.replace('-', ' ')
+                                if 'non specific' in val:
+                                    val = val.replace('non specific', 'non-specific')
+                                if val[1].isupper():
+                                    found = self.dlg.keywordList.findItems(
+                                        val, Qt.MatchExactly)
+                                    if len(found) > 0:
+                                        self.dlg.keywordList.setCurrentRow(
+                                            self.dlg.keywordList.row(found[0]),
+                                            QItemSelectionModel.Select)
+                                    else:
+                                        print ("WARNING: Invalid Keyword Ignored "+\
+                                               "{}".format(val))
+                        else:
+                            if self.MDTEXT[i][1].isupper():
+                                found = self.dlg.keywordList.findItems(
+                                    val, Qt.MatchExactly)
+                                if len(found) > 0:
+                                    self.dlg.keywordList.setCurrentRow(
+                                        self.dlg.keywordList.row(found[0]),
+                                        QItemSelectionModel.Select)
+                                else:
+                                    print ("WARNING: Invalid Keyword Ignored "   + \
+                                           "{}".format(val))
+
+                    # Update Resolution Fields
+                    elif i == RESOLUTION:
+                        ms = md.find(RESOLUTION[16:], namespaces=NSX).attrib['uom']
+                        self.dlg.scale.setChecked(True)
+                        self.dlg.resolutionRadioButton.setChecked(True)
+                        self.dlg.resolutionText.setText(self.MDTEXT[i])
+                        self.dlg.resolutionUnits.setCurrentIndex(
+                            self.dlg.resolutionUnits.findText(
+                                self.resolutionCode[ms]))
+
+                    elif i == CITDATE:
+                        dates = {'creation'   : (self.dlg.resourceCreate,
+                                                 self.dlg.resourceCreateCheck),
+                                 'publication': (self.dlg.resourcePublish,
+                                                 self.dlg.resourcePublishCheck),
+                                 'revision'   : (self.dlg.resourceUpdate,
+                                                 self.dlg.resourceUpdateCheck)}
+                        if type(self.MDTEXT[i]) == tuple:
+                            for num, el in enumerate(self.MDTEXT[i]):
+                                dt = el.split('-')
+                                if len(dt) == 1: dt = (dt[0], 1, 1)
+                                elif len(dt) == 2: dt = (dt[0], dt[1], 1)
+                                dates[self.MDTEXT[CITDATETYPE][num]][0].setEnabled(
+                                    True)
+                                dates[self.MDTEXT[CITDATETYPE][num]][0].setDate(
+                                    QDate(int(dt[0]), int(dt[1]), int(dt[2])))
+                                dates[self.MDTEXT[CITDATETYPE][num]][1].setChecked(
+                                    True)
+                        else:
+                            dt = self.MDTEXT[i].split('-')
+                            if len(dt) == 1: dt = (dt[0], 1, 1)
+                            elif len(dt) == 2: dt = (dt[0], dt[1], 1)
+                            dates[self.MDTEXT[CITDATETYPE]][0].setEnabled(True)
+                            dates[self.MDTEXT[CITDATETYPE]][0].setDate(
+                                QDate(int(dt[0]), int(dt[1]), int(dt[2])))
+                            dates[self.MDTEXT[CITDATETYPE]][1].setChecked(True)
+
+                    # Update Reference System Fields
+                    elif i == RS:
+                        if self.MDTEXT[i].isdigit():
+                            crs = QgsCoordinateReferenceSystem(int(self.MDTEXT[i]))
+                            self.dlg.referenceSys.setCrs(crs)
+                        elif 'urn:ogc:def:crs:EPSG::' in self.MDTEXT[i]:
+                            crs = QgsCoordinateReferenceSystem(
+                                int(self.MDTEXT[i].split(
+                                    'urn:ogc:def:crs:EPSG::')[1]))
+                            self.dlg.referenceSys.setCrs(crs)
+                        elif 'EPSG::' in self.MDTEXT[i]:
+                            crs = QgsCoordinateReferenceSystem(
+                                int(self.MDTEXT[i].split('EPSG::')[1]))
+                            self.dlg.referenceSys.setCrs(crs)
+                        else:
+                            if self.MDTEXT[i] in crsList:
+                                crs = QgsCoordinateReferenceSystem(
+                                    crsList[self.MDTEXT[i]])
+                                self.dlg.referenceSys.setCrs(crs)
+                            
+                            else:
+                                print ("WARNING unknown CRS", self.MDTEXT[i])
+                        
+
+                    elif i in RMAINTDATE:
+                        if self.MDTEXT[i] != '':
+                            dt, val, d = ['year', 'month', 'day'], 0, ()
+                            while val < len(self.MDTEXT[i].split('-')):
+                                dt[val] = (dt[val], self.MDTEXT[i].split('-')[val])
+                                val += 1
+                            for val in dt:
+                                if type(val) == tuple: d += (int(val[1]),)
+                                else: d += (01,)
+                            self.dlg.date.setDate(QDate(d[0], d[1], d[2]))
+                            self.dlg.dONUCheck.setChecked(True)
+                            self.dlg.date.setEnabled(True)
+
+                    # Update All Other Text Fields
+                    elif i in self.tF:
+                        # Select Only First Value If Multiple
+                        # - Should only be one if correct.
+                        if type(self.MDTEXT[i]) == tuple:
+                            print ("WARNING found {} for {}, only using {}".
+                                   format(self.MDTEXT[i], i, self.MDTEXT[i][0]))
+                            self.tF[i].setText(self.MDTEXT[i][0])
+                        else:
+                            self.tF[i].setText(self.MDTEXT[i])
+                            
+                    elif i in self.cFS:
+                        if type(self.MDTEXT[i]) == tuple:
+                            print ("WARNING FOUND {} for {}, only using {}".
+                                   format(self.MDTEXT[i], i, self.MDTEXT[i][0]))
+                            val = self.MDTEXT[i][0]
+                        else:
+                            val = self.MDTEXT[i]
+                        found = False
+                        for l in range(self.cFS[i].count()):
+                            if self.cFS[i].itemText(l) == val:
+                                found = True
+                                self.cFS[i].setCurrentIndex(l)
+                        if not found:
+                            self.cFS[i].setCurrentIndex(0)
+
+                    # Update All Other Combo Fields
+                    elif i in self.cF:
+                        if type(self.MDTEXT[i]) == tuple:
+                            # Select Only First Value If Multiple
+                            # - Should only be one if correct.
+                            print ("WARNING found {} for {}, only using {}".
+                                   format(self.MDTEXT[i], i, self.MDTEXT[i][0]))
+                            self.cF[i][0].setCurrentIndex(
+                                self.cF[i][0].findText(self.MDTEXT[i][0]))
+                        else:
+                            self.cF[i][0].setCurrentIndex(
+                                self.cF[i][0].findText(self.MDTEXT[i]))
+
+                    # Else if is Topic Category or Resource or Bounding Box Value(s)
+                    else:
+                        if type(self.MDTEXT[i]) == tuple:
+                            if i == TOPIC:
+                                for item in self.MDTEXT[i]:
+                                    found = self.dlg.topicCategory.findItems(
+                                        item.strip(), Qt.MatchExactly)
+                                    if len(found) > 0:
+                                        self.dlg.topicCategory.setCurrentRow(
+                                            self.dlg.topicCategory.row(found[0]),
+                                            QItemSelectionModel.Select)
+                            elif i == RESOURCELIMIT: res = self.MDTEXT[i]
+                            elif i == RESOURCEUSE:
+                                for k, val in enumerate(self.MDTEXT[i]):
+                                    if val == 'copyright': copy = k
+                                    elif val == 'license': lice = k
+                            elif i == METALIMIT: meta = self.MDTEXT[i]
+                            elif i == METAUSE:
+                                for k, val in enumerate(self.MDTEXT[i]):
+                                    if val == 'copyright': metcopy = k
+                                    elif val == 'license': metlice = k
+                        else:
+                            if i == TOPIC:
+                                item = self.MDTEXT[i]
+                                found = self.dlg.topicCategory.findItems(
+                                    item.strip(), Qt.MatchExactly)
+                                if len(found) > 0:
+                                    self.dlg.topicCategory.setCurrentRow(
+                                        self.dlg.topicCategory.row(found[0]),
+                                        QItemSelectionModel.Select)
+                            elif i == RESOURCELIMIT: res = (self.MDTEXT[i],)
+                            elif i == RESOURCEUSE:
+                                if self.MDTEXT[i] == 'copyright': copy = 0
+                                elif self.MDTEXT[i] == 'license': lice = 0
+                            elif i == METALIMIT: meta = (self.MDTEXT[i],)
+                            elif i == METAUSE:
+                                if self.MDTEXT[i] == 'copyright': metcopy = 0
+                                elif self.MDTEXT[i] == 'license': metlice = 0
+                            elif i == EXTENTBBE:
+                                self.dlg.eastExtent.setText(self.MDTEXT[EXTENTBBE])
+                            elif i == EXTENTBBW:
+                                self.dlg.westExtent.setText(self.MDTEXT[EXTENTBBW])
+                            elif i == EXTENTBBS:
+                                self.dlg.southExtent.setText(self.MDTEXT[EXTENTBBS])
+                            elif i == EXTENTBBN:
+                                self.dlg.northExtent.setText(self.MDTEXT[EXTENTBBN])
+
+            if lice is not None and res is not None and lice < len(res):
+                self.dlg.resourceConLicense.setText(res[lice])
+            if copy is not None and res is not None and copy < len(res):
+                self.dlg.resourceConCopyright.setText(res[copy])
+            if metlice is not None and meta is not None and metlice < len(meta):
+                self.dlg.metadataConLicense.setText(meta[metlice])
+            if metcopy is not None and meta is not None and metcopy < len(meta):
+                self.dlg.metadataConCopyright.setText(meta[metcopy])
         except Exception as e:
-            self.dlg.loadError.setText("Metadata Load Error: {}".format(e))
-            self.dlg.loadError.show()
-            return
-        if 'Metadata' not in md.getroot().tag:
-            self.dlg.loadError.setText("Metadata Load Error, not ISO Metadata")
+            self.dlg.reset_form()
+            self.dlg.loadError.setText(str(e))
             self.dlg.loadError.show()
             return
         
@@ -403,206 +765,8 @@ class LINZ_Metadata:
         # Update window name and reset fields.
         fname = self.dlg.TEMPLATEPATH[self.dlg.TEMPLATEPATH.rfind('/')+1:]
         self.dlg.setWindowTitle("LINZ ANZLIC METADATA - " + fname)
-        self.dlg.referenceSys.setCrs(QgsCoordinateReferenceSystem())
-        self.dlg.reset_form()
         self.dlg.setCurrentIndex(1)
         for i in range(self.dlg.count()): self.dlg.setTabEnabled(i, True)
-
-        # Read through metadata file and set path, text in MDTEXT
-        for m in md.iter():
-            if m.text:
-                key = re.sub('\[+.+?\]', '', md.getpath(m))
-                if key in self.MDTEXT:
-                    if type(self.MDTEXT[key]) == tuple:
-                        self.MDTEXT[key] = self.MDTEXT[key] + (m.text,)
-                    else: self.MDTEXT[key] = (self.MDTEXT[key], m.text)
-                else:
-                    self.MDTEXT[key] = m.text
-
-        # Add Topic Category Selection Values to UI List.
-        for val in topicCategoryValues:
-            self.dlg.topicCategory.addItem(val.strip())
-        self.dlg.topicCategory.sortItems()
-
-        # Add Combo Box Selection Values to UI Combo Fields.
-        for i in FIELDS:
-            if i in self.cF:
-                self.cF[i][0].addItem('')
-                self.cF[i][0].addItems(self.cF[i][1])
-
-        # Update UI Fields based on fields found in Metadata
-        for i in FIELDS:
-            if i in self.MDTEXT:
-                # Update Scale Fields
-                if i == SCALE:
-                    self.dlg.scale.setChecked(True)
-                    self.dlg.scaleRadioButton.setChecked(True)
-                    if ':' in self.MDTEXT[i]:
-                        self.MDTEXT[i] = self.MDTEXT[i].split(':')[1]
-                    self.dlg.scaleWidget.setScaleString("1:" + self.MDTEXT[i])
-
-                elif i == KEYWORDS:
-                    if type(self.MDTEXT[i]) == tuple:
-                        selection = ()
-                        for val in self.MDTEXT[i]:
-                            val = val.replace('-', ' ')
-                            if val[1].isupper():
-                                found = self.dlg.keywordList.findItems(val, Qt.MatchExactly)
-                                if len(found) > 0:
-                                    self.dlg.keywordList.setCurrentRow(self.dlg.keywordList.row(found[0]),QItemSelectionModel.Select)
-                                else:
-                                    print ("WARNING: Invalid Keyword Ignored {}".format(val))
-                            else:
-                                print ('JURISDICTION: ', val)
-                    else:
-                        if self.MDTEXT[i][1].isupper():
-                            found = self.dlg.keywordList.findItems(val, Qt.MatchExactly)
-                            if len(found) > 0:
-                                self.dlg.keywordList.setCurrentRow(self.dlg.keywordList.row(found[0]),QItemSelectionModel.Select)
-                            else:
-                                print ("WARNING: Invalid Keyword Ignored {}".format(val))
-                        else:
-                            print ('JURISDICTION: ', self.MDTEXT[i])
-
-                # Update Resolution Fields
-                elif i == RESOLUTION:
-                    ms = md.find(RESOLUTION[16:], namespaces=NSX).attrib['uom']
-                    self.dlg.scale.setChecked(True)
-                    self.dlg.resolutionRadioButton.setChecked(True)
-                    self.dlg.resolutionText.setText(self.MDTEXT[i])
-                    self.dlg.resolutionUnits.setCurrentIndex(
-                        self.dlg.resolutionUnits.findText(
-                            self.resolutionCode[ms]))
-
-                elif i == CITDATE:
-                    dates = {'creation'     : (self.dlg.resourceCreate, self.dlg.resourceCreateCheck),
-                             'publication'      : (self.dlg.resourcePublish, self.dlg.resourcePublishCheck),
-                             'revision'     : (self.dlg.resourceUpdate, self.dlg.resourceUpdateCheck)}
-                    if type(self.MDTEXT[i]) == tuple:
-                        for num, el in enumerate(self.MDTEXT[i]):
-                            dt = el.split('-')
-                            if len(dt) == 1: dt = (dt[0], 1, 1)
-                            elif len(dt) == 2: dt = (dt[0], dt[1], 1)
-                            dates[self.MDTEXT[CITDATETYPE][num]][0].setEnabled(True)
-                            dates[self.MDTEXT[CITDATETYPE][num]][0].setDate(QDate(int(dt[0]), int(dt[1]), int(dt[2])))
-                            dates[self.MDTEXT[CITDATETYPE][num]][1].setChecked(True)
-                    else:
-                        dt = self.MDTEXT[i].split('-')
-                        if len(dt) == 1: dt = (dt[0], 1, 1)
-                        elif len(dt) == 2: dt = (dt[0], dt[1], 1)
-                        dates[self.MDTEXT[CITDATETYPE]][0].setEnabled(True)
-                        dates[self.MDTEXT[CITDATETYPE]][0].setDate(QDate(int(dt[0]), int(dt[1]), int(dt[2])))
-                        dates[self.MDTEXT[CITDATETYPE]][1].setChecked(True)
-
-                # Update Reference System Fields
-                elif i == RS:
-                    if self.MDTEXT[i].isdigit():
-                        crs = QgsCoordinateReferenceSystem(int(self.MDTEXT[i]))
-                    elif 'urn:ogc:def:crs:EPSG::' in self.MDTEXT[i]:
-                        crs = QgsCoordinateReferenceSystem(
-                            int(self.MDTEXT[i].split(
-                                'urn:ogc:def:crs:EPSG::')[1]))
-                    else:
-                        if self.MDTEXT[i] in crsList:
-                            crs = QgsCoordinateReferenceSystem(
-                                crsList[self.MDTEXT[i]])
-                        
-                        else:
-                            print ("WARNING unknown CRS", self.MDTEXT[i])
-                    self.dlg.referenceSys.setCrs(crs)
-
-                elif i in RMAINTDATE:
-                    if self.MDTEXT[i] != '':
-                        dt, val, d = ['year', 'month', 'day'], 0, ()
-                        while val < len(self.MDTEXT[i].split('-')):
-                            dt[val] = (dt[val], self.MDTEXT[i].split('-')[val])
-                            val += 1
-                        for val in dt:
-                            if type(val) == tuple: d += (int(val[1]),)
-                            else: d += (01,)
-                        self.dlg.date.setDate(QDate(d[0], d[1], d[2]))
-                        self.dlg.dONUCheck.setChecked(True)
-                        self.dlg.date.setEnabled(True)
-
-                # Update All Other Text Fields
-                elif i in self.tF:
-                    # Select Only First Value If Multiple
-                    # - Should only be one if correct.
-                    if type(self.MDTEXT[i]) == tuple:
-                        print ("WARNING found {} for {}, only using {}".
-                               format(self.MDTEXT[i], i, self.MDTEXT[i][0]))
-                        self.tF[i].setText(self.MDTEXT[i][0])
-                    else:
-                        self.tF[i].setText(self.MDTEXT[i])
-
-                # Update All Other Combo Fields
-                elif i in self.cF:
-                    if type(self.MDTEXT[i]) == tuple:
-                        # Select Only First Value If Multiple
-                        # - Should only be one if correct.
-                        print ("WARNING found {} for {}, only using {}".
-                               format(self.MDTEXT[i], i, self.MDTEXT[i][0]))
-                        self.cF[i][0].setCurrentIndex(
-                            self.cF[i][0].findText(self.MDTEXT[i][0]))
-                    else:
-                        self.cF[i][0].setCurrentIndex(
-                            self.cF[i][0].findText(self.MDTEXT[i]))
-
-                # Else if is Topic Category or Resource or Bounding Box Value(s)
-                else:
-                    if type(self.MDTEXT[i]) == tuple:
-                        if i == TOPIC:
-                            for item in self.MDTEXT[i]:
-                                found = self.dlg.topicCategory.findItems(
-                                    item.strip(), Qt.MatchExactly)
-                                if len(found) > 0:
-                                    self.dlg.topicCategory.setCurrentRow(
-                                        self.dlg.topicCategory.row(found[0]),
-                                        QItemSelectionModel.Select)
-                        elif i == RESOURCELIMIT: res = self.MDTEXT[i]
-                        elif i == RESOURCEUSE:
-                            for k, val in enumerate(self.MDTEXT[i]):
-                                if val == 'copyright': copy = k
-                                elif val == 'license': lice = k
-                        elif i == METALIMIT: meta = self.MDTEXT[i]
-                        elif i == METAUSE:
-                            for k, val in enumerate(self.MDTEXT[i]):
-                                if val == 'copyright': metcopy = k
-                                elif val == 'license': metlice = k
-                    else:
-                        if i == TOPIC:
-                            item = self.MDTEXT[i]
-                            found = self.dlg.topicCategory.findItems(
-                                item.strip(), Qt.MatchExactly)
-                            if len(found) > 0:
-                                self.dlg.topicCategory.setCurrentRow(
-                                    self.dlg.topicCategory.row(found[0]),
-                                    QItemSelectionModel.Select)
-                        elif i == RESOURCELIMIT: res = (self.MDTEXT[i],)
-                        elif i == RESOURCEUSE:
-                            if self.MDTEXT[i] == 'copyright': copy = 0
-                            elif self.MDTEXT[i] == 'license': lice = 0
-                        elif i == METALIMIT: meta = (self.MDTEXT[i],)
-                        elif i == METAUSE:
-                            if self.MDTEXT[i] == 'copyright': metcopy = 0
-                            elif self.MDTEXT[i] == 'license': metlice = 0
-                        elif i == EXTENTBBE:
-                            self.dlg.eastExtent.setText(self.MDTEXT[EXTENTBBE])
-                        elif i == EXTENTBBW:
-                            self.dlg.westExtent.setText(self.MDTEXT[EXTENTBBW])
-                        elif i == EXTENTBBS:
-                            self.dlg.southExtent.setText(self.MDTEXT[EXTENTBBS])
-                        elif i == EXTENTBBN:
-                            self.dlg.northExtent.setText(self.MDTEXT[EXTENTBBN])
-
-        if lice is not None and res is not None and lice < len(res):
-            self.dlg.resourceConLicense.setText(res[lice])
-        if copy is not None and res is not None and copy < len(res):
-            self.dlg.resourceConCopyright.setText(res[copy])
-        if metlice is not None and meta is not None and metlice < len(meta):
-            self.dlg.metadataConLicense.setText(meta[metlice])
-        if metcopy is not None and meta is not None and metcopy < len(meta):
-            self.dlg.metadataConCopyright.setText(meta[metcopy])
 
     def formatSummary(self, tree):
         ''' Write fields to the formatted summary tab.
@@ -618,7 +782,7 @@ class LINZ_Metadata:
                           CITDATETYPE, LINEAGE, LINKAGE, KEYWORDS, TOPIC)
         systemInfo = (RS, STATUS, RMAINTCODE, RMAINTDATE, SPATIALREP, SCALE,
                       RESOLUTION, EXTENTDES, EXTENTBBW, EXTENTBBE, EXTENTBBN,
-                      EXTENTBBS)
+                      EXTENTBBS, TEMPORALSINGLE, TEMPORALBEGIN, TEMPORALEND)
         rconstraints = (CLASSIFCODE, RESOURCELIMIT, RESOURCEUSE)
         mconstraints = (MCLASSIFCODE, METALIMIT, METAUSE)
         gen, mA, rA, rF, sI, rcon, mcon = (), (), (), (), (), (), ()
@@ -664,11 +828,13 @@ class LINZ_Metadata:
         self.dlg.metadataTable.setColumnWidth(0, 210)
         self.dlg.metadataTable.setWordWrap(True)
         font = QFont('Noto Sans', 14, weight=QFont.Bold, italic=True)
-        boundingBox = ('East Bound Longitude', 'West Bound Longitude', 'South Bound Latitude', 'North Bound Latitude')
+        boundingBox = ('East Bound Longitude', 'West Bound Longitude',
+                       'South Bound Latitude', 'North Bound Latitude')
         # Update formatted table to include text and text 'title' values.
         while values < len(vals):
             if type(vals[values]) == str:
-                self.dlg.metadataTable.setItem(k, 0, QTableWidgetItem(vals[values]))
+                self.dlg.metadataTable.setItem(
+                    k, 0, QTableWidgetItem(vals[values]))
                 self.dlg.metadataTable.item(k, 0).setFont(font)
                 k += 1
             else:
@@ -679,13 +845,14 @@ class LINZ_Metadata:
                         item0 += ' - ' + vals[values][num+1][1].title()
                     elif i[0] == 'Code' and i[1].isdigit():
                         add, item0 = True, 'Reference System'
-                        item1 += ' - ' + self.dlg.referenceSys.crs().description()
+                        item1 += ' - '+self.dlg.referenceSys.crs().description()
                     elif i[0] == 'Code':
                         add, item0 = True, 'Extent Description'
                     elif i[0] in boundingBox:
                         add, item0 = True, '      ' + i[0] 
                         if i[0] == 'West Bound Longitude':
-                            self.dlg.metadataTable.setItem(k, 0, QTableWidgetItem('Extent Bounding Box'))
+                            self.dlg.metadataTable.setItem(
+                                k, 0, QTableWidgetItem('Extent Bounding Box'))
                             k += 1
                     elif i[0] == 'Classification':
                         add, item0 = True, 'Security Classification'
@@ -695,8 +862,10 @@ class LINZ_Metadata:
                     elif i[0] != 'Date Type' and i[0] != 'Use Constraints':
                         add = True
                     if add:
-                        self.dlg.metadataTable.setItem(k, 1, QTableWidgetItem(item1))
-                        self.dlg.metadataTable.setItem(k, 0, QTableWidgetItem(item0))
+                        self.dlg.metadataTable.setItem(
+                            k, 1, QTableWidgetItem(item1))
+                        self.dlg.metadataTable.setItem(
+                            k, 0, QTableWidgetItem(item0))
                         k += 1
             values += 1
         self.dlg.metadataTable.resizeRowsToContents()
@@ -735,7 +904,9 @@ class LINZ_Metadata:
             insert = (i[17:].split(found)[1][1:])
             f = tree.find(found, namespaces=NSX)
             
-        if insert == "" and many is not None:
+        if insert == "" and many is not None or                          \
+           many is not None and 'extent' in i and 'Bounding' not in i or \
+           many is not None and 'extent' in i and 'west' in i:
             if many == tree.getroot():
                 insert = found
                 f = tree.getroot()
@@ -758,7 +929,7 @@ class LINZ_Metadata:
                 code.attrib['codeListValue'] = constraint
                 code.text = constraint
                 f.addnext(sib)
-        if 'gco' not in f.tag and 'URL' not in f.tag:
+        if 'gco' not in f.tag and 'URL' not in f.tag and 'Position' not in f.tag and 'Topic' not in f.tag:
             f.attrib['codeList'] = codeUrl + f.tag[f.tag.rfind('}')+1:]
             f.attrib['codeListValue'] = text
         f.text = text
@@ -767,183 +938,328 @@ class LINZ_Metadata:
     def writeXML(self):
         ''' Iterate through fields and set them in xml tree from UI fields.
         '''
-        md = etree.Element('{http://www.isotc211.org/2005/gmd}MD_Metadata',
-                           nsmap=NSX)
-        tree = etree.ElementTree(md)
+        try:
+            md = etree.Element('{http://www.isotc211.org/2005/gmd}MD_Metadata',
+                               nsmap=NSX)
+            tree = etree.ElementTree(md)
 
-        for i in FIELDS:
-            # Update Scale Field
-            if i == FID and self.dlg.outputFile.toPlainText() != '':
-                tree = self.write(i, tree, str(uuid.uuid4()))
-            elif i == DSTAMP and self.dlg.outputFile.toPlainText() != '':
-                date = QDate.currentDate().toString('yyyy-MM-dd')
-                tree = self.write(i, tree, date)
-            elif i == SCALE                 and \
-               self.dlg.scale.isChecked() and \
-               self.dlg.scaleRadioButton.isChecked():
-                tree = self.write(
-                    i,tree,self.dlg.scaleWidget.scaleString().replace(',', ''))
-
-            # Update Resolution Fields
-            elif i == RESOLUTION            and \
-                 self.dlg.scale.isChecked() and \
-                 self.dlg.resolutionRadioButton.isChecked():
-                tree=self.write(i, tree, self.dlg.resolutionText.toPlainText())
-                for i in self.resolutionCode:
-                    if self.resolutionCode[i] == \
-                       self.dlg.resolutionUnits.currentText():
-                        res = tree.find(RESOLUTION[16:], namespaces=NSX)
-                        res.attrib['uom'] = i
-
-            # Update Reference System Field
-            elif i == RS and self.dlg.referenceSys.crs().authid() !=  "":
-                tree = self.write(
-                    i, tree, self.dlg.referenceSys.crs().authid().split(':')[1])
-
-            # Update Text Fields
-            elif i in self.tF and self.tF[i].toPlainText() != '':
-                tree = self.write(i, tree, self.tF[i].toPlainText())
-
-            # Update Combo Fields
-            elif i in self.cF and self.cF[i][0].currentText() != '':
-                tree = self.write(i, tree, self.cF[i][0].currentText())
-
-            # Update Hierarchy Level Name, based on Hierarchy Level
-            elif i == HLEVELNAME and self.cF[HLEVEL][0].currentText() != '':
-                tree = self.write(i, tree, self.cF[HLEVEL][0].currentText())
-
-            # Update Scope based on Hierarchy Level
-            elif i == SCOPE and self.cF[HLEVEL][0].currentText() != '':
-                tree = self.write(i, tree, self.cF[HLEVEL][0].currentText())
-
-            # Update Scope Description based on Hierarchy Level
-            elif i == SCOPEDESC and self.cF[HLEVEL][0].currentText() != '':
-                tree = self.write(i, tree, self.cF[HLEVEL][0].currentText())
-
-            # Update Topic Category(s)
-            elif i == TOPIC:
-                for j in self.dlg.topicCategory.selectedItems():
+            for i in FIELDS:
+                if i == FID and self.dlg.outputFile.toPlainText() != '':
+                    tree = self.write(i, tree, str(uuid.uuid4()))
+                elif i == DSTAMP and self.dlg.outputFile.toPlainText() != '':
+                    date = QDate.currentDate().toString('yyyy-MM-dd')
+                    tree = self.write(i, tree, date,'gmd:identificationInfo/gmd' + \
+                                      ':MD_DataIdentification')
+                elif i == SCALE                 and \
+                   self.dlg.scale.isChecked() and \
+                   self.dlg.scaleRadioButton.isChecked():
                     tree = self.write(
-                        i, tree, j.text(),
-                        'gmd:identificationInfo/gmd:MD_DataIdentification')
+                        i,tree,self.dlg.scaleWidget.scaleString().replace(',', '').split('1:')[1])
 
-            elif i == RMAINTDATE:
-                if self.dlg.date.isEnabled() == True:
-                    date = self.dlg.date.date().toString('yyyy-MM')
-                    tree = self.write(i, tree, date)
+                # Update Resolution Fields
+                elif i == RESOLUTION            and \
+                     self.dlg.scale.isChecked() and \
+                     self.dlg.resolutionRadioButton.isChecked():
+                    tree=self.write(i, tree, self.dlg.resolutionText.toPlainText())
+                    for i in self.resolutionCode:
+                        if self.resolutionCode[i] == \
+                           self.dlg.resolutionUnits.currentText():
+                            res = tree.find(RESOLUTION[16:], namespaces=NSX)
+                            res.attrib['uom'] = i
 
-            # Update Resource Constraints
-            elif i == RESOURCELIMIT:
-                if self.dlg.resourceConLicense.toPlainText() != '':
-                    tree = self.write(i, tree,
-                                      self.dlg.resourceConLicense.toPlainText(),
-                                      'gmd:identificationInfo/gmd:MD_' + \
-                                      'DataIdentification',constraint='license')
-                if self.dlg.resourceConCopyright.toPlainText() != '':
-                    tree=self.write(i, tree,
-                                    self.dlg.resourceConCopyright.toPlainText(),
-                                    'gmd:identificationInfo/gmd:MD_' + \
-                                    'DataIdentification',constraint='copyright')
+                # Update Reference System Field
+                elif i == RS and self.dlg.referenceSys.crs().authid() !=  "":
+                    tree = self.write(
+                        i, tree, self.dlg.referenceSys.crs().authid().split(':')[1])
 
-            # Update Metadata Constraints
-            elif i == METALIMIT:
-                if self.dlg.metadataConLicense.toPlainText() != '':
-                    tree = self.write(i, tree,
-                                      self.dlg.metadataConLicense.toPlainText(),
-                                      tree.getroot(), constraint='license')
-                if self.dlg.metadataConCopyright.toPlainText() != '':
-                    tree=self.write(i, tree,
-                                    self.dlg.metadataConCopyright.toPlainText(),
-                                    tree.getroot(), constraint='copyright')
+                # Update Text Fields
+                elif i in self.tF and self.tF[i].toPlainText() != '':
+                    tree = self.write(i, tree, self.tF[i].toPlainText())
 
-            # Update Keyword or Date Fields
-            elif i in self.MDTEXT       and \
-                 'Constraint' not in i  and \
-                 i != RS                and \
-                 i != HLEVELNAME        and \
-                 i != SCOPE             and \
-                 i != SCOPEDESC:
-                dateUrl = 'http://standards.iso.org/ittf/PubliclyAvailable'  + \
-                      'Standards/ISO_19139_Schemas/resources/Codelist/gmx'   + \
-                      'Codelists.xml#CI_DateTypeCode'
-                keywordUrl = 'http://standards.iso.org/ittf/Publicly'        + \
-                             'AvailableStandards/ISO_19139_Schemas/resources'+ \
-                             '/Codelist/gmxCodelists.xml#MD_KeywordTypeCode'
-                if type(self.MDTEXT[i]) == tuple:
-                    if i == CITDATE or i == CITDATETYPE:
-                        if i == CITDATE:
-                            for j in self.MDTEXT[i]:
-                                tree=self.write(
-                                    i, tree, j,
-                                    'gmd:identificationInfo/gmd:MD_DataId' + \
-                                    'entification/gmd:citation/gmd:CI_Citation')
-                        else:
-                            dates = tree.findall(CITDATE[16:], namespaces=NSX)
-                            for num, j in enumerate(self.MDTEXT[i]):
-                                dateEl = etree.Element(
-                                    etree.QName(NSX['gmd'], 'dateType'))
-                                dateElCode=etree.SubElement(
-                                    dateEl,
-                                    etree.QName(NSX['gmd'], 'CI_DateTypeCode'))
-                                dateElCode.attrib['codeList'] = dateUrl
-                                dateElCode.attrib['codeListValue'] = j
-                                dateElCode.text = j
-                                dates[num].getparent().addnext(dateEl)
+                elif i in self.cFS and self.cFS[i].currentText() != '':
+                    tree = self.write(i, tree, self.cFS[i].currentText())
 
-                    elif i == KEYWORDS or i == KEYWORDSTYPE:
-                        if i == KEYWORDS:
-                            tree = self.write(i, tree, 'New Zealand', 'gmd:identificationInfo/gmd:MD_DataIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords')
+                # Update Combo Fields
+                elif i in self.cF and self.cF[i][0].currentText() != '':
+                    if 'extent' in i:
+                        tree = self.write(i, tree, self.cF[i][0].currentText(), 'gmd:identificationInfo/gmd:MD_DataIdentification')
+                        auth = etree.Element(etree.QName(NSX['gmd'], 'authority'))
+                        ci = etree.SubElement(auth, etree.QName(NSX['gmd'], 'CI_Citation'))
+                        ti = etree.SubElement(ci, etree.QName(NSX['gmd'], 'Title'))
+                        cs = etree.SubElement(ti, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'ANZLIC Geographic Extent Name Register'
+                        dt = etree.SubElement(ci, etree.QName(NSX['gmd'], 'date'))
+                        cidt = etree.SubElement(dt, etree.QName(NSX['gmd'], 'CI_Date'))
+                        dt2 = etree.SubElement(cidt, etree.QName(NSX['gmd'], 'date'))
+                        Dt = etree.SubElement(dt2, etree.QName(NSX['gco'], 'Date'))
+                        Dt.text = '2006-10-10'
+                        dttp = etree.SubElement(cidt, etree.QName(NSX['gmd'], 'dateType'))
+                        cidttp = etree.SubElement(dttp, etree.QName(NSX['gmd'], 'CI_DateTypeCode'))
+                        cidttp.text = 'publication'
+                        cidttp.attrib['codeList'] = 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode'
+                        cidttp.attrib['codeListValue'] = 'publication'
+                        ed = etree.SubElement(ci, etree.QName(NSX['gmd'], 'edition'))
+                        cs = etree.SubElement(ed, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'Version 2'
+                        edDt = etree.SubElement(ci, etree.QName(NSX['gmd'], 'editionDate'))
+                        Dt = etree.SubElement(edDt, etree.QName(NSX['gco'], 'Date'))
+                        Dt.text = '2001-02'
+                        ide = etree.SubElement(ci, etree.QName(NSX['gmd'], 'identifier'))
+                        mdId = etree.SubElement(ide, etree.QName(NSX['gmd'], 'MD_Identifer'))
+                        cde = etree.SubElement(mdId, etree.QName(NSX['gmd'], 'code'))
+                        cs = etree.SubElement(cde, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'http://asdd.ga.gov.au/asdd/profileinfo/anzlic-allgens.xml#new_zealand'
+                        cRP = etree.SubElement(ci, etree.QName(NSX['gmd'], 'citedResponsibleParty'))
+                        org = etree.SubElement(cRP, etree.QName(NSX['gmd'], 'organisationName'))
+                        cs = etree.SubElement(org, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'ANZLIC the Spatial Information Council'
+                        rle = etree.SubElement(cRP, etree.QName(NSX['gmd'], 'role'))
+                        cirlc = etree.SubElement(rle, etree.QName(NSX['gmd'], 'CI_RoleCode'))
+                        cirlc.text = 'custodian'
+                        cirlc.attrib['codeList'] = 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode'
+                        cirlc.attrib['codeListValue'] = 'custodian'
+                        mdid = tree.find(i[17:], namespaces=NSX)
+                        mdid.getparent().addprevious(auth)
+                    else:
+                        tree = self.write(i, tree, self.cF[i][0].currentText())
+
+                # Update Hierarchy Level Name, based on Hierarchy Level
+                elif i == HLEVELNAME and self.cF[HLEVEL][0].currentText() != '':
+                    tree = self.write(i, tree, self.cF[HLEVEL][0].currentText())
+
+                # Update Scope based on Hierarchy Level
+                elif i == SCOPE and self.cF[HLEVEL][0].currentText() != '':
+                    tree = self.write(i, tree, self.cF[HLEVEL][0].currentText())
+
+                # Update Scope Description based on Hierarchy Level
+                elif i == SCOPEDESC and self.cF[HLEVEL][0].currentText() != '':
+                    tree = self.write(i, tree, self.cF[HLEVEL][0].currentText())
+
+                # Update Topic Category(s)
+                elif i == TOPIC:
+                    for j in self.dlg.topicCategory.selectedItems():
+                        tree = self.write(
+                            i, tree, j.text(),
+                            'gmd:identificationInfo/gmd:MD_DataIdentification')
+
+                elif i == RMAINTDATE:
+                    if self.dlg.date.isEnabled() == True:
+                        date = self.dlg.date.date().toString('yyyy-MM')
+                        tree = self.write(i, tree, date)
+
+                # Update Resource Constraints
+                elif i == RESOURCELIMIT:
+                    if self.dlg.resourceConLicense.toPlainText() != '':
+                        tree = self.write(i, tree,
+                                          self.dlg.resourceConLicense.toPlainText(),
+                                          'gmd:identificationInfo/gmd:MD_' + \
+                                          'DataIdentification/gmd:resourceConstraints',constraint='license')
+                    if self.dlg.resourceConCopyright.toPlainText() != '':
+                        tree=self.write(i, tree,
+                                        self.dlg.resourceConCopyright.toPlainText(),
+                                        'gmd:identificationInfo/gmd:MD_' + \
+                                        'DataIdentification/gmd:resourceConstraints',constraint='copyright')
+
+                # Update Metadata Constraints
+                elif i == METALIMIT:
+                    if self.dlg.metadataConLicense.toPlainText() != '':
+                        tree = self.write(i, tree,
+                                          self.dlg.metadataConLicense.toPlainText(),
+                                          'gmd:metadataConstraints', constraint='license')
+                    if self.dlg.metadataConCopyright.toPlainText() != '':
+                        tree=self.write(i, tree,
+                                        self.dlg.metadataConCopyright.toPlainText(),
+                                        'gmd:metadataConstraints', constraint='copyright')
+
+                elif i == TEMPORALSINGLE or i == TEMPORALBEGIN:
+                    if i == TEMPORALSINGLE and not \
+                       self.dlg.endDateCheck.isChecked() or \
+                       i == TEMPORALBEGIN and self.dlg.endDateCheck.isChecked():
+                        if self.dlg.temporalCheck.isChecked():
+                            date = self.dlg.startDate.date().toString('yyyy-MM-dd')
+                            if self.dlg.startTimeCheck.isChecked():
+                                date += 'T' + self.dlg.startTime.time().toString(
+                                    'hh:mm:ss')
+                            tree = self.write(i, tree, date, 'gmd:identification'+ \
+                                              'Info/gmd:MD_DataIdentification')
+                elif i == TEMPORALEND:
+                    if self.dlg.temporalCheck.isChecked() and \
+                       self.dlg.endDateCheck.isChecked():
+                        date = self.dlg.endDate.date().toString('yyyy-MM-dd')
+                        if self.dlg.endTimeCheck.isChecked():
+                            date += 'T' + self.dlg.endTime.time().toString(
+                                'hh:mm:ss')
+                        tree = self.write(i, tree, date, 'gmd:identificationInfo/'+\
+                                          'gmd:MD_DataIdentification/gmd:extent/' +\
+                                          'gmd:EX_Extent/gmd:temporalElement/gmd' +\
+                                          ':EX_TemporalExtent/gmd:extent/gml:'    +\
+                                          'TimePeriod')
+
+                elif i == KEYWORDS or i == KEYWORDSTYPE:
+                    if i == KEYWORDS:
+                        keywordUrl = 'http://standards.iso.org/ittf/Publicly'    + \
+                                     'AvailableStandards/ISO_19139_Schemas/'     + \
+                                     'resources/Codelist/gmxCodelists.xml#MD'    + \
+                                     '_KeywordTypeCode'
+                        tree = self.write(i, tree, 'New Zealand', 'gmd:'         + \
+                                          'identificationInfo/gmd:MD_Data'       + \
+                                          'Identification/gmd:descriptiveKeywords'+\
+                                          '/gmd:MD_Keywords')
+                        
+                        kt = etree.Element(etree.QName(NSX['gmd'], 'type'))
+                        ktc= etree.SubElement(kt, etree.QName(NSX['gmd'],
+                                                              'MD_KeywordTypeCode'))
+                        ktc.attrib['codeList'] = keywordUrl
+                        ktc.attrib['codeListValue'] = 'theme'
+                        h = tree.find(i[17:], namespaces=NSX)
+                        h.getparent().addnext(kt)
+                        
+                        tName = etree.Element(etree.QName(NSX['gmd'], 'thesaurusName'))
+                        ciCit = etree.SubElement(tName, etree.QName(NSX['gmd'], 'CI_Citation'))
+                        ti = etree.SubElement(ciCit, etree.QName(NSX['gmd'], 'title'))
+                        cs = etree.SubElement(ti, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'ANZLIC Jurisdictions'
+                        dte = etree.SubElement(ciCit, etree.QName(NSX['gmd'], 'date'))
+                        cidte = etree.SubElement(dte, etree.QName(NSX['gmd'], 'CI_Date'))
+                        dte2 = etree.SubElement(cidte, etree.QName(NSX['gmd'], 'date'))
+                        Dte = etree.SubElement(dte2, etree.QName(NSX['gco'], 'Date'))
+                        Dte.text = '2008-10-29'
+                        dtetp = etree.SubElement(cidte, etree.QName(NSX['gmd'], 'dateType'))
+                        cidtetyp = etree.SubElement(dtetp, etree.QName(NSX['gmd'], 'CI_DateTypeCode'))
+                        cidtetyp.text = 'revision'
+                        cidtetyp.attrib['codeList'] = 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode'
+                        cidtetyp.attrib['codeListValue'] = 'revision'
+                        ed = etree.SubElement(ciCit, etree.QName(NSX['gmd'], 'edition'))
+                        cs = etree.SubElement(ed, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'Version 2.1'
+                        edDte = etree.SubElement(ciCit, etree.QName(NSX['gmd'], 'editionDate'))
+                        dt = etree.SubElement(edDte, etree.QName(NSX['gco'], 'Date'))
+                        dt.text = '2008-10-29'
+                        iden = etree.SubElement(ciCit, etree.QName(NSX['gmd'], 'identifier'))
+                        mdId = etree.SubElement(iden, etree.QName(NSX['gmd'], 'MD_Identifier'))
+                        cde = etree.SubElement(mdId, etree.QName(NSX['gmd'], 'code'))
+                        cs = etree.SubElement(cde, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'http://asdd.ga.gov.au/asdd/profileinfo/anzlic-jurisdic.xml#anzlic-jurisdic'
+                        cRP = etree.SubElement(ciCit, etree.QName(NSX['gmd'], 'citedResponsibleParty'))
+                        ciCRP = etree.SubElement(cRP, etree.QName(NSX['gmd'], 'CI_ResponsibleParty'))
+                        org = etree.SubElement(ciCRP, etree.QName(NSX['gmd'], 'organisationName'))
+                        cs = etree.SubElement(org, etree.QName(NSX['gco'], 'CharacterString'))
+                        cs.text = 'ANZLIC the Spatial Information Council'
+                        rle = etree.SubElement(ciCRP, etree.QName(NSX['gmd'], 'role'))
+                        cirlcd = etree.SubElement(rle, etree.QName(NSX['gmd'] ,'CI_RoleCode'))
+                        cirlcd.text = 'custodian'
+                        cirlcd.attrib['codeList'] = 'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode'
+                        cirlcd.attrib['codeListValue'] = 'custodian'
+                        
+                        kt.addnext(tName)
+
+                        found = False
+                        for j in self.dlg.keywordList.selectedItems():
+                            found = True
+                            tree = self.write(i, tree, j.text().replace(' ', '-'),
+                                              'gmd:identificationInfo/gmd:MD_Data'+\
+                                              'Identification/gmd:descriptive'   + \
+                                              'Keywords/gmd:MD_Keywords')
+                        if found:
                             kt = etree.Element(etree.QName(NSX['gmd'], 'type'))
-                            ktc = etree.SubElement(kt, etree.QName(NSX['gmd'], 'MD_KeywordTypeCode'))
+                            ktc = etree.SubElement(kt, etree.QName(
+                                NSX['gmd'], 'MD_KeywordTypeCode'))
                             ktc.attrib['codeList'] = keywordUrl
                             ktc.attrib['codeListValue'] = 'theme'
-                            h = tree.find(i[17:], namespaces=NSX)
-                            h.getparent().addnext(kt)
-                            # & ADD Thesaurus here
-                            found = False
-                            for j in self.dlg.keywordList.selectedItems():
-                                found = True
-                                tree = self.write(i, tree, j.text().replace(' ', '-'), 'gmd:identificationInfo/gmd:MD_DataIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords')
-                            if found:
-                                kt = etree.Element(etree.QName(NSX['gmd'], 'type'))
-                                ktc = etree.SubElement(kt, etree.QName(NSX['gmd'], 'MD_KeywordTypeCode'))
-                                ktc.attrib['codeList'] = keywordUrl
-                                ktc.attrib['codeListValue'] = 'theme'
-                                tree.findall(i[17:], namespaces=NSX)[len(tree.findall(i[17:], namespaces=NSX))-1].getparent().addnext(kt)
-                    else:
-                        print("WARNING: UNKNOWN TUPLE WHEN DEFAULT: {}, {}",
-                              i, self.MDTEXT[i])
-                # Update Any other fields that are not empty.
-                elif self.MDTEXT[i] != '' and i not in SETFIELDS:
-                    tree = self.write(i, tree, self.MDTEXT[i])
+                            tree.findall(i[17:], namespaces=NSX)[
+                                len(tree.findall(
+                                    i[17:],
+                                    namespaces=NSX))-1].getparent().addnext(kt)
 
-        # Create New Metadata File
-        md_text = etree.tostring(md, pretty_print=True,
-                                 xml_declaration=True, encoding='utf-8')
-        with open(TEMPFILE, 'w') as f:
-            f.write(md_text)
+                elif i == CITDATE or i == CITDATETYPE:
+                    if i == CITDATE:
+                        dateUrl = 'http://standards.iso.org/ittf/Publicly' + \
+                                  'AvailableStandards/ISO_19139_Schemas/'  + \
+                                  'resources/Codelist/gmxCodelists.xml#CI' + \
+                                  '_DateTypeCode'
+                        
+                        codeListVal = {self.dlg.resourceCreateCheck  :
+                                       ('creation', self.dlg.resourceCreate),
+                                       self.dlg.resourceUpdateCheck  :
+                                       ('revision', self.dlg.resourceUpdate),
+                                       self.dlg.resourcePublishCheck :
+                                       ('publication', self.dlg.resourcePublish)}
 
-        # Create XML Summary
-        self.dlg.summary.setText(md_text.decode("utf-8"))
+                        for val in (self.dlg.resourceCreateCheck,
+                                    self.dlg.resourcePublishCheck,
+                                    self.dlg.resourceUpdateCheck):
+                            if val.isChecked():
+                                date = codeListVal[val][1].date().toString(
+                                    'yyyy-MM-dd')
+                                tree = self.write(i, tree, date,
+                                                  'gmd:identificationInfo/gmd:' + \
+                                                  'MD_DataIdentification/gmd:'  + \
+                                                  'citation/gmd:CI_Citation')
+                                citD = etree.Element(etree.QName(NSX['gmd'],
+                                                                 'dateType'))
+                                citDCode = etree.SubElement(citD,
+                                                            etree.QName(
+                                                                NSX['gmd'],
+                                                                'CI_DateTypeCode'))
+                                citDCode.attrib['codeList'] = dateUrl
+                                citDCode.attrib['codeListValue']=codeListVal[val][0]
+                                citDCode.text = codeListVal[val][0]
+                                tree.findall(i[17:], namespaces=NSX)[
+                                    len(tree.findall(
+                                        i[17:],
+                                        namespaces=NSX))-1].getparent().addnext(citD)
 
-        # Create Formatted Summary
-        self.formatSummary(tree)
+                elif i in self.MDTEXT       and \
+                     'Constraint' not in i  and \
+                     i != RS                and \
+                     i != HLEVELNAME        and \
+                     i != SCOPE             and \
+                     i != SCOPEDESC:
+                    # Update Any other fields that are not empty.
+                    if type(self.MDTEXT[i]) != tuple and \
+                       self.MDTEXT[i] != '' and \
+                       i not in SETFIELDS:
+                        if 'extent' in i:
+                            tree = self.write(i, tree, self.MDTEXT[i],
+                                              'gmd:identificationInfo/gmd:MD' + \
+                                              '_DataIdentification')
+                        else:
+                            tree = self.write(i, tree, self.MDTEXT[i])
+
+            # Create New Metadata File
+            md_text = etree.tostring(md, pretty_print=True,
+                                     xml_declaration=True, encoding='utf-8')
+            with open(TEMPFILE, 'w') as f:
+                f.write(md_text)
+
+            # Create XML Summary
+            self.dlg.summary.setText(md_text.decode("utf-8"))
+
+            # Create Formatted Summary
+            self.formatSummary(tree)
+
+        except Exception as e:
+            raise Exception("Write Error: " + str(e))
+            
         
 
     def done(self):
         ''' create metadata clicked '''
         # Clear validation and update output file.
         self.dlg.validationLog.clear()
-        # TODO: COPY TEMPFILE to OUTPUTFILE
-        copyfile(TEMPFILE, self.dlg.OUTPUTFILE)
-        os.remove(TEMPFILE)
+        try:
+            copyfile(TEMPFILE, self.dlg.OUTPUTFILE)
+            os.remove(TEMPFILE)
+        except Exception as e:
+            self.dlg.validationLog.setText("XML Creation Error: " + str(e))
+            return
         if self.dlg.OUTPUTFILE == self.dlg.TEMPLATEPATH:
             self.dlg.validationLog.setText('Metadata "{}" Edited'.
                                            format(self.dlg.OUTPUTFILE))
         else:
             self.dlg.validationLog.setText('Metadata "{}" Created'.
                                            format(self.dlg.OUTPUTFILE))
-        self.dlg.createMetadata.setEnabled(False)
+        self.dlg.createMetadata.setEnabled(False)        
 
     def toggleDate(self, state):
         ''' date of next update check box state changed '''
@@ -962,75 +1278,226 @@ class LINZ_Metadata:
         if checked:
             self.dlg.scaleWidget.setEnabled(True)
             self.dlg.resolutionText.setEnabled(False)
-            self.dlg.resolutionText.clear
-            self.dlg.resolutionUnits.setCurrentIndex(0)
             self.dlg.resolutionUnits.setEnabled(False)
         else:
             self.dlg.scaleWidget.setEnabled(False)
-            self.dlg.scaleWidget.setScaleString("0")
             self.dlg.resolutionText.setEnabled(True)
             self.dlg.resolutionUnits.setEnabled(True)
+
+    def toggleTemporal(self, state):
+        ''' temporal check box state changed. '''
+        if state > 0:
+            self.dlg.startDate.setEnabled(True)
+            self.dlg.startTimeCheck.setEnabled(True)
+            self.dlg.endDateCheck.setEnabled(True)
+        else:
+            self.dlg.startDate.setEnabled(False)
+            self.dlg.startTimeCheck.setChecked(False)
+            self.dlg.startTimeCheck.setEnabled(False)
+            self.dlg.endDateCheck.setChecked(False)
+            self.dlg.endDateCheck.setEnabled(False)
+
+    def toggleStartTime(self, state):
+        ''' start time check box state changed.'''
+        if state > 0:
+            self.dlg.startTime.setEnabled(True)
+        else:
+            self.dlg.startTime.setEnabled(False)
+
+    def toggleEndTime(self, state):
+        ''' end time check box state changed '''
+        if state > 0:
+            self.dlg.endTime.setEnabled(True)
+        else:
+            self.dlg.endTime.setEnabled(False)
+
+    def toggleEndDate(self, state):
+        ''' end date check box state changed '''
+        if state > 0:
+            self.dlg.endDate.setEnabled(True)
+            self.dlg.endTimeCheck.setEnabled(True)
+        else:
+            self.dlg.endDate.setEnabled(False)
+            self.dlg.endTimeCheck.setEnabled(False)
+            self.dlg.endTimeCheck.setChecked(False)
+
+    def toggleCreateDate(self, state):
+        if state > 0:
+            self.dlg.resourceCreate.setEnabled(True)
+        else:
+            self.dlg.resourceCreate.setEnabled(False)
+            
+    def togglePublishDate(self, state):
+        if state > 0:
+            self.dlg.resourcePublish.setEnabled(True)
+        else:
+            self.dlg.resourcePublish.setEnabled(False)
+            
+    def toggleUpdateDate(self, state):
+        if state > 0:
+            self.dlg.resourceUpdate.setEnabled(True)
+        else:
+            self.dlg.resourceUpdate.setEnabled(False)
 
     def check(self):
         ''' validate / error check clicked '''
         # Clear validation log, and update xml, before performing checks on
+        contact = ('INDIVIDUALNAME', 'ORGANISATIONNAME', 'POSITIONNAME', 'VOICE',
+                   'FACSIMILE', 'DELIVERYADDRESS', 'CITY', 'COUNTRY', 'POSTALCODE',
+                   'EMAIL', 'ROLE')
+        basic = ('HIERARCHYLEVEL', 'TITLE', 'ABSTRACT', 'PURPOSE')
+        security= ('SECURITYCLASSRES', 'SECURITYCLASSMET', 'RESTRICCODERES',
+                   'RESTRICCODEMET')
+        extent = ('EXTENTDESCRIPTION', 'EXTENTBOUNDINGBOX', 'EXTENTTEMPORAL',
+                  'EXTENTVERTICAL')
+        ident = ('REFERENCESYS1', 'STATUS', 'LINEAGE', 'SPATIALREPRESENTATION',
+                 'MAINTENANCE')
+        other = ('KEYWORD',)
+
+        tabDict = {'INDIVIDUALNAME'     : (self.dlg.iName1, self.dlg.iName2),
+                   'ORGANISATIONNAME'   : (self.dlg.oName1, self.dlg.oName2),
+                   'POSITIONNAME'       : (self.dlg.pName1, self.dlg.pName2) ,
+                   'VOICE'              : (self.dlg.voice1, self.dlg.voice2),
+                   'FACSIMILE'          : (self.dlg.fas1, self.dlg.fas2),
+                   'DELIVERYADDRESS'    : (self.dlg.dadd1, self.dlg.dadd2),
+                   'CITY'               : (self.dlg.city1, self.dlg.city2),
+                   'COUNTRY'            : (self.dlg.country1, self.dlg.country2),
+                   'POSTALCODE'         : (self.dlg.postCode1, self.dlg.postCode2),
+                   'EMAIL'              : (self.dlg.email1, self.dlg.email2),
+                   'ROLE'               : (self.dlg.role1, self.dlg.role2),
+                   'HIERARCHYLEVEL'     : self.dlg.hlName,
+                   'TITLE'              : self.dlg.title,
+                   'ABSTRACT'           : self.dlg.abs,
+                   'PURPOSE'            : self.dlg.purpose,
+                   'SECURITYCLASSRES'   : self.dlg.resSecClass,
+                   'SECURITYCLASSMET'   : self.dlg.metSecClass,
+                   'RESTRICCODERES'    : (self.dlg.resourceConCopyright, self.dlg.resourceConLicense),
+                   'RESTRICCODEMET'    : (self.dlg.metadataConCopyright, self.dlg.metadataConLicense),
+                   'EXTENTDESCRIPTION'  : self.dlg.geoDescCombo,
+                   'EXTENTBOUNDINGBOX'  : self.dlg.geoBBFrame,
+                   'EXTENTTEMPORAL'     : self.dlg.temporalFrame,
+                   'REFERENCESYS1'      : self.dlg.referenceSys,
+                   'STATUS'             : self.dlg.status,
+                   'LINEAGE'            : self.dlg.lineage,
+                   'SPATIALREPRESENTATION' : self.dlg.spatialrep,
+                   'MAINTENANCE'        : self.dlg.maintenance,
+                   'KEYWORD'            : self.dlg.keywordList}
+        
         self.dlg.validationLog.clear()
-        self.writeXML()
+        try:
+            self.writeXML()
+        except Exception as e:
+            self.dlg.validationLog.setText(str(e))
+            return
         file, vdtr = r'{}/{}'.format(os.getcwd(), TEMPFILE), Local()
         meta = vdtr.metadata(file)
-        
+        if self.dlg.check != 0:
+            self.use.setPalette(self.palette)
         try:
-            # TODO: Add validation checks here.
             runChecks(meta)
-            self.dlg.validationLog.setText('Checks Complete')
+            self.dlg.fixError.hide()
+            self.dlg.validationLog.setText('Error Checks Complete')
+            # TODO: Add validation checks here.
+            #vdtr.setschema()
+            #vdtr.validate(meta)
+            #vdtr.conditional(meta)
+            #self.dlg.validationLog.setText('Error Checks Complete\nValidation Checks Complete')
             self.checks = True
             self.dlg.createMetadata.setEnabled(True)
         except Exception as e:
-            self.dlg.validationLog.setText('Checker Error: {}'.format(e))
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            self.checks = False
-            self.dlg.createMetadata.setEnabled(False)
+            if isinstance(e, ValidatorException):
+                print (str(e))
+            else:
+                self.dlg.check += 1
+                self.widget = self.dlg.widget(7)        
+                valFound = None
+                self.dlg.fixError.show()
+                self.dlg.validationLog.setText('Checker Error: {}'.format(e))
+                font = QFont('Noto Sans', 14, weight=QFont.Bold, italic=True)
+                for val in contact:
+                    if val in str(e):
+                        self.widget = self.dlg.widget(2)
+                        valFound = val
+                        break
+                for val in basic:
+                    if val in str(e):
+                        self.widget = self.dlg.widget(1)
+                        valFound = val
+                        break
+                for val in security:
+                    if val in str(e):
+                        self.widget = self.dlg.widget(6)
+                        valFound = val
+                        break
+                for val in extent:
+                    if val in str(e):
+                        self.widget = self.dlg.widget(5)
+                        valFound = val
+                        break
+                for val in ident:
+                    if val in str(e):
+                        self.widget = self.dlg.widget(3)
+                        valFound = val
+                        break
+                for val in other:
+                    if val in str(e):
+                        self.widget = self.dlg.widget(4)
+                        valFound = val
+                        break
+                if type(tabDict[valFound]) == tuple:
+                    if 'copyright' in str(e):
+                        self.use = tabDict[valFound][0]
+                    elif 'license' in str(e):
+                        self.use = tabDict[valFound][1]
+                    elif valFound + '2' in str(e):
+                        self.use = tabDict[valFound][0]
+                    else:
+                        self.use = tabDict[valFound][1]
+                else:
+                    self.use = tabDict[valFound]
+                self.palette = self.use.palette()
+                palette = QPalette(self.palette)
+                palette.setColor(QPalette.Window, QColor(Qt.red))
+                palette.setColor(QPalette.Base, QColor(Qt.red))
+                self.use.setPalette(palette)
+                self.checks = False
+                self.dlg.createMetadata.setEnabled(False)
 
-    def setTemplate(self):
-        ''' select template clicked '''
-        qfd, filename = QFileDialog(), ()
-        self.dlg.metadataFile.clear()
-        qfd.setFileMode(QFileDialog.AnyFile)
-        qfd.setFilter("XML Template file (*.xml)")
-        if qfd.exec_():
-            self.dlg.reset_form()
-            filename = qfd.selectedFiles()
-            if filename:
-                self.dlg.changeTemplate(filename[0])
-                self.dlg.templateFile.setText(self.dlg.TEMPLATEPATH)
-                self.dlg.outputFile.setText(self.dlg.TEMPLATEPATH)
+    def fixError(self):
+        self.dlg.fixError.hide()
+        self.dlg.setCurrentWidget(self.widget)
 
-    def setOutputTemplate(self):
-        ''' select output file clicked '''
-        qfd, filename = QFileDialog(), ()
-        self.dlg.metadataFile.clear()
-        qfd.setFileMode(QFileDialog.AnyFile)
-        qfd.setFilter("XML Output file (*.xml)")
-        if qfd.exec_():
-            filename = qfd.selectedFiles()
-            if filename:
-                self.dlg.OUTPUTFILE = filename[0]
-                self.dlg.outputFile.setText(self.dlg.OUTPUTFILE)
-
-    def setMetadata(self):
-        ''' select metadata clicked '''
-        qfd, filename = QFileDialog(), ()
-        self.dlg.outputFile.clear()
-        self.dlg.templateFile.clear()
-        qfd.setFileMode(QFileDialog.AnyFile)
-        qfd.setFilter("XML Metadata file (*.xml)")
-        if qfd.exec_():
-            filename = qfd.selectedFiles()
-            if filename:
-                self.dlg.OUTPUTFILE = filename[0]
-                self.dlg.changeTemplate(filename[0])
-                self.dlg.metadataFile.setText(self.dlg.OUTPUTFILE)
+    def setFile(self, i):
+        ''' select file clicked '''
+        try:
+            self.dlg.loadError.hide()
+            qfd, filename = QFileDialog(), ()
+            self.dlg.metadataFile.clear()
+            qfd.setFileMode(QFileDialog.AnyFile)
+            if i == 1:
+                qfd.setFilter("XML Template file (*.xml)")
+            elif i == 2:
+                qfd.setFilter("XML Output file (*.xml)")
+            else:
+                qfd.setFilter("XML Metadata file (*.xml)")
+            if qfd.exec_():
+                self.dlg.reset_form()
+                filename = qfd.selectedFiles()
+                if filename:
+                    if i == 1:
+                        self.dlg.changeTemplate(filename[0])
+                        self.dlg.templateFile.setText(self.dlg.TEMPLATEPATH)
+                        self.dlg.outputFile.setText(self.dlg.TEMPLATEPATH)
+                    elif i == 2:
+                        self.dlg.OUTPUTFILE = filename[0]
+                        self.dlg.outputFile.setText(self.dlg.OUTPUTFILE)
+                    else:
+                        self.dlg.OUTPUTFILE = filename[0]
+                        self.dlg.changeTemplate(filename[0])
+                        self.dlg.metadataFile.setText(self.dlg.OUTPUTFILE)
+        except Exception as e:
+            self.dlg.loadError.setText("File Selection Error: " + str(e))
+            self.dlg.loadError.show()
 
     def updateFileText(self):
         ''' default template clicked '''
@@ -1041,31 +1508,37 @@ class LINZ_Metadata:
         ''' auto fill (resource(1) or metadata(2)) clicked.
             copy fields existing in other contact to current contact.
         '''
-        resource, metadata = {}, {}
-        if i == 2:
-            fillName, fromName, fillVal, fromVal = resource, metadata, '1', '2'
-        else:
-            fillName, fromName, fillVal, fromVal = metadata, resource, '2', '1'
-        for i in self.dlg.contactFields:
-            if '1' in i.objectName():
-                if 'role' in i.objectName():
-                    resource[i.objectName()] = i.currentText()
-                else:
-                    resource[i.objectName()] = i.toPlainText()
+        try:
+            self.dlg.autoFillError.hide()
+            resource, metadata = {}, {}
+            if i == 2:
+                fillName, fromName, fillVal, fromVal = resource, metadata, '1', '2'
             else:
-                if 'role' in i.objectName():
-                    metadata[i.objectName()] = i.currentText()
-                else:
-                    metadata[i.objectName()] = i.toPlainText()
-        for val in fillName:
-            text = fillName[val]
-            for i in self.dlg.contactFields:
-                if i.objectName() in fromName and \
-                   i.objectName().split(fromVal)[0] == val.split(fillVal)[0]:
-                    if 'role' in i.objectName():
-                        i.setCurrentIndex(i.findText(text))
+                fillName, fromName, fillVal, fromVal = metadata, resource, '2', '1'
+            for i in self.dlg.contact:
+                if '1' in i.objectName():
+                    if type(i) == QComboBox:
+                        resource[i.objectName()] = i.currentText()
                     else:
-                        i.setText(text)
+                        resource[i.objectName()] = i.toPlainText()
+                else:
+                    if type(i) == QComboBox:
+                        metadata[i.objectName()] = i.currentText()
+                    else:
+                        metadata[i.objectName()] = i.toPlainText()
+            for val in fillName:
+                text = fillName[val]
+                for i in self.dlg.contact:
+                    if i.objectName() in fromName and \
+                       i.objectName().split(fromVal)[0] == val.split(fillVal)[0]:
+                        if type(i) == QComboBox:
+                            i.setCurrentIndex(i.findText(text))
+                        else:
+                            i.setText(text)
+
+        except Exception as e:
+            self.dlg.autoFillError.setText("Auto Fill Error: " + str(e))
+            self.dlg.autoFillError.show()
 
     def textStyle(self, i):
         ''' text style button clicked (bold (1), italic (2), link (3))
@@ -1073,66 +1546,42 @@ class LINZ_Metadata:
             Add *selected text* around selected text if italic clicked
             Add [selected text](LINK HERE) around selected text if link clicked.
         '''
-        if i == 1: textStyle = "**"
-        if i == 2: textStyle = "*"
-        cursor = self.dlg.abs.textCursor()
-        textSelected = cursor.selectedText()
-        selectStart, selectEnd = cursor.selectionStart(), cursor.selectionEnd()
-        if len(textSelected) > 1:
-            if i == 3: tS = "[" + textSelected + "](LINK HERE)"
-            else: tS = textStyle + textSelected + textStyle
-        else:
-            if i == 3: tS = "[TEXT HERE](LINK HERE)"
-            else: tS = textStyle + "TEXT HERE" + textStyle
-        if selectStart != 0:
-            start = self.dlg.abs.toPlainText()[:selectStart]
-        else: start = ""
-        if selectEnd != len(self.dlg.abs.toPlainText())-1:
-            end = self.dlg.abs.toPlainText()[selectEnd:]
-        else: end = ""
-        text = start+tS+end
-        self.dlg.abs.setText(text)
-        if i ==3: textStyle = 'LINK HERE)'
-        else: textStyle = 'TEXT HERE' + textStyle
-        if self.dlg.abs.toPlainText().find(textStyle) != -1:
-            newStart = self.dlg.abs.toPlainText().find(textStyle)
-            newEnd = newStart + 9
-            cursor.setPosition(newStart)
-            cursor.setPosition(newEnd, QTextCursor.KeepAnchor)
-            self.dlg.abs.setTextCursor(cursor)
-        elif i != 3:
-            if i == 1: move = 2
-            else: move = 1
-            cursor.setPosition(selectStart+move)
-            cursor.setPosition(selectEnd+move, QTextCursor.KeepAnchor)
-            self.dlg.abs.setTextCursor(cursor)
+        try:
+            if i == 1: textStyle = "**"
+            if i == 2: textStyle = "*"
+            cursor = self.dlg.abs.textCursor()
+            textSelected = cursor.selectedText()
+            selectStart, selectEnd = cursor.selectionStart(), cursor.selectionEnd()
+            if len(textSelected) > 1:
+                if i == 3: tS = "[" + textSelected + "](LINK HERE)"
+                else: tS = textStyle + textSelected + textStyle
+            else:
+                if i == 3: tS = "[TEXT HERE](LINK HERE)"
+                else: tS = textStyle + "TEXT HERE" + textStyle
+            if selectStart != 0:
+                start = self.dlg.abs.toPlainText()[:selectStart]
+            else: start = ""
+            if selectEnd != len(self.dlg.abs.toPlainText())-1:
+                end = self.dlg.abs.toPlainText()[selectEnd:]
+            else: end = ""
+            text = start+tS+end
+            self.dlg.abs.setText(text)
+            if i ==3: textStyle = 'LINK HERE)'
+            else: textStyle = 'TEXT HERE' + textStyle
+            if self.dlg.abs.toPlainText().find(textStyle) != -1:
+                newStart = self.dlg.abs.toPlainText().find(textStyle)
+                newEnd = newStart + 9
+                cursor.setPosition(newStart)
+                cursor.setPosition(newEnd, QTextCursor.KeepAnchor)
+                self.dlg.abs.setTextCursor(cursor)
+            elif i != 3:
+                if i == 1: move = 2
+                else: move = 1
+                cursor.setPosition(selectStart+move)
+                cursor.setPosition(selectEnd+move, QTextCursor.KeepAnchor)
+                self.dlg.abs.setTextCursor(cursor)
+        except Exception as e:
+            print ("Text Style Error: " + str(e))
 
     def run(self):
         self.dlg.show()
-        
-        # Select Template Clicked
-        self.dlg.selectTemplate.clicked.connect(self.setTemplate)
-        self.dlg.selectOutputFile.clicked.connect(self.setOutputTemplate)
-        self.dlg.selectMetadata.clicked.connect(self.setMetadata)
-        # Default Template Clicked
-        self.dlg.defaultButton.clicked.connect(self.updateFileText)
-        # Load Metadata Clicked
-        self.dlg.loadTemplate.clicked.connect(lambda: self.loadMetadata(1))
-        self.dlg.loadMetadata.clicked.connect(lambda: self.loadMetadata(2))
-        
-        # State Changed Of Date of Next Update Check Box
-        self.dlg.dONUCheck.stateChanged.connect(self.toggleDate)
-        self.dlg.scale.stateChanged.connect(self.toggleState)
-        self.dlg.scaleRadioButton.toggled.connect(self.toggleRadio)
-        
-        # Create Metadata Clicked
-        self.dlg.createMetadata.clicked.connect(self.done)
-        # Validate/ Error Check Clicked 
-        self.dlg.validateErrorCheck.clicked.connect(self.check)
-
-        self.dlg.autofillResource.clicked.connect(lambda: self.autoFill(1))
-        self.dlg.autofillMetadata.clicked.connect(lambda: self.autoFill(2))
-
-        self.dlg.boldText.clicked.connect(lambda: self.textStyle(1))
-        self.dlg.italicText.clicked.connect(lambda: self.textStyle(2))
-        self.dlg.linkText.clicked.connect(lambda: self.textStyle(3))

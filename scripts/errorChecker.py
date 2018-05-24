@@ -112,7 +112,6 @@ class InvalidConfigException(ErrorCheckerException): pass
 
 
 FILE = r'{}/config.yaml'.format(os.path.abspath(os.path.join(__file__, '../..')))
-print ()
 
 NSX = {'xlink'                  : 'http://www.w3.org/1999/xlink',
        'xs'                     : 'http://www.w3.org/2001/XMLSchema',
@@ -240,9 +239,11 @@ MAINTENANCE = IDENT + '/gmd:resourceMaintenance/gmd:MD_MaintenanceInformati' + \
 KEYWORD = IDENT + '/gmd:descriptiveKeywords/gmd:MD_Keywords/gmd:keyword/gco' + \
           ':CharacterString'
 
-ADDRESSVALUES = ('INDIVIDUALNAME', 'ORGANISATIONNAME', 'POSITIONNAME', 'VOICE',\
-                 'FACSIMILE', 'DELIVERYADDRESS', 'CITY', 'POSTALCODE', 'EMAIL',\
-                 'COUNTRY', 'ROLE1', 'ROLE2')
+ADDRESSVALUES = ('INDIVIDUALNAME1', 'INDIVIDUALNAME2', 'ORGANISATIONNAME1', \
+                 'ORGANISATIONNAME2', 'POSITIONNAME1', 'POSITIONNAME2', 'VOICE1',\
+                 'VOICE2', 'FACSIMILE1', 'FACSIMILE2', 'DELIVERYADDRESS1', \
+                 'DELIVERYADDRESS2', 'CITY1', 'CITY2', 'POSTALCODE1', 'POSTALCODE2', \
+                 'EMAIL1', 'EMAIL2', 'COUNTRY1', 'COUNTRY2', 'ROLE1', 'ROLE2')
 
 EXTENTVALUES = ('EXTENTDESC', 'EXTENTBOUNDINGBOX', 'EXTENTDESCRIPTION',        \
                 'EXTENTTEMPORAL', 'EXTENTVERTICAL')
@@ -368,9 +369,10 @@ def checkAddress(meta, address):
             allChecks(meta, contact + ROLE, address[0], address[1])
         else:
             allChecks(meta, pointOfContact + ROLE,address[0], address[1])
+    elif '1' in address[0]:
+        allChecks(meta, contact + globals().get(address[0][:len(address[0])-1]),address[0], address[1])
     else:
-        allChecks(meta, contact + globals().get(address[0]),address[0], address[1])
-        allChecks(meta, pointOfContact + globals().get(address[0]),\
+        allChecks(meta, pointOfContact + globals().get(address[0][:len(address[0])-1]),\
                   address[0], address[1], iterCheck=True)
 
 
