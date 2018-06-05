@@ -6,9 +6,9 @@ sys.path.append('../scripts/')
 
 from validate import Remote, Local, InaccessibleMetadataException
 import errorChecker
-from errorChecker import runAllChecks, search, MetadataIncorrectException, \
+from errorChecker import runChecks, MetadataIncorrectException, \
      MetadataEmptyException, MetadataNoneException, MetadataErrorException, \
-     InaccessibleFileException, runBasicChecks
+     InaccessibleFileException, InvalidConfigException
 
 from typing import List, Tuple
 
@@ -31,20 +31,9 @@ class Test_1_setup(unittest.TestCase):
         for lid in _testvals('c'):
             try:
                 meta = self.vdtr.metadata(lid)
-                runAllChecks(meta, lid)
+                runChecks(meta, lid)
             except Exception as e:
-                self.assertFalse(True, 'Expected To Pass, Got: {}'.format(e))
-                continue
-        
-
-    def test_3_correctBasicMetadata(self):
-        ''' test error check on selected base checks '''
-        for lid in _testvals('bc'):
-            try:
-                meta = self.vdtr.metadata(lid)
-                runBasicChecks(meta)
-            except Exception as e:
-                self.assertFalse(True, 'Expected To Pass, Got: {}'.format(e))
+                self.assertFalse(True)
                 continue
 
     def test_3_incorrectMetadata(self):
@@ -52,7 +41,7 @@ class Test_1_setup(unittest.TestCase):
         for lid in _testvals('i'):
             try:
                 meta = self.vdtr.metadata(lid)
-                runAllChecks(meta, lid)
+                runChecks(meta, lid)
             except MetadataIncorrectException as mie:
                 self.assertIsInstance(mie, MetadataIncorrectException)
                 continue
@@ -63,62 +52,67 @@ class Test_1_setup(unittest.TestCase):
         for lid in _testvals('e'):
             try:
                 meta = self.vdtr.metadata(lid)
-                runAllChecks(meta, lid)
+                runChecks(meta, lid)
             except MetadataEmptyException as mee:
                 self.assertIsInstance(mee, MetadataEmptyException)
                 continue
             self.assertFalse(True, 'Expected MetadataEmptyException')
-
+            
     def test_5_noneMetadata(self):
         ''' test error check on layers with missing fields '''
         for lid in _testvals('n'):
             try:
                 meta = self.vdtr.metadata(lid)
-                runAllChecks(meta, lid)
+                runChecks(meta, lid)
             except MetadataNoneException as mne:
                 self.assertIsInstance(mne, MetadataNoneException)
                 continue
             self.assertFalse(True, 'Expected MetadataNoneException')
-
+                             
     def test_6_errorMetadata(self):
         ''' test all in error '''
         for lid in _testvals('ipn'):
             try:
                 meta = self.vdtr.metadata(lid)
-                runAllChecks(meta, lid)
+                runChecks(meta, lid)
             except MetadataErrorException as mee:
                 self.assertIsInstance(mee, MetadataErrorException)
                 continue
             self.asserFalse(True, 'Expected MetadataErrorException')
 
-    def test_7_fileSearchError(self):
-        ''' test file search raises error if cannot find keyword '''
-        try:
-            search(errorChecker.FILE, 'TEST: ')
-            self.assertFalse(True, 'Expected InaccessibleFileException')
-        except InaccessibleFileException as ife:
-            self.assertIsInstance(ife, InaccessibleFileException)
-            
+    def test_7_allOptionsConfig(self):
+        ''' test config with all options at least True
+            All 'correct' should show as None, as none have facsimile for metadata contact. '''
+        for lid in _testvals('c'):
+            try:
+                meta = self.vdtr.metadata(lid)
+                file = r'../tests/testConfigAll.yaml'
+                runChecks(meta, lid, file)
+            except MetadataNoneException as mne:
+                self.assertIsInstance(mne, MetadataNoneException)
+                continue
+            self.assertFalse(True, 'Expected MetadataNoneException')
 
-
-    def test_8_fileSearchCorrect(self):
-        ''' test file search can find text based on keyword '''
-        try:
-            word = search(errorChecker.FILE, 'ORGANISATIONNAME: ')
-        except Exception as e:
-            self.assertFalse(True, e)
-            
-        self.assertTrue(word)
+    def test_8_invalidConfig(self):
+        '''test config with invalid config option '''
+        for lid in _testvals('c'):
+            try:
+                meta = self.vdtr.metadata(lid)
+                file = r'../tests/testConfigInvalid.yaml'
+                runChecks(meta, lid, file)
+            except InvalidConfigException as ie:
+                self.assertIsInstance(ie, InvalidConfigException)
+                continue
+            self.assertFalse(True, 'Expected InvalidConfigException')
 
         
 def _testvals(type: str = 'sf') -> List[Tuple]:
     '''Returns a list of test ids'''
     ids = [] # type: List[Tuple]
-    if 'b' in type: ids += [(i, 'baseCorrect') for i in ('53455', '50201', '50972', '50202', '50203', )]
-    if 'c' in type: ids += [(i, 'correct') for i in ('50813', '50053', '50526', '50643',)]
-    if 'i' in type: ids += [(i, 'incorrect') for i in ('51871', '51769', '51870', '52344', '51362', '50845', '53455',)]
+    if 'c' in type: ids += [(i, 'correct') for i in ('52233','52141', '52154', '52166', '52167')]
+    if 'i' in type: ids += [(i, 'incorrect') for i in ('51389', '51368','51306','50526', '50053')]
     if 'p' in type: ids += [(i, 'empty') for i in ('51920','50772', '50789', '53451', '53519',)]
-    if 'n' in type: ids += [(i, 'none') for i in ('51306', '51368','51389',)]
+    if 'n' in type: ids += [(i, 'none') for i in ('50842',)]
     
     return ids
 
