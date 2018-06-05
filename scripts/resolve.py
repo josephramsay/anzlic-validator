@@ -49,6 +49,8 @@ SLi = 1
         
 DEPTH = 0
 
+class NonCachedResponseException(Exception): pass
+
 class DisplayWrapper(object):
     '''Simple wrapper function to display schema call stack'''
     @classmethod
@@ -67,13 +69,13 @@ class DisplayWrapper(object):
         
         return wrapper
      
-class RemoteResolver(Resolver):
+class CacheResolver(Resolver):
     '''Custom resolver to redirect resolution of cached resources back through the cache'''
     PICKLESFX = '.history'   # type: str
     BLANKHIST = {'cache':set([]),'fail':set([])}   # type: Dict[str,Set[str]]
     
     def __init__(self,response,encoding,history) -> None:
-        self.response = response          
+        self.response = self._testresp(response)          
         self.encoding = encoding      
         self.source = self.response.url
         self.history = history or self._load_hist(self.source)
@@ -85,6 +87,11 @@ class RemoteResolver(Resolver):
         self._precache()
         #if not history: # ensures saving only at end of resolve init
         self._save_hist()
+    
+    def _testresp(self,response):
+        if isinstance(response,CachedResponse):
+            return response
+        raise NonCachedResponseException('Provided response object is not from a cached source')
      
     def _precache(self) -> None:
         '''Precache imports and includes'''
@@ -120,25 +127,25 @@ class RemoteResolver(Resolver):
                 print ('Cannot parse url {}, {}'.format(i,url))
             except Exception as e:
                 print ('Unexpected Exception {} with {}'.format(e,url))
-            self.history = RemoteResolver._merge(self.history,{'fail':set([url,])})
+            self.history = CacheResolver._merge(self.history,{'fail':set([url,])})
             CachedResponse.RemoveFromCache(self.response.cacheLocation,url)  
             return False
         return True
     
   
-    def _load_hist(self,src=None) -> Dict:
+    def _load_hist(self,src = None) -> Dict:
         '''Return fetch/fail history from file or touch/init a new picklefile if reqd'''
         hist = self.BLANKHIST
-        if src:
+        if src and hasattr(self.response,'cacheLocation'):
             self.picklefile = '{}/{}{}'.format(self.response.cacheLocation,CachedResponse._hash(src),self.PICKLESFX)
-        try: 
-            with open(self.picklefile,'rb') as f:
-                hist = pickle.load(f)
-            #return self._merge(self.history,pickle.load(open(self.picklefile,'rb')))
-        except (EOFError, FileNotFoundError) as fnfe:
-            #touch
-            with open(self.picklefile, 'ab') as f:
-                pass
+            try: 
+                with open(self.picklefile,'rb') as f:
+                    hist = pickle.load(f)
+                #return self._merge(self.history,pickle.load(open(self.picklefile,'rb')))
+            except (EOFError, FileNotFoundError) as fnfe:
+                #touch
+                with open(self.picklefile, 'ab') as f:
+                    pass
         return hist
            
     def _save_hist(self) -> None:
@@ -151,9 +158,9 @@ class RemoteResolver(Resolver):
     @DisplayWrapper.show()
     def _getXMLResponse(self,url) -> None:
         resp = validate.SCHMD._request(url)
-        merge_hist = RemoteResolver._merge(self.history,{'cache':set([url,])})
-        resolver = RemoteResolver(resp,self.encoding,merge_hist)
-        self.history = RemoteResolver._merge(self.history,resolver.history)
+        merge_hist = CacheResolver._merge(self.history,{'cache':set([url,])})
+        resolver = CacheResolver(resp,self.encoding,merge_hist)
+        self.history = CacheResolver._merge(self.history,resolver.history)
   
     @staticmethod        
     def _merge(a,b) -> Dict:

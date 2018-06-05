@@ -1,8 +1,10 @@
 import os
 import re
+import sys
 import urllib.request   as UR
 import urllib.parse     as UP
 import urllib.error     as UE
+import getopt
 
 from pprint import pprint
 from typing import List, Dict, Set
@@ -20,7 +22,8 @@ from abc import ABCMeta, abstractmethod
 #One solution was to implement a cache solution but no longer sure that its required
 
 from cache import CacheHandler, CachedResponse
-from resolve import RemoteResolver
+#from resolve import RemoteResolver
+import resolve
 from authenticate import Authentication
 
 
@@ -32,6 +35,7 @@ from authenticate import Authentication
 BORX = 'b'
 ENC = 'utf-8'
 CACHE = '.validator_cache'
+USE_CACHE = False
 KEY = Authentication.apikey('~/.apikey3')
 NSX = {'xlink'                  : 'http://www.w3.org/1999/xlink',
        'xs'                     : 'http://www.w3.org/2001/XMLSchema',
@@ -127,7 +131,8 @@ class SCHMD(object):
     def _bcached(url,enc=ENC):
         '''Wrapper for cached url open with bs'''
         txt = SCHMD._request(url)
-        return BS(txt,'lxml-xml')    
+        bst = BS(txt,'lxml-xml')
+        return bst
     
     @staticmethod
     def _xcached(url,enc=ENC):
@@ -140,8 +145,8 @@ class SCHMD(object):
     @staticmethod
     def _parsetxt(txt,resp=None,enc=None,history=None):#{'cache':[],'fail':[]}):
         '''Parse provided text into XML doc'''
-        if enc and resp: 
-            resolver = RemoteResolver(resp,enc,history)
+        if enc and resp and isinstance(resp,CachedResponse): 
+            resolver = resolve.CacheResolver(resp,enc,history)
             parser = RemoteParser(enc)
             parser.resolvers.add(resolver)
             return etree.XML(txt, parser)
@@ -150,17 +155,20 @@ class SCHMD(object):
     @staticmethod
     def _extracttxt(resp,enc):
         '''Get the bytes text from the response if it hasn't already been done and if encoding is specified'''
-        txt = resp.read().encode(enc) if (enc and not isinstance(resp,bytes)) else resp.read()
+        txt = resp.read()
+        #test that an encoding value is supplied and that either the resp is http or the txt is not already bytes
+        if enc and not isinstance(txt,bytes):#(hasattr(resp,'url') or 
+            txt = txt.encode(enc)
         return txt
         #return SCHMD._hackisotc211(txt)
     
     @staticmethod
     def _request(url):
         '''Add cachehandler as additional opener and open'''
-        opener = UR.build_opener(CacheHandler(CACHE))
-        #UR.install_opener(opener)
-        #return UR.urlopen(url)
-        return opener.open(url)
+        if USE_CACHE:
+            opener = UR.build_opener(CacheHandler(CACHE))
+            UR.install_opener(opener)
+        return UR.urlopen(url)
     
     @staticmethod
     def _hackisotc211(txt):
@@ -282,8 +290,11 @@ class Remote(SCHMD):
             raise ValidatorException('Processing error {}.\n{}'.format(lid,e))
         return None
         
-    def getids(self,wxs,sorf = 0):
+    def getids(self, wxs = 'wfs', sorf = 'services', torl = 'layer'):
         '''Read the layer and table IDS from the getcapabilities for the WFS and WMS service types
+        wxs: WFS or WMS (or both WxS TODO) 
+        sorf: Services or Feeds (only one makes sense)
+        torl: Layer or Table or both landt/tandl
         cap: capabilities url template
         ftx: feature type xpath fragment
         borx: parser selection, beautifulsoup or lxml
@@ -302,7 +313,7 @@ class Remote(SCHMD):
         try: ret
         except NameError: raise CapabilitiesParseException('No matching {} features found'.format(wxs))
             
-        return ret['layer']
+        return ret if torl in ('tandl','landt') else ret[lort] 
     
     def _bextract(self,bst,ftx):
         '''regex out id and table/layer type using bsoup'''
@@ -321,16 +332,16 @@ class Remote(SCHMD):
         return ret
 
     
-    def _geturlset(self,src,wxs):
+    def _geturlset(self,sorf,wxs):
         '''Returns capabilities URL, xpath fragment to title/name and parser method
         wxs: Select xpath for wfs/wms layer types
-        src: Select where to get layer IDs from; services(0) or feeds(1). 
+        sorf: Select where to get layer IDs from; services or feeds. 
         (If selecting LDS Services, capabilities are limited to 250 results so will have to be paged)
         '''
-        cap = ('http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
-               'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary')
+        cap = {'services':'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
+               'feeds':'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary'}
         #wfs/wms feature paths      
-        ftx = ({'wfs':{'path':'FeatureType',
+        ftx = {'services':{'wfs':{'path':'FeatureType',
                        'name':'Name',
                        'title':'Title',
                        'lib':'b'},
@@ -339,7 +350,7 @@ class Remote(SCHMD):
                        'title':'Title',
                        'lib':'x'}
                }[wxs],        
-               {'wfs':{'path':'//csw:SearchResults/csw:SummaryRecord',
+               'feeds':{'wfs':{'path':'//csw:SearchResults/csw:SummaryRecord',
                        'name':'./dc:identifier',
                        'title':'./dc:Title',
                        'lib':'b'},
@@ -347,9 +358,9 @@ class Remote(SCHMD):
                        'name':'./dc:identifier',
                        'title':'./dc:Title',
                        'lib':'x'}
-               }[wxs])
+               }[wxs]}
         borx = {'b':(self._bcached,self._bextract),'x':(self._xcached,self._xextract)}[ftx[src]['lib']]
-        return cap[src],ftx[src],borx
+        return cap[sorf],ftx[sorf],borx
     
 class Combined(Remote):
     '''Subclass of the Remote connector but subclassing schema/metadata to attempt local file load first'''
@@ -383,18 +394,47 @@ class Combined(Remote):
         raise ValidatorException('No Layer Id or filename specified')
         
 class RemoteParser(XMLParser):
-    '''Simple custom parser wrapper overrodes init with encoding spec'''
+    '''Simple custom parser wrapper overrides init with encoding spec'''
     def __init__(self,enc) -> None:
         super(RemoteParser,self).__init__(ns_clean=True,recover=True,encoding=enc)
        
     
-def main():
+def process(opts,args):
     '''Validate all layers'''
-    v3 = Combined()
-    v3.setschema()
-    wfsi = v3.getids('wms')
     
-    for lid in wfsi:
+    global USE_CACHE
+    
+    id = None
+    wxs = 'wfs'
+    torl = 'layer'
+    sorf = 'services'
+    
+    if 'cache' in args: 
+        USE_CACHE = True
+    else:
+        USE_CACHE = False
+        
+    if 'local' in args:
+        Validator = Local
+    elif 'remote' in args:
+        Validator = Remote
+    else:
+        Validator = Combined
+        
+    for o,v in opts:
+        if o in ('-i','--id'): id = [(v,'user supplied'),]
+        if o in ('-w','--wxs') and v in ('wfs','wms'): wxs = v
+        if o in ('-t','--torl') and v in ('layer','table','tandl','landt'): torl = v
+        if o in ('-s','--sorf') and v in ('services','feeds'): sorf = v
+        
+    #v1 = Remote()
+    #v1.setschema()
+    v3 = Validator()
+    v3.setschema()
+    
+    wxsi = id or v3.getids(wxs=wxs,sorf=sorf,torl=torl)
+    
+    for lid in wxsi:
         try:
             v3.setmetadata(lid)
             v = v3.validate()
@@ -402,7 +442,32 @@ def main():
             print(lid,v and c)
         except ValidatorException as ve:
             print (lid,ve,False)
+    
+def poa(oa):
+    '''Options and Args reorganised for getopts'''
+    o = [('{}:'.format(i[0]),'{}='.format(i[1:])) for i in oa[0].split(',')]
+    a = [(i[0],i[1:]) for i in oa[1].split(',')]
+    return (''.join([i[0] for i in o]+[i[0] for i in a]),[i[1] for i in o]+[i[1] for i in a])
 
+def main():
+    '''Main function gets args and parses the system ones'''
+    
+    oa = ['wwxs,iid,ttorl,ssorf','llocal,rremote,ccache,vversion,hhelp']
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], *poa(oa))
+    except getopt.error as msg:
+        print (msg+". For help use --help")
+        sys.exit(2)
+        
+    for opt, val in opts:
+        if opt in ("-h", "--help"):
+            print (__doc__)
+            sys.exit(0)
+        elif opt in ("-v", "--version"):
+            print (__version__)
+            sys.exit(0)
+        
+    process(opts,args)
 
 if __name__ == "__main__":
     main()
