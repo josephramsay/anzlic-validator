@@ -1,5 +1,4 @@
 <!-- LINZ ANZLIC TEMPLATE -->
-
 <gmd:MD_Metadata xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gml="http://www.opengis.net/gml" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.isotc211.org/2005/gmd">
     <gmd:fileIdentifier>
         <gco:CharacterString>C6BCE1F1-AFA7-42DB-B9CF-29C59333A173</gco:CharacterString>
@@ -249,7 +248,13 @@
             <gmd:resourceConstraints>
                 <gmd:MD_LegalConstraints>
                     <gmd:useLimitation>
-                        <gco:CharacterString>Released by LINZ under Creative Commons Attribution 4.0 International (CC BY 4.0) with: Following Disclaimers: 1. ##restrictions## Following Attribution: "Sourced from LINZ Data Service and licensed for reuse under the CC BY 4.0 license" For details see https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data</gco:CharacterString>
+                        <gco:CharacterString>Released by LINZ under Creative Commons Attribution 4.0 International (CC BY 4.0) with: 
+
+Following Disclaimers: 1. 
+##restrictions## 
+
+Following Attribution: 
+"Sourced from LINZ Data Service and licensed for reuse under the CC BY 4.0 license" For details see https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data</gco:CharacterString>
                     </gmd:useLimitation>
                     <gmd:useConstraints>
                         <gmd:MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml" codeListValue="license">license</gmd:MD_RestrictionCode>
@@ -364,7 +369,10 @@
     <gmd:metadataConstraints>
         <gmd:MD_LegalConstraints>
             <gmd:useLimitation>
-                <gco:CharacterString>Released by LINZ under Creative Commons Attribution 4.0 International (CC BY 4.0) with: Following Attribution: "Sourced from the LINZ Data Service and licensed for reuse under the CC BY 4.0 License" For details see https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data</gco:CharacterString>
+                <gco:CharacterString>Released by LINZ under Creative Commons Attribution 4.0 International (CC BY 4.0) with: 
+
+Following Attribution: 
+"Sourced from the LINZ Data Service and licensed for reuse under the CC BY 4.0 License" For details see https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data</gco:CharacterString>
             </gmd:useLimitation>
             <gmd:useConstraints>
                 <gmd:MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml" codeListValue="license">license</gmd:MD_RestrictionCode>

@@ -5,7 +5,7 @@ import urllib.parse     as UP
 import urllib.error     as UE
 
 from pprint import pprint
-from typing import List, Dict, Set
+#from typing import List, Dict, Set
 from lxml import etree
 from lxml.etree import XMLParser, XML, ElementTree, _Element
 from lxml.etree import XMLSyntaxError, XMLSchemaParseError
@@ -168,10 +168,10 @@ class SCHMD(object):
         This hack replaces that reference in the supplied schema text'''
         return txt.replace(bytes(SL[0],'utf-8'),bytes(SL[SLi],'utf-8')) if SLi else txt
         
-    def conditional(self):
+    def conditional(self, md=None):
         '''Bonus conditional extent checks'''
         dataset = False
-            
+        if md is not None: self.md = md
         for element in self.md.findall('gmd:hierarchyLevel/gmd:MD_ScopeCode',namespaces=NSX):
             if not element.get('codeListValue'):
                 raise MetadataConditionalException('No Hierarchy Level Declared')
@@ -252,6 +252,7 @@ class Remote(SCHMD):
     def schema(cls):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = '{url}gmd/metadataEntity.xsd'.format(url=SL[SLi])
+        print (sch_name)
         sch_doc = cls._xcached(sch_name)
         try:
             sch = etree.XMLSchema(sch_doc)
@@ -368,7 +369,7 @@ class Combined(Remote):
                 raise ValidatorException('{}\n{}'.format(msg1,msg2))
         
     @classmethod
-    def metadata(cls,id=None,name=None) -> _Element:
+    def metadata(cls,id=None,name=None): #-> _Element:
         '''Wrapper attempting local metadata load. 
         NB. Uses Filename or layer_id which determines fetch method'''
         if name:
@@ -384,7 +385,7 @@ class Combined(Remote):
         
 class RemoteParser(XMLParser):
     '''Simple custom parser wrapper overrodes init with encoding spec'''
-    def __init__(self,enc) -> None:
+    def __init__(self,enc): #-> None:
         super(RemoteParser,self).__init__(ns_clean=True,recover=True,encoding=enc)
        
     

@@ -7,7 +7,7 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=LINZ Metadata
+name=ANZLIC Metadata
 qgisMinimumVersion=2.0
 description=Plugin to provide a LINZ specific metadata editor and uploader.
 version=0.1
