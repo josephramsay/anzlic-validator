@@ -1,0 +1,10 @@
+scripts/.mypy_cache
+scripts/.validator_cache
+scripts/.test_cache
+tests/.mypy_cache
+tests/.validator_cache
+tests/.test_cache
+tests/data/*
+.settings
+**/*.pyc
+**/*.autosave

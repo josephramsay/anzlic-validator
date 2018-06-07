@@ -1,0 +1,60 @@
+#from lxml import etree as ET
+from lxml import etree
+import hashlib
+
+#x0=u'ö'
+#x1='<outer><inner>100</inner><text>oo'+x0+'oo</text></outer>'
+#x2=ET.XML(x1)
+#x2.findall('text')
+
+
+# wfs = c0cd
+u1 = 'http://data.linz.govt.nz/services;key=d13aac6b5d3a456589f20381a5290b7f/wms?service=wms&request=GetCapabilities'
+# wms = 7c55 
+u2 = 'http://data.linz.govt.nz/services;key=d13aac6b5d3a456589f20381a5290b7f/wfs?service=wfs&request=GetCapabilities'
+
+def h(u):
+    h=hashlib.md5(bytes(u,'utf-8')).hexdigest()
+    print (u,'\n',h)
+
+h(u1)
+
+# WMS metadata
+f = open('/home/jramsay/git/anzlic-validator/scripts/.validator_cache/7c55203411c640b9e9b42b593de4f178.body','r')
+rr=f.read()
+f.close()
+r_xml=etree.XML(rr.encode('utf-8'))
+r_fs=etree.fromstring(rr.encode('utf-8'))
+
+# WFS metedata
+f = open('/home/jramsay/git/anzlic-validator/scripts/.validator_cache/c0cd386a8b7aaed0251079bdc0d93d16.body','r')
+pp=f.read()
+f.close()
+p_xml=etree.XML(pp.encode('utf-8'))
+p_fs=etree.fromstring(pp.encode('utf-8'))
+
+# metadataIdentity.xsd Schema
+f = open('/home/jramsay/git/anzlic-validator/scripts/.validator_cache/fa35ae63d25c5ec3cbe52b68ccc9d407.body','r')
+qq=f.read()
+f.close()
+q_xml=etree.XML(qq.encode('utf-8'))
+q_fs=etree.fromstring(qq.encode('utf-8'))
+
+
+p1 = 'Capability/Layer/Title'
+p2 = 'FeatureType'
+
+px = p1
+
+r_xml.findall(px)
+p_xml.findall(px)
+q_xml.findall(px)
+
+
+p_xml.findall('wfs:FeatureType',namespaces=NSX)
+p_xml.findall('wfs:WFS_Capabilities/wfs:FeatureTypeList/wfs:FeatureType',namespaces=NSX)
+p_xml.findall('{http://www.opengis.net/wfs/2.0}WFS_Capabilities/{http://www.opengis.net/wfs/2.0}FeatureTypeList/{http://www.opengis.net/wfs/2.0}FeatureType')
+p_xml.findall('{http://www.opengis.net/wfs/2.0}WFS_Capabilities/FeatureTypeList/FeatureType')
+p_xml.getchildren()[3].getchildren()[2].getchildren()[0].text
+p_xml.findall('FeatureType',namespaces=NSX)
+
