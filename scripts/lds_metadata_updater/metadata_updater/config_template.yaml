@@ -1,0 +1,43 @@
+---
+# Template config for the metadata updater backend
+
+
+Connection:
+  Api_key: <ADMIN API KEY>            # Not Recommended. Should be stored as envi var
+  Domain:  <Data Service Domain>      # e.g. data.linz.govt.nz
+
+  Text:
+    Mapping:
+      1:                               # The order the text replacements are to occur
+                                       # DONT NOT DUPLICATE NUMBERS. !!!
+                                       # ENUSRE SEQUENTIAL STARTING AT 1 !!!
+        search: the terrace            # The text to search for replacement.
+                                       # !!! Must be in Python Reg Exp format!
+        replace: The Road              # The the text to replace the search text
+        ignore_case: True              # True or False. If True, search text case is ignored
+      2:
+        search: Land Info New Zealand
+        replace: Land Information Aoteroa
+        ignore_case: True
+
+  Output:
+    Destination: <Directory>          # The directory where to write 
+                                      # metadata file backups
+
+  Datasets:
+    Layers: <Layers to Process>       # A list of Layers or Table ids or "All"
+                                      # All will process All Tables and Layers 
+                                      # e.g. [93639,93648, 93649] or "All"
+    Sets:                             # Sets are not currently supported
+    Docs:                             # Documents are not currently supported
+
+  Test:
+    Dry_run: True                     # True or False
+                                       # If True, metadata xml documents are
+                                       # edited and stored but no changes to the 
+                                       # Data Service made
+    Overwrite_files: True              # True or False
+                                       # Usefule dev and testing. When True
+                                       # metadata files that are already in
+                                       # the destination dir will be over-written
+    

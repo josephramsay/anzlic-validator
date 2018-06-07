@@ -1,0 +1,29 @@
+---
+# Template config for the metadata updater backend
+
+Connection:
+  Api_key: peanutbutter
+  Domain: data.linz.govt.nz
+
+Text:
+  Mapping:
+    1:
+      search: Seaweed
+      replace: Sea plants
+      ignore_case: True
+    2:
+      search: Land InforMAtion New Zealand
+      replace: Land DATA New Zealand
+      ignore_case: True
+
+Output:
+  Destination: data
+
+Datasets:
+  Layers: [93661]
+  Sets: # Not currently supported
+  Docs: # Not currently supported
+
+Test:
+  Dry_run: False
+  Overwrite_files: True
