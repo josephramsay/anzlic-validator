@@ -1,0 +1,198 @@
+# ERROR CHECK CONFIG
+#------------------------
+#   To check if a field exists and is not none or empty use. 
+#   Ie. INDIVIDUALNAME: True, to not check change to False
+
+#   To check if a field is a particular field use the field in
+#   quotes. Ie.  INDIVIDUALNAME: "Omit"
+
+#   To check if a field is in a range of values use the same as
+#   a single field inside brackets. Ie. INDIVIDUALNAME: ["omit", "Omit"]
+
+#   To check if a field exists or is in a range of values ONLY if it exists 
+#   add "NONE" to check if not inside the brackets.
+#   Ie. INDIVIDUALNAME: ["omit", "NONE"]
+#   Adding "EMPTY" will also ignore if there are empty tags existing. 
+#
+#   To check if particular text(s)  is included in fields, this can be done by
+#   inclosing the fields in '[]' and adding the text 'CONTAINS' like so:
+#   RESOURCECON: [True, ['CONTAINS','CC BY 4.0']] or
+#   RESOURCECON: [True, ['CONTAINS','CC BY 4.0', 'LINZ']]
+#   Where the True/False element remains as previous, but ['CONTAINS', ...]
+#   is added, where any number of fields may be added to be checked that they
+#   exist.
+#
+
+#------------------------
+
+# Address Fields (1 - Metadata 'Contact',  2 - Resource 'PointOfContact'.)
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+INDIVIDUALNAME1: ["Omit", "omit"]
+INDIVIDUALNAME2: ["Omit", "omit"]
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+ORGANISATIONNAME1: "LINZ - Land Information New Zealand"
+ORGANISATIONNAME2: "LINZ - Land Information New Zealand"
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+POSITIONNAME1: True
+POSITIONNAME2: True
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+VOICE1: ["0800 665 463 or +64 4 460 0110", "04 4600110"]
+VOICE2: ["0800 665 463 or +64 4 460 0110", "04 4600110"]
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+FACSIMILE1: False
+FACSIMILE2: False
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+DELIVERYADDRESS1: "155 The Terrace"
+DELIVERYADDRESS2: "155 The Terrace"
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+CITY1: "Wellington"
+CITY2: "Wellington"
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+COUNTRY1: "New Zealand"
+COUNTRY2: "New Zealand"
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+POSTALCODE1: ["6011", "6145"]
+POSTALCODE2: ["6011", "6145"]
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+EMAIL1: ["info@linz.govt.nz", "customersupport@linz.govt.nz"]
+EMAIL2: ["info@linz.govt.nz", "customersupport@linz.govt.nz"]
+
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+ROLE1: "resourceProvider"
+ROLE2: "pointOfContact"
+
+#------------------------
+
+# Hierarchy Level - All Same Value
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+HIERARCHYLEVEL: "dataset"
+HIERARCHYLEVELNAME: "dataset"
+SCOPELEVEL: "dataset"
+SCOPELEVELDESC: "dataset"
+
+#------------------------
+
+# Security Classification - Resource/ Metadata
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+SECURITYCLASSRES: "unclassified"
+SECURITYCLASSMET: "unclassified"
+
+# Metadata and Resource Use Constraint Code
+# True/ False or Value(s) allowed, cannot use 'CONTAINS'
+# Note - ALL items will be checked for.
+RESTRICCODERES: ["copyright", "license"]
+RESTRICCODEMET: ["copyright", "license"]
+
+# Resource/Metadata Use Constraint Text.
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+RESOURCECON: [True, ['CONTAINS','CC BY 4.0']]
+METADATACON: [True, ['CONTAINS','CC BY 4.0']]
+
+#------------------------
+
+# Extent Description/ Bounding Box/ Temporal
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+EXTENTDESCRIPTION: True
+EXTENTBOUNDINGBOX: False
+EXTENTTEMPORAL: False
+
+#------------------------
+# Note, Cannot be both Scale and Resolution.
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+SCALE: False
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+RESOLUTION: False
+
+#------------------------
+
+# Check Reference System Not None
+# True/ False or Values allowed
+REFERENCESYS1: True
+
+# True/ False only allowed
+# Check Reference System if Not None, is correct against CRS listed from LDS API
+# Requires Error Checker to be passed Layer ID.
+REFERENCESYS2: True
+
+#------------------------
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+TITLE: True
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+ALTTITLE: False
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+ABSTRACT: True
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+PURPOSE: True
+
+#------------------------
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+# Check Layer Status
+STATUS: True
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+LINEAGE: True
+
+# Note Doesn't Provide Way To Write.
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+LINKAGE: False
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+SPATIALREPRESENTATION: ['vector', 'grid']
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+TOPICCATEGORY: True
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+FID: True
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+MAINTENANCE: True
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+MAINTNEXTUPDATE: False
+
+# True/ False or Value(s) allowed, can use 'CONTAINS'
+KEYWORD: False
+
+# True/ False or 'creation', 'publication', 'revision' value(s) allowed.
+# Note - All items will be checked for.
+KEYDATE: ['creation', 'publication', 'revision']
+
+#------------------------
+
+# Check Dates, are formatted correctly ie:
+# YYYY, YYYY-MM or YYYY-MM-DD
+# True/ False only allowed
+DATEFORMAT: True
+
+# Check for empty tags
+# True/ False only allowed
+EMPTYFORMAT: True
+
+#-------------------------
+# Default constraint Text fields - Not Included as part of Checks
+# Must be formatted in a single line, to have the text show additional lines add '\n'.
+
+# RCOPYRIGHT, MCOPYRIGHT - Resource/ Metadata use Copyright default Text
+# RLICENSE, MLICENSE - Resource/ Metadata use License default Text
+
+RCOPYRIGHT: 'Copyright of this work is owned by Land Information New Zealand.\n© LINZ'
+MCOPYRIGHT: 'Copyright of this work is owned by Land Information New Zealand.\n© LINZ'
+
+RLICENSE: 'Released by LINZ under Creative Commons Attribution 4.0 International (CC BY 4.0) with:\n\nFollowing Disclaimers: 1.\n##restrictions##\n\nFollowing Attribution:\n"Sourced from LINZ Data Service and licensed for reuse under the CC BY 4.0 license" For details see https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data'
+MLICENSE: 'Released by LINZ under Creative Commons Attribution 4.0 International (CC BY 4.0) with:\n\nFollowing Attribution:\n"Sourced from the LINZ Data Service and licensed for reuse under the CC BY 4.0 License" For details see https://www.linz.govt.nz/data/licensing-and-using-data/attributing-linz-data'
