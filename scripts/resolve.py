@@ -74,7 +74,7 @@ class CacheResolver(Resolver):
     PICKLESFX = '.history'   # type: str
     BLANKHIST = {'cache':set([]),'fail':set([])}   # type: Dict[str,Set[str]]
     
-    def __init__(self,response,encoding,history) #-> None:
+    def __init__(self,response,encoding,history): # -> None:
         self.response = self._testresp(response)          
         self.encoding = encoding      
         self.source = self.response.url
@@ -93,7 +93,7 @@ class CacheResolver(Resolver):
             return response
         raise NonCachedResponseException('Provided response object is not from a cached source')
      
-    def _precache(self): #-> None:
+    def _precache(self): # -> None:
         '''Precache imports and includes'''
         for incl in self.doc.findall('xs:include',namespaces=validate.NSX):
             for i,ns in enumerate([self.source,self.target]):
@@ -104,7 +104,7 @@ class CacheResolver(Resolver):
                 if self._getimports(UR.urljoin(self._slash(ns),impt.attrib['schemaLocation']),'import-{}'.format(i)):
                     break
 
-    def _getimports(self,url,i):# -> None:
+    def _getimports(self,url,i): # -> None:
         '''import xsd using selectio of urls including targetNamespace, namespace and url of source'''
         #for i,url in enumerate(ul):
         #hasn't been fetched already or in failed list
@@ -133,7 +133,7 @@ class CacheResolver(Resolver):
         return True
     
   
-    def _load_hist(self,src=None): #-> Dict:
+    def _load_hist(self,src=None): # -> Dict:
         '''Return fetch/fail history from file or touch/init a new picklefile if reqd'''
         hist = self.BLANKHIST
         if src and hasattr(self.response,'cacheLocation'):
@@ -149,7 +149,7 @@ class CacheResolver(Resolver):
         return hist
            
 
-    def _save_hist(self):# -> None:
+    def _save_hist(self): # -> None:
         '''Save the fetched/failed url list into picklefile, merging with existing'''
         if hasattr(self,'picklefile'):
             hist = self._merge(self.history,self._load_hist())
@@ -157,14 +157,14 @@ class CacheResolver(Resolver):
                 pickle.dump(hist,f)
     
     @DisplayWrapper.show()
-    def _getXMLResponse(self,url): #-> None:
+    def _getXMLResponse(self,url): # -> None:
         resp = validate.SCHMD._request(url)
         merge_hist = CacheResolver._merge(self.history,{'cache':set([url,])})
         resolver = CacheResolver(resp,self.encoding,merge_hist)
         self.history = CacheResolver._merge(self.history,resolver.history)
   
     @staticmethod        
-    def _merge(a,b):#-> Dict:
+    def _merge(a,b): # -> Dict:
         '''Unidirectional merge from a<-b'''
         c = a.copy()
         for k in c:
@@ -173,7 +173,7 @@ class CacheResolver(Resolver):
         #return {k:a[k].copy().update(b[k]) if k in b else a[k].copy() for k in a.keys()}
 
     @staticmethod
-    def _slash(u): #-> str:
+    def _slash(u): # -> str:
         return os.path.join(u,'') if u.rfind('/')>u.rfind('.') else u
 
     def _cached(self,frag): #-> str:
@@ -181,7 +181,7 @@ class CacheResolver(Resolver):
             if frag.lstrip('.') in u: return u
         return None
         
-    def resolve(self, system_url, public_id, context): #-> str:
+    def resolve(self, system_url, public_id, context): # -> str:
         '''Override of resolver resolve method that fetches and read cached page using that in a resolve_string call'''
         #pprint (self.history)
         rstr = None
@@ -195,34 +195,5 @@ class CacheResolver(Resolver):
             print ('resolve_string failed with {}, defaulting'.format(system_url))
         return rstr
         
-        
-        
 
-    
-    
-# class ExclusiveList(Set):
-#     def __init__(self,list):
-#         self._list = list
-#         
-#     def append(self,item):
-#         '''Emulates set but denying addition of duplicate items'''
-#         if item not in self._list: self._list.append(item)
-#         
-#     def __len__(self): return len(self._list)
-# 
-#     def __getitem__(self, i): return self._list[i]
-# 
-#     def __delitem__(self, i): del self._list[i]
-# 
-#     def __setitem__(self, i, v):
-#         self._list[i] = v
-# 
-#     def __repr__(self):
-#         return str(self._list)
-
-        
-        
-#     def _getpath(self,url):
-#         pr = UP.urlparse(url)
-#         return '{}://{}{}/'.format(pr.scheme,pr.netloc,'/'.join(pr.path.split('/')[:-1]))
 
