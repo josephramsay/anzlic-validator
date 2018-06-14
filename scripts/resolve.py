@@ -48,9 +48,7 @@ SLi = 1
 
 DEPTH = 0
 
-
 class NonCachedResponseException(Exception): pass
-
 
 class DisplayWrapper(object):
     '''Simple wrapper function to display schema call stack'''
@@ -71,7 +69,6 @@ class DisplayWrapper(object):
 
         return wrapper
 
-
 class CacheResolver(Resolver):
     '''Custom resolver to redirect resolution of cached resources back through the cache'''
     PICKLESFX = '.history'  # type: str
@@ -91,14 +88,12 @@ class CacheResolver(Resolver):
         self._precache()
         # if not history: # ensures saving only at end of resolve init
         self._save_hist()
-
-    def _testresp(self, response):
-        if isinstance(response, CachedResponse):
+    
+    def _testresp(self,response):
+        if isinstance(response,CachedResponse):
             return response
         raise NonCachedResponseException(
             'Provided response object is not from a cached source')
-
-    def _precache(self):  # -> None:
         '''Precache imports and includes'''
         for incl in self.doc.findall('xs:include', namespaces=validate.NSX):
             for i, ns in enumerate([self.source, self.target]):
@@ -146,16 +141,14 @@ class CacheResolver(Resolver):
     def _load_hist(self, src=None):  # -> Dict:
         '''Return fetch/fail history from file or touch/init a new picklefile if reqd'''
         hist = self.BLANKHIST
-        if src and hasattr(self.response, 'cacheLocation'):
-            self.picklefile = '{}/{}{}'.format(self.response.cacheLocation,
-                                               CachedResponse._hash(src),
-                                               self.PICKLESFX)
-            try:
-                with open(self.picklefile, 'rb') as f:
+        if src and hasattr(self.response,'cacheLocation'):
+            self.picklefile = '{}/{}{}'.format(self.response.cacheLocation,CachedResponse._hash(src),self.PICKLESFX)
+            try: 
+                with open(self.picklefile,'rb') as f:
                     hist = pickle.load(f)
-                # return self._merge(self.history,pickle.load(open(self.picklefile,'rb')))
+                #return self._merge(self.history,pickle.load(open(self.picklefile,'rb')))
             except (EOFError, FileNotFoundError) as fnfe:
-                # touch
+                #touch
                 with open(self.picklefile, 'ab') as f:
                     pass
         return hist
@@ -170,12 +163,12 @@ class CacheResolver(Resolver):
     @DisplayWrapper.show()
     def _getXMLResponse(self, url):  # -> None:
         resp = validate.SCHMD._request(url)
-        merge_hist = CacheResolver._merge(self.history, {'cache': set([url, ])})
-        resolver = CacheResolver(resp, self.encoding, merge_hist)
-        self.history = CacheResolver._merge(self.history, resolver.history)
-
-    @staticmethod
-    def _merge(a, b):  # -> Dict:
+        merge_hist = CacheResolver._merge(self.history,{'cache':set([url,])})
+        resolver = CacheResolver(resp,self.encoding,merge_hist)
+        self.history = CacheResolver._merge(self.history,resolver.history)
+  
+    @staticmethod        
+    def _merge(a,b):#-> Dict:
         '''Unidirectional merge from a<-b'''
         c = a.copy()
         for k in c:

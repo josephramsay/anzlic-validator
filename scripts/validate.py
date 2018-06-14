@@ -157,7 +157,7 @@ class SCHMD(object):
     def _bcached(url, enc=ENC):
         '''Wrapper for cached url open with bs'''
         txt = SCHMD._request(url)
-        bst = BS(txt, 'lxml-xml')
+        bst = BS(txt,'lxml-xml')
         return bst
 
     @staticmethod
@@ -372,18 +372,14 @@ class Remote(SCHMD):
             raise CapabilitiesAccessException(
                 'Failed to get {}/{} layer ids.\n{}'.format(wxs, sorf, he))
         except ValueError as ve:
-            raise CapabilitiesParseException(
-                'Failed to read {}/{} layer ids.\n{}'.format(wxs, sorf, ve))
-        # Catch if no features found
-        try:
-            ret
-        except NameError:
-            raise CapabilitiesParseException(
-                'No matching {} features found'.format(wxs))
-
-        return ret if torl in ('tandl', 'landt') else ret[lort]
-
-    def _bextract(self, bst, ftx):
+            raise CapabilitiesParseException('Failed to read {}/{} layer ids.\n{}'.format(wxs,sorf,ve))
+        #Catch if no features found
+        try: ret
+        except NameError: raise CapabilitiesParseException('No matching {} features found'.format(wxs))
+            
+        return ret if torl in ('tandl','landt') else ret[lort] 
+    
+    def _bextract(self,bst,ftx):
         '''regex out id and table/layer type using bsoup'''
         ret = {'layer': (), 'table': ()}
         for ft in bst.find_all(ftx['path']):
@@ -401,40 +397,36 @@ class Remote(SCHMD):
             ret[match.group(1)] += (
             (int(match.group(2)), ft.find(ftx['title'], namespaces=NSX).text),)
         return ret
-
-    def _geturlset(self, sorf, wxs):
+    
+    def _geturlset(self,sorf,wxs):
         '''Returns capabilities URL, xpath fragment to title/name and parser method
         wxs: Select xpath for wfs/wms layer types
-        sorf: Select where to get layer IDs from; services or feeds.
+        sorf: Select where to get layer IDs from; services or feeds. 
         (If selecting LDS Services, capabilities are limited to 250 results so will have to be paged)
         '''
-        cap = {
-            'services': 'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
-            'feeds': 'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary'}
-        # wfs/wms feature paths
-        ftx = {'services': {'wfs': {'path': 'FeatureType',
-                                    'name': 'Name',
-                                    'title': 'Title',
-                                    'lib': 'b'},
-                            'wms': {'path': 'Capability/Layer/Layer',
-                                    'name': 'Name',
-                                    'title': 'Title',
-                                    'lib': 'x'}
-                            }[wxs],
-               'feeds':
-                   {'wfs': {'path': '//csw:SearchResults/csw:SummaryRecord',
-                            'name': './dc:identifier',
-                            'title': './dc:Title',
-                            'lib': 'b'},
-                    'wms': {'path': '//csw:SearchResults/csw:SummaryRecord',
-                            'name': './dc:identifier',
-                            'title': './dc:Title',
-                            'lib': 'x'}
-                    }[wxs]}
-        borx = {'b': (self._bcached, self._bextract),
-                'x': (self._xcached, self._xextract)}[ftx[src]['lib']]
-        return cap[sorf], ftx[sorf], borx
-
+        cap = {'services':'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
+               'feeds':'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary'}
+        #wfs/wms feature paths      
+        ftx = {'services':{'wfs':{'path':'FeatureType',
+                       'name':'Name',
+                       'title':'Title',
+                       'lib':'b'},
+                'wms':{'path':'Capability/Layer/Layer',
+                       'name':'Name',
+                       'title':'Title',
+                       'lib':'x'}
+               }[wxs],        
+               'feeds':{'wfs':{'path':'//csw:SearchResults/csw:SummaryRecord',
+                       'name':'./dc:identifier',
+                       'title':'./dc:Title',
+                       'lib':'b'},
+                'wms':{'path':'//csw:SearchResults/csw:SummaryRecord',
+                       'name':'./dc:identifier',
+                       'title':'./dc:Title',
+                       'lib':'x'}
+               }[wxs]}
+        borx = {'b':(self._bcached,self._bextract),'x':(self._xcached,self._xextract)}[ftx[src]['lib']]
+        return cap[sorf],ftx[sorf],borx
 
 class Combined(Remote):
     '''Subclass of the Remote connector but subclassing schema/metadata to attempt local file load first'''
@@ -475,14 +467,13 @@ class Combined(Remote):
 class RemoteParser(XMLParser):
     '''Simple custom parser wrapper overrodes init with encoding spec'''
 
-    def __init__(self, enc):  # -> None:
-        super(RemoteParser, self).__init__(ns_clean=True, recover=True,
-                                           encoding=enc)
-
-
-def process(opts, args):
+    def __init__(self,enc): #-> None:
+        super(RemoteParser,self).__init__(ns_clean=True,recover=True,encoding=enc)
+       
+    
+def process(opts,args):
     '''Validate all layers'''
-
+    
     global USE_CACHE
 
     id = None
@@ -501,20 +492,19 @@ def process(opts, args):
         Validator = Remote
     else:
         Validator = Combined
-
-    for o, v in opts:
-        if o in ('-i', '--id'): id = [(v, 'user supplied'), ]
-        if o in ('-w', '--wxs') and v in ('wfs', 'wms'): wxs = v
-        if o in ('-t', '--torl') and v in (
-        'layer', 'table', 'tandl', 'landt'): torl = v
-        if o in ('-s', '--sorf') and v in ('services', 'feeds'): sorf = v
-
-    # v1 = Remote()
-    # v1.setschema()
+        
+    for o,v in opts:
+        if o in ('-i','--id'): id = [(v,'user supplied'),]
+        if o in ('-w','--wxs') and v in ('wfs','wms'): wxs = v
+        if o in ('-t','--torl') and v in ('layer','table','tandl','landt'): torl = v
+        if o in ('-s','--sorf') and v in ('services','feeds'): sorf = v
+        
+    #v1 = Remote()
+    #v1.setschema()
     v3 = Validator()
     v3.setschema()
-
-    wxsi = id or v3.getids(wxs=wxs, sorf=sorf, torl=torl)
+    
+    wxsi = id or v3.getids(wxs=wxs,sorf=sorf,torl=torl)
 
     for lid in wxsi:
         try:
@@ -523,27 +513,24 @@ def process(opts, args):
             c = v3.conditional()
             print(lid, v and c)
         except ValidatorException as ve:
-            print (lid, ve, False)
-
-
+            print (lid,ve,False)
+    
 def poa(oa):
     '''Options and Args reorganised for getopts'''
-    o = [('{}:'.format(i[0]), '{}='.format(i[1:])) for i in oa[0].split(',')]
-    a = [(i[0], i[1:]) for i in oa[1].split(',')]
-    return (''.join([i[0] for i in o] + [i[0] for i in a]),
-            [i[1] for i in o] + [i[1] for i in a])
-
+    o = [('{}:'.format(i[0]),'{}='.format(i[1:])) for i in oa[0].split(',')]
+    a = [(i[0],i[1:]) for i in oa[1].split(',')]
+    return (''.join([i[0] for i in o]+[i[0] for i in a]),[i[1] for i in o]+[i[1] for i in a])
 
 def main():
     '''Main function gets args and parses the system ones'''
-
-    oa = ['wwxs,iid,ttorl,ssorf', 'llocal,rremote,ccache,vversion,hhelp']
+    
+    oa = ['wwxs,iid,ttorl,ssorf','llocal,rremote,ccache,vversion,hhelp']
     try:
         opts, args = getopt.getopt(sys.argv[1:], *poa(oa))
     except getopt.error as msg:
-        print (msg + ". For help use --help")
+        print (msg+". For help use --help")
         sys.exit(2)
-
+        
     for opt, val in opts:
         if opt in ("-h", "--help"):
             print (__doc__)
@@ -551,9 +538,8 @@ def main():
         elif opt in ("-v", "--version"):
             print (__version__)
             sys.exit(0)
-
-    process(opts, args)
-
+        
+    process(opts,args)
 
 if __name__ == "__main__":
     main()
