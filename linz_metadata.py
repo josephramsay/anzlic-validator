@@ -22,24 +22,26 @@
 """
 
 # Import the code for the dialog
+import qgis
 import yaml
 import re
 import os
 import uuid
 import koordinates
 import sys
+import traceback
 import scripts.resources
-
+import urllib2 as UR
 from qgis.core import QgsCoordinateReferenceSystem as QCRS
 from PyQt4.QtCore import QSettings, QCoreApplication, QDate, QTime, Qt, \
-    QTranslator, qVersion
+    QTranslator, qVersion, QObject
 from PyQt4.QtGui import QIcon, QAction, QFileDialog, QItemSelectionModel, \
     QTextCursor, QFont, QTableWidgetItem as QTWI, QComboBox, QPalette, QColor, \
-    QLabel
+    QLabel, QWhatsThis
 from linz_metadata_dialog import LINZ_MetadataDialog
 from scripts.codeList import codeList as CL
 from lxml.etree import parse as PS, SubElement as SE, QName as QN, \
-    Element as EL, tostring as TS, ElementTree as ELT
+    Element as EL, tostring as TS, ElementTree as ELT, XMLSyntaxError
 from shutil import copyfile
 from scripts.validate import Combined, ValidatorException, KEY
 from scripts.errorChecker import runChecks, InvalidConfigException
@@ -221,13 +223,13 @@ class LINZ_Metadata:
         """
         self.dlg = LINZ_MetadataDialog()
         self.publishDialog = Publish_MetadataDialog(self.dlg)
-        self.tF, self.cF, self.cFS, self.palette = None, None, None, None
-        self.rcode, self.widget, self.use, self.MDTEXT = None, None, None, {}
-        self.client, self.lid, self.layer, self.resCC = None, None, None, None
-        self.configfile, self.title, self.rcopyright = None, None, None
-        self.metaCL, self.resCL, self.metaCC = None, None, None
-        self.rlicense, self.mcopyright, self.mlicense = None, None, None
-        self.iface = iface
+        noneVar = ('tF', 'cF', 'cFS', 'palette', 'rcode', 'widget', 'use',
+                   'client', 'lidpub', 'layer', 'resCC', 'configfile', 'title',
+                   'rcopyright', 'metaCL', 'resCL', 'metaCC', 'lid', 'rlicense',
+                   'mcopyright', 'mlicense')
+        for var in noneVar:
+            setattr(self, var, None)
+        self.MDTEXT, self.iface, self.actions = {}, iface, []
         self.plugin_dir = os.path.dirname(__file__)
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(self.plugin_dir, 'i18n',
@@ -237,7 +239,6 @@ class LINZ_Metadata:
             self.translator.load(locale_path)
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
-        self.actions = []
         self.menu = self.tr(u'&LINZ Metadata')
         self.toolbar = self.iface.addToolBar(u'LINZ_Metadata')
         self.toolbar.setObjectName(u'LINZ_Metadata')
@@ -404,7 +405,6 @@ class LINZ_Metadata:
         self.dlg.linkText.clicked.connect(lambda: self.textStyle(3))
 
         self.dlg.fixError.clicked.connect(self.fixError)
-        self.dlg.selectConfig.clicked.connect(self.configUpdate)
 
         self.dlg.loadExtent.clicked.connect(self.loadExtent)
 
@@ -415,6 +415,85 @@ class LINZ_Metadata:
 
         self.dlg.fillLegal.clicked.connect(self.autoFillLegal)
         self.dlg.undoFill.clicked.connect(self.autoFillLegalUndo)
+
+        self.dlg.loadMetadataID.clicked.connect(self.selectLayer)
+
+        self.dlg.iName2.editTextChanged.connect(lambda: self.test(self.dlg.iName2))
+        self.dlg.iName1.editTextChanged.connect(lambda: self.test(self.dlg.iName1))
+        self.dlg.oName2.editTextChanged.connect(lambda: self.test(self.dlg.oName2))
+        self.dlg.oName1.editTextChanged.connect(lambda: self.test(self.dlg.oName1))
+        self.dlg.pName2.editTextChanged.connect(lambda: self.test(self.dlg.pName2))
+        self.dlg.pName1.editTextChanged.connect(lambda: self.test(self.dlg.pName1))
+        self.dlg.dadd2.editTextChanged.connect(lambda: self.test(self.dlg.dadd2))
+        self.dlg.dadd1.editTextChanged.connect(lambda: self.test(self.dlg.dadd1))
+        self.dlg.city2.editTextChanged.connect(lambda: self.test(self.dlg.city2))
+        self.dlg.city1.editTextChanged.connect(lambda: self.test(self.dlg.city1))
+        self.dlg.postCode2.editTextChanged.connect(lambda: self.test(self.dlg.postCode2))
+        self.dlg.postCode1.editTextChanged.connect(lambda: self.test(self.dlg.postCode1))
+        self.dlg.email2.editTextChanged.connect(lambda: self.test(self.dlg.email2))
+        self.dlg.email1.editTextChanged.connect(lambda: self.test(self.dlg.email1))
+        self.dlg.voice2.editTextChanged.connect(lambda: self.test(self.dlg.voice2))
+        self.dlg.voice1.editTextChanged.connect(lambda: self.test(self.dlg.voice1))
+        self.dlg.fas2.editTextChanged.connect(lambda: self.test(self.dlg.fas2))
+        self.dlg.fas1.editTextChanged.connect(lambda: self.test(self.dlg.fas1))
+        self.dlg.role2.editTextChanged.connect(lambda: self.test(self.dlg.role2))
+        self.dlg.role1.editTextChanged.connect(lambda: self.test(self.dlg.role1))
+        self.dlg.referenceSys.crsChanged.connect(lambda: self.test2(self.dlg.referenceSys))
+
+
+
+    def test(self, sender):
+        font = QFont('Noto Sans', 11)
+        sender.setFont(font)
+        if sender.isEditable:
+            sender.lineEdit().setFont(font)
+
+    def test2(self, sender):
+        font = QFont('Noto Sans', 11)
+        sender.setFont(font)
+
+    def selectLayer(self):
+        self.dlg.loadError.hide()
+        if self.dlg.loadLayerID.text() != '':
+            self.lid = self.dlg.loadLayerID.text()
+            md_name = 'https://data.linz.govt.nz/layer/{lid}/metadata/iso/xml/'
+            try:
+                md_handle = UR.urlopen(md_name.format(lid=self.lid))
+                if not os.path.exists(
+                        '{}/downloads'.format(os.path.dirname(__file__))):
+                    os.makedirs(
+                        '{}/downloads'.format(os.path.dirname(__file__)))
+                filename = '{}/downloads/{}'.format(
+                    os.path.dirname(__file__),
+                    md_handle.info()['content-disposition'].split(
+                        "filename*=UTF-8''")[1])
+                with open(filename, 'wb') as file:
+                    file.write(md_handle.read())
+                self.dlg.OUTPUTFILE = filename
+                self.dlg.changeTemplate(filename)
+                self.dlg.metadataFile.setText(self.dlg.OUTPUTFILE)
+                self.loadMetadata(2)
+            except XMLSyntaxError as xse:
+                # Private layers are inaccessible
+                if 'https://id.koordinates.com/login' in md_handle.url:
+                    self.dlg.loadError.setText(
+                        'Private layer {}.\n{}'.format(self.lid, xse))
+                else:
+                    self.dlg.loadError.setText(
+                        'Metadata parse error {}.\n{}'.format(self.lid, xse))
+                self.dlg.loadError.show()
+            except UR.HTTPError as he:
+                self.dlg.loadError.setText(
+                    'Metadata unavailable {}.\n{}'.format(self.lid, he))
+                self.dlg.loadError.show()
+            except Exception as e:
+                # catch any other error and continue, may not be what is wanted
+                self.dlg.loadError.setText(
+                    'Processing error {}.\n{}'.format(self.lid, e))
+                self.dlg.loadError.show()
+        else:
+            self.dlg.loadError.setText('Input Layer ID')
+            self.dlg.loadError.show()
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -440,16 +519,16 @@ class LINZ_Metadata:
             topicCategoryValues = CL('MD_TopicCategoryCode')
             self.MDTEXT = {}
             if button == 1:
-                if self.dlg.templateFile.toPlainText() == '' or \
-                        self.dlg.outputFile.toPlainText() == '':
+                if self.dlg.templateFile.text() == '' or \
+                        self.dlg.outputFile.text() == '':
                     raise Exception("Metadata Load Error, No File Selected")
-                self.dlg.changeTemplate(self.dlg.templateFile.toPlainText())
-                self.dlg.OUTPUTFILE = self.dlg.outputFile.toPlainText()
+                self.dlg.changeTemplate(self.dlg.templateFile.text())
+                self.dlg.OUTPUTFILE = self.dlg.outputFile.text()
             elif button == 2:
-                if self.dlg.metadataFile.toPlainText() == '':
+                if self.dlg.metadataFile.text() == '':
                     raise Exception("Metadata Load Error, No File Selected")
-                self.dlg.changeTemplate(self.dlg.metadataFile.toPlainText())
-                self.dlg.OUTPUTFILE = self.dlg.metadataFile.toPlainText()
+                self.dlg.changeTemplate(self.dlg.metadataFile.text())
+                self.dlg.OUTPUTFILE = self.dlg.metadataFile.text()
             try:
                 md = PS(os.path.abspath(os.path.join(
                     os.path.dirname(__file__), self.dlg.TEMPLATEPATH)))
@@ -514,6 +593,7 @@ class LINZ_Metadata:
                           POCROLE: 'ROLE2'}
 
             constraints = ('RCOPYRIGHT', 'RLICENSE', 'MCOPYRIGHT', 'MLICENSE')
+            font = QFont('Noto Sans', 11)
             for vals in constraints:
                 text = ''
                 if vals in config:
@@ -823,7 +903,7 @@ class LINZ_Metadata:
         self.dlg.loadError.hide()
         self.dlg.loadError.clear()
         # Update window name and reset fields.
-        fname = self.dlg.TEMPLATEPATH[self.dlg.TEMPLATEPATH.rfind('/') + 1:]
+        fname = self.dlg.OUTPUTFILE[self.dlg.OUTPUTFILE.rfind('/') + 1:]
         self.dlg.setWindowTitle("ANZLIC METADATA - " + fname)
         self.dlg.setCurrentIndex(1)
         for i in range(self.dlg.count()):
@@ -887,7 +967,8 @@ class LINZ_Metadata:
         self.dlg.metadataTable.setRowCount(j)
         self.dlg.metadataTable.setColumnWidth(0, 210)
         self.dlg.metadataTable.setWordWrap(True)
-        font = QFont('Noto Sans', 14, QFont.Bold, True)
+        font = QFont('Noto Sans', 15, QFont.Bold, True)
+        font2 = QFont('Noto Sans', 11)
         changeVals = {'Code'                 : 'Extent Description',
                       'Classification'       : 'Security Classification',
                       'Denominator'          : 'Scale',
@@ -956,6 +1037,7 @@ class LINZ_Metadata:
                             textnew = text
                         text = textnew
                         abst = QLabel(text)
+                        abst.setFont(font2)
                         abst.setWordWrap(True)
                         abst.setTextInteractionFlags(Qt.TextBrowserInteraction)
                         self.dlg.metadataTable.setCellWidget(k, 1, abst)
@@ -1066,6 +1148,23 @@ class LINZ_Metadata:
               ('ANZLIC the Spatial Information Council', None)),
              ('/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:role/' +
               'gmd:CI_RoleCode', ('custodian', None))])
+        extentDesv1 = OD(
+            [('/gmd:title' + CS, (
+                'ANZMet Lite Country codelist',
+                'gmd:identificationInfo/gmd:MD_DataIdentification')),
+             ('/gmd:date/gmd:CI_Date/gmd:date' + DT, ('2009-03-31', None)),
+             ('/gmd:date/gmd:CI_Date/gmd:dateType/gmd:CI_DateTypeCode',
+              ('publication', None)),
+             ('/gmd:edition' + CS, ('Version 1.0', None)),
+             ('/gmd:editionDate' + DT, ('2009-03-31', None)),
+             ('/gmd:identifier/gmd:MD_Identifier/gmd:code' + CS,
+              ('http://asdd.ga.gov.au/asdd/profileinfo/anzlic-country.xml' +
+               '#Country', None)),
+             ('/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:' +
+              'organisationName' + CS,
+              ('ANZLIC the Spatial Information Council', None)),
+             ('/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:role/' +
+              'gmd:CI_RoleCode', ('custodian', None))])
         keywordDict = OD(
             [('/gmd:title' + CS, ('ANZLIC Jursidictions', None)),
              ('/gmd:date/gmd:CI_Date/gmd:date' + DT, ('2008-10-29', None)),
@@ -1090,11 +1189,11 @@ class LINZ_Metadata:
             for i in FIELDS:
 
                 # File Identifier
-                if i == FID and self.dlg.outputFile.toPlainText() != '':
+                if i == FID and self.dlg.outputFile.text() != '':
                     tree = self.write(i, tree, str(uuid.uuid4()))
 
                 # Date Stamp
-                elif i == DSTAMP and self.dlg.outputFile.toPlainText() != '':
+                elif i == DSTAMP and self.dlg.outputFile.text() != '':
                     date = QDate.currentDate().toString('yyyy-MM-dd')
                     tree = self.write(i, tree, date, iD)
 
@@ -1111,11 +1210,11 @@ class LINZ_Metadata:
                     if self.dlg.scale.isChecked() and \
                             self.dlg.resolutionRadioButton.isChecked():
                         if self.dlg.rUnits.currentText() == '' or \
-                                self.dlg.resolutionText.toPlainText() == '':
+                                self.dlg.resolutionText.text() == '':
                             raise Exception('Write Warning: Resolution not ' +
                                             'written to XML as missing fields.')
                         else:
-                            text = self.dlg.resolutionText.toPlainText()
+                            text = self.dlg.resolutionText.text()
                             tree = self.write(i, tree, text)
                             for j in self.rcode:
                                 if self.rcode[j] == self.dlg.rUnits.currentText(
@@ -1135,8 +1234,11 @@ class LINZ_Metadata:
                         idn = SE(md, QN(NSX['gmd'], 'identificationInfo'))
                         idn = SE(idn, QN(NSX['gmd'], 'MD_DataIdentification'))
                     for s in self.dlg.geogDesList.selectedItems():
+                        exDesc = extentDesc
+                        if s.text() == 'nzl':
+                            exDesc = extentDesv1
                         extent = SE(idn, QN(NSX['gmd'], 'extent'))
-                        for value in extentDesc:
+                        for value in exDesc:
                             base, found = '', None
                             for val in (ex+value).split('/'):
                                 if extent.find(
@@ -1165,11 +1267,11 @@ class LINZ_Metadata:
                                             sel.text = s.text()
                                             f.addnext(el)
                                         num += 1
-                            f.text = extentDesc[value][0]
+                            f.text = exDesc[value][0]
                             if 'gco' not in f.tag:
                                 f.attrib['codeList'] = url + f.tag[f.tag.rfind(
                                     '}') + 1:]
-                                f.attrib['codeListValue'] = extentDesc[value][0]
+                                f.attrib['codeListValue'] = exDesc[value][0]
 
                 # Reference System
                 elif i == RS:
@@ -1420,6 +1522,8 @@ class LINZ_Metadata:
             self.publishDialog.layerId.clear()
             self.publishDialog.publishBox.setEnabled(False)
             self.publishDialog.show()
+            if self.lid:
+                self.publishDialog.layerId.setText(self.lid)
         except Exception as e:
             self.dlg.validationLog.setText('Publication Error: ' + str(e))
 
@@ -1433,11 +1537,14 @@ class LINZ_Metadata:
         try:
             self.publishDialog.errorText.clear()
             self.publishDialog.titleBox.clear()
-            self.lid = self.publishDialog.layerId.toPlainText()
-            self.layer = self.client.layers.get(self.lid)
-            self.title = self.layer.title
-            self.publishDialog.titleBox.setText(self.title)
-            self.publishDialog.publishBox.setEnabled(True)
+            self.lidpub = self.publishDialog.layerId.toPlainText()
+            if self.lidpub != '':
+                self.layer = self.client.layers.get(self.lidpub)
+                self.title = self.layer.title
+                self.publishDialog.titleBox.setText(self.title)
+                self.publishDialog.publishBox.setEnabled(True)
+            else:
+                self.publishDialog.errorText.setText('Enter Layer ID to Update')
         except Exception as e:
             self.publishDialog.errorText.setText(str(e))
             self.publishDialog.publishBox.setEnabled(False)
@@ -1457,7 +1564,7 @@ class LINZ_Metadata:
             if res:
                 #r = self.client.publishing.create(publisher)
                 self.dlg.validationLog.setText('Publication Complete - ' + 
-                                               self.lid + ' - ' + self.title)
+                                               self.lidpub + ' - ' + self.title)
             else:
                 raise Exception('Error Getting Draft Metadata')
         except Exception as e:
@@ -1465,9 +1572,9 @@ class LINZ_Metadata:
         '''
         print (publish)
         xmlfile = self.dlg.OUTPUTFILE
-        layerID = self.lid
+        layerID = self.lidpub
         print (xmlfile, layerID)
-        text = 'Publication Complete - ' + self.lid + ' - ' + self.title
+        text = 'Publication Complete - ' + self.lidpub + ' - ' + self.title
         self.dlg.validationLog.setText(text)
 
     def toggleDate(self, state):
@@ -1621,16 +1728,6 @@ class LINZ_Metadata:
         else:
             self.dlg.resourceUpdate.setEnabled(False)
 
-    def configUpdate(self):
-        """
-        Select Config clicked.
-        Update config file to be used in Error Checker(automatic) and Contact
-        Drop down(requires load metadata to be clicked to apply) options.
-        :return: None
-        """
-        self.configfile = r'{}/{}'.format(os.path.abspath(os.path.join(
-            __file__, '../config')), self.dlg.configSelector.currentText())
-
     def loadExtent(self):
         """
         Load Extent clicked.
@@ -1742,7 +1839,7 @@ class LINZ_Metadata:
                 self.use.hide()
 
             # Run Error Checks
-            runChecks(meta, con=self.configfile)
+            runChecks(meta, self.lid, con=self.configfile)
 
             self.dlg.fixError.hide()
             self.dlg.validationLog.setText('Error Checks Complete')
@@ -1832,6 +1929,7 @@ class LINZ_Metadata:
             except Exception as e:
                 self.dlg.validationLog.setText('Checker Error: {}'.format(
                     str(e)))
+                traceback.print_exc()
                 self.dlg.fixError.hide()
                 self.dlg.createMetadata.setEnabled(False)
             self.dlg.createMetadata.setEnabled(False)
