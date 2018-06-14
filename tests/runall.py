@@ -30,17 +30,17 @@ class FullSuite(unittest.TestSuite):
     
     def suite(self):
         suites = ()
-        suites += unittest.makeSuite(T11)
-        suites += unittest.makeSuite(T12)
+        suites += (unittest.makeSuite(T11),)
+        suites += (unittest.makeSuite(T12),)
         
-        suites += unittest.makeSuite(T21)
-        suites += unittest.makeSuite(T22)
-        suites += unittest.makeSuite(T23)
-        suites += unittest.makeSuite(T24)
+        suites += (unittest.makeSuite(T21),)
+        suites += (unittest.makeSuite(T22),)
+        suites += (unittest.makeSuite(T23),)
+        suites += (unittest.makeSuite(T24),)
         
         #suites += unittest.makeSuite(T31)
 
-        suites += unittest.makeSuite(T41)
+        suites += (unittest.makeSuite(T41),)
    
         return unittest.TestSuite(suites)
 
@@ -52,7 +52,7 @@ def main():
     else:
         suite  = unittest.TestSuite()
     
-    runner = unittest.TextTestRunner()
+    runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
     
 if __name__ == "__main__":

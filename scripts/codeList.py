@@ -1,5 +1,5 @@
 import lxml
-from urllib import request
+import urllib2
 from lxml import etree
 
 NSX = {'gml'    :   'http://www.opengis.net/gml/3.2',
@@ -11,7 +11,7 @@ NSX = {'gml'    :   'http://www.opengis.net/gml/3.2',
        'gmx'    :   'http://www.isotc211.org/2005/gmx'}
 
 url = "http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml"
-codeListURL = request.urlopen(url)
+codeListURL = urllib2.urlopen(url)
 cdl = etree.parse(codeListURL)
 root = cdl.getroot()
 
@@ -25,4 +25,5 @@ def codeList(name):
     for el in root.findall('gmx:codelistItem/gmx:CodeListDictionary', namespaces=NSX):
         if el.xpath('@gml:id', namespaces=NSX)[0] == name:
             return finder(el)
+
 
