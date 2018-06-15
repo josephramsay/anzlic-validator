@@ -71,12 +71,14 @@ class DisplayWrapper(object):
 
 class CacheResolver(Resolver):
     '''Custom resolver to redirect resolution of cached resources back through the cache'''
+
     PICKLESFX = '.history'  # type: str
     BLANKHIST = {'cache': set([]), 'fail': set([])}  # type: Dict[str,Set[str]]
 
     def __init__(self, response, encoding, history):  # -> None:
         self.response = self._testresp(response)
         self.encoding = encoding
+
         self.source = self.response.url
         self.history = history or self._load_hist(self.source)
         self.doc = XML(validate.SCHMD._extracttxt(self.response, self.encoding))
@@ -92,8 +94,9 @@ class CacheResolver(Resolver):
     def _testresp(self,response):
         if isinstance(response,CachedResponse):
             return response
-        raise NonCachedResponseException(
-            'Provided response object is not from a cached source')
+        raise NonCachedResponseException('Provided response object is not from a cached source')
+     
+    def _precache(self): # -> None:
         '''Precache imports and includes'''
         for incl in self.doc.findall('xs:include', namespaces=validate.NSX):
             for i, ns in enumerate([self.source, self.target]):
@@ -108,6 +111,7 @@ class CacheResolver(Resolver):
                                                impt.attrib['schemaLocation']),
                                     'import-{}'.format(i)):
                     break
+
 
     def _getimports(self, url, i):  # -> None:
         '''import xsd using selectio of urls including targetNamespace, namespace and url of source'''
@@ -138,6 +142,7 @@ class CacheResolver(Resolver):
             return False
         return True
 
+
     def _load_hist(self, src=None):  # -> Dict:
         '''Return fetch/fail history from file or touch/init a new picklefile if reqd'''
         hist = self.BLANKHIST
@@ -153,7 +158,8 @@ class CacheResolver(Resolver):
                     pass
         return hist
 
-    def _save_hist(self):  # -> None:
+    def _save_hist(self): # -> None:
+
         '''Save the fetched/failed url list into picklefile, merging with existing'''
         if hasattr(self, 'picklefile'):
             hist = self._merge(self.history, self._load_hist())
@@ -161,14 +167,14 @@ class CacheResolver(Resolver):
                 pickle.dump(hist, f)
 
     @DisplayWrapper.show()
-    def _getXMLResponse(self, url):  # -> None:
+    def _getXMLResponse(self, url): # -> None:
         resp = validate.SCHMD._request(url)
         merge_hist = CacheResolver._merge(self.history,{'cache':set([url,])})
         resolver = CacheResolver(resp,self.encoding,merge_hist)
         self.history = CacheResolver._merge(self.history,resolver.history)
   
     @staticmethod        
-    def _merge(a,b):#-> Dict:
+    def _merge(a,b): # -> Dict:
         '''Unidirectional merge from a<-b'''
         c = a.copy()
         for k in c:
@@ -177,16 +183,15 @@ class CacheResolver(Resolver):
         # return {k:a[k].copy().update(b[k]) if k in b else a[k].copy() for k in a.keys()}
 
     @staticmethod
-    def _slash(u):  # -> str:
-        return os.path.join(u, '') if u.rfind('/') > u.rfind('.') else u
+    def _slash(u): # -> str:
+        return os.path.join(u,'') if u.rfind('/')>u.rfind('.') else u
 
-    def _cached(self, frag):  # -> str:
-        for u in [h for h in self.history['cache'] if
-                  h not in self.history['fail']]:
+    def _cached(self,frag): # -> str:
+        for u in [h for h in self.history['cache'] if h not in self.history['fail']]:
             if frag.lstrip('.') in u: return u
         return None
-
-    def resolve(self, system_url, public_id, context):  # -> str:
+        
+    def resolve(self, system_url, public_id, context): # -> str:
         '''Override of resolver resolve method that fetches and read cached page using that in a resolve_string call'''
         # pprint (self.history)
         rstr = None
