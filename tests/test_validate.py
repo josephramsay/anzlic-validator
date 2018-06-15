@@ -3,14 +3,14 @@ import unittest
 import os
 import sys
 
-sys.path.append('../scripts/')
+sys.path.append('../')
 
-from validate import Remote, Local, Combined, NSX
-from validate import ValidatorParseException, ValidatorAccessException
-from cache import CacheHandler
-from authenticate import Authentication
+from scripts.validate import Remote, Local, Combined, NSX
+from scripts.validate import ValidatorParseException, ValidatorAccessException
+from scripts.cache import CacheHandler
+from scripts.authenticate import Authentication
 
-from typing import List, Tuple
+#from typing import List, Tuple
 
 class Test_1_init(unittest.TestCase):
         
@@ -163,7 +163,7 @@ class Test_4_setupcombined(unittest.TestCase):
             self.assertTrue(_scanxml(sample))
         
         
-def _testvals(type: str = 'sf') -> List[Tuple]:
+def _testvals(type='sf'):# -> List[Tuple]:
     '''Returns a list of test ids'''
     ids = [] # type: List[Tuple]
     if 's' in type: ids += [(i,'succeed') for i in ('50772','50845','50789')]
@@ -172,10 +172,10 @@ def _testvals(type: str = 'sf') -> List[Tuple]:
     if 'x' in type: ids += [(i,'nonexistant') for i in ('98765','12345',)]
     return ids
 
-def _testnames(type: str = '') -> List[Tuple]:
+def _testnames(type=''):# -> List[Tuple]:
     return [('nz-primary-parcels.iso.xml','succeed'),]
 
-def _scanxml(sample, snip: str = '') -> bool: 
+def _scanxml(sample, snip=''):# -> bool: 
     '''Look for XML snippet in sample'''
     return sample == True or sample.getroot().find(snip,namespaces=NSX)
 
