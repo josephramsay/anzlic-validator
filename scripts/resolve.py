@@ -1,3 +1,18 @@
+'''
+Name: resolve
+Created: 11/03/2018
+@author: jramsay
+
+Notes.
+Contains CacheResolver module that, given a CachedResponse, typically a schema document,  
+will attempt to precache all linked sub schemas and provide these back to the lxml.etree parser 
+when assigned as a resolver
+
+
+Todo.
+1.redirect _getXMLResponse to a logger instance (DisplayWrapper)
+'''
+
 import os
 #import re
 import urllib.request   as UR
@@ -32,21 +47,7 @@ SL = ['http://www.isotc211.org/2005/',
       'http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/',
       'https://www.ngdc.noaa.gov/emma/xsd/schema/']
 SLi = 1
-
-
-# class ResolverHistory():
-#     BLANKHIST = {'cache':[],'fail':[]}
-#     def __init__(self):
-#         self.history = self.BLANKHIST
-#     def __len__(self):
-#         return len(self.history['cache']) + len(self.history['fail'])
-#     def __getitem__(self,ci):
-#         c,i = ci
-#         return self.history[c][i]
-#     def __setitem__(self,ci,val):
-#         c,i = ci
-#         self.history[c][i] = val
-        
+    
 DEPTH = 0
 
 class NonCachedResponseException(Exception): pass
@@ -68,27 +69,36 @@ class DisplayWrapper(object):
             return res
         
         return wrapper
-     
+    
+    
+
 class CacheResolver(Resolver):
     '''Custom resolver to redirect resolution of cached resources back through the cache'''
     PICKLESFX = '.history'   # type: str
     BLANKHIST = {'cache':set([]),'fail':set([])}   # type: Dict[str,Set[str]]
     
-    def __init__(self,response,encoding,history): # -> None:
-        self.response = self._testresp(response)          
-        self.encoding = encoding      
+    #def __init__(self,response,encoding='UTF-8',history=None): # -> None:
+    def __init__(self,*args, **kwargs): # -> None
+        self.response = self._testresp(kwargs.get('response') or args[0])
+        self.encoding = kwargs.get('encoding') or args[1] or 'UTF-8'
         self.source = self.response.url
-        self.history = history or self._load_hist(self.source)
+        self.history = kwargs.get('history') or args[2] or self._load_hist(self.source)
+        #self.response = self._testresp(response)          
+        #self.encoding = encoding      
+        
+        #self.history = history or self._load_hist(self.source)
         self.doc = XML(validate.SCHMD._extracttxt(self.response,self.encoding))
         if self.doc.tag.lower() == 'html':  
             raise validate.InaccessibleSchemaException('Invalid response, {} is HTML'.format(self.source))
-        self.target = self.doc.attrib['targetNamespace']
+        self.target = self.doc.attrib['targetNamespace'] if self.doc.attrib.has_key('targetNamespace') else SL[SLi]
+
         #precache imports
         self._precache()
         #if not history: # ensures saving only at end of resolve init
         self._save_hist()
     
     def _testresp(self,response):
+        '''Test that the response is a cache type'''
         if isinstance(response,CachedResponse):
             return response
         raise NonCachedResponseException('Provided response object is not from a cached source')
@@ -182,7 +192,7 @@ class CacheResolver(Resolver):
         return None
         
     def resolve(self, system_url, public_id, context): # -> str:
-        '''Override of resolver resolve method that fetches and read cached page using that in a resolve_string call'''
+        '''Override of resolver resolve method that fetches and reads cached pages using the result in a resolve_string call'''
         #pprint (self.history)
         rstr = None
         cached_url = self._cached(system_url)
@@ -196,33 +206,20 @@ class CacheResolver(Resolver):
         return rstr
         
         
-        
 
+def test1():
+    '''Test function used here to check py27 vs py3 compatability'''
     
-    
-# class ExclusiveList(Set):
-#     def __init__(self,list):
-#         self._list = list
-#         
-#     def append(self,item):
-#         '''Emulates set but denying addition of duplicate items'''
-#         if item not in self._list: self._list.append(item)
-#         
-#     def __len__(self): return len(self._list)
-# 
-#     def __getitem__(self, i): return self._list[i]
-# 
-#     def __delitem__(self, i): del self._list[i]
-# 
-#     def __setitem__(self, i, v):
-#         self._list[i] = v
-# 
-#     def __repr__(self):
-#         return str(self._list)
+    opener = UR.build_opener(CacheHandler('.test_cache'))
+    UR.install_opener(opener)
+    resp = UR.urlopen('https://data.linz.govt.nz/layer/50772-nz-primary-parcels/metadata/iso/xml/')
 
-        
-        
-#     def _getpath(self,url):
-#         pr = UP.urlparse(url)
-#         return '{}://{}{}/'.format(pr.scheme,pr.netloc,'/'.join(pr.path.split('/')[:-1]))
+    resolver = CacheResolver(resp,'utf-8',None)
+
+def main():
+    test1()
+    
+if __name__ == "__main__":
+    main()
+    
 

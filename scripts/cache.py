@@ -7,6 +7,9 @@ import http.client
 import unittest
 import hashlib
 import io
+import collections
+
+from email import policy
 #from email import policy,message
 #from typing import Dict
 
@@ -16,6 +19,12 @@ CACHE_HEADER = 'x-cache-local'
 THROTTLE_HEADER = 'x-throttling'
 THROTTLE_DELAY = 5
 DEF_RESP_LEN = 100000
+CODES = collections.OrderedDict({200:'OK'})
+
+class CacheHandlerException(Exception): pass
+class CacheHandlerResponseCodeException(CacheHandlerException): 
+    def __init__(self, code): self.code = code
+class ThrottlingProcessorException(Exception): pass
 
 class ThrottlingProcessor(urllib.request.BaseHandler):
     """Prevents overloading the remote web server by delaying requests.
@@ -53,12 +62,14 @@ class ThrottlingProcessor(urllib.request.BaseHandler):
         return response
 
 class CacheHandler(urllib.request.BaseHandler):
-    """Stores responses in a persistant on-disk cache.
+    ''''Stores responses in a persistant on-disk cache.
     If a subsequent GET request is made for the same URL, the stored
-    response is returned, saving time, resources and bandwith"""    
+    response is returned, saving time, resources and bandwith'''
+    
     def __init__(self,cacheLocation):
         """The location of the cache directory"""
         self.cacheLocation = CacheHandler._create(cacheLocation)
+        self.codes = CODES
         
     @staticmethod
     def _getcachepath(cacheLocation):
@@ -99,7 +110,7 @@ class CacheHandler(urllib.request.BaseHandler):
         if live, store a copy then pull that same copy (without the cache-header) to return, 
         if from cache, pull cached copy again (add a cache-header) and return
         '''
-        if request.get_method() == "GET":
+        if self._checkResponseCode(response) and request.get_method() == "GET":
             if CACHE_HEADER not in response.info():
                 CachedResponse.StoreInCache(self.cacheLocation, request.get_full_url(), response)
                 return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=False)
@@ -107,12 +118,32 @@ class CacheHandler(urllib.request.BaseHandler):
                 return CachedResponse(self.cacheLocation, request.get_full_url(), setCacheHeader=True)
         else:
             return response
+        
+    def _checkResponseCode(self,response):
+        '''Test that the response code is in self.codes=[200,]'''
+        if response.code not in self.codes:
+            raise CacheHandlerResponseCodeException(response.code)
+        return response.code
     
 class CachedResponse(io.StringIO):
     """An urllib2.response-like object for cached responses.
-    To determine wheter a response is cached or coming directly from
+    To determine whether a response is cached or coming directly from
     the network, check the x-cache header rather than the object type."""
     
+    def __init__(self, cacheLocation,url,setCacheHeader=True):
+        self.cacheLocation = cacheLocation
+        self.url, self.code, self.msg = url, list(CODES)[0], CODES[list(CODES)[0]]
+        hash = self._hash(url)
+        cache_body = open(self._path(hash, 'body'),'r').read()
+        #io.StringIO.__init__(self, cache_body)
+        super(CachedResponse,self).__init__(cache_body)
+        headerbuf = open(self._path(hash, 'headers'),'r').read().strip()
+        if setCacheHeader:
+            headerbuf += '\n{}: {}\r\n'.format(CACHE_HEADER,self._path(hash))
+        self.headers = http.client.HTTPMessage(policy.default)
+        for line in headerbuf.splitlines():
+            self.headers.add_header(*line.split(':',1)) if line else None
+            
     @staticmethod
     def ExistsInCache(cacheLocation, url):
         '''Checks if the hashed URL exists in the cache'''
@@ -140,20 +171,6 @@ class CachedResponse(io.StringIO):
             os.remove('{}/{}.body'.format(cacheLocation,hash))
         except FileNotFoundError: pass
 
-    
-    def __init__(self, cacheLocation,url,setCacheHeader=True):
-        self.cacheLocation = cacheLocation
-        hash = self._hash(url)
-        cache_body = open(self._path(hash, 'body'),'r').read()
-        io.StringIO.__init__(self, cache_body)
-        #super(CachedResponse,self).__init__(cache_body)
-        self.url, self.code, self.msg = url, 200, 'OK'
-        headerbuf = open(self._path(hash, 'headers'),'r').read().strip()
-        if setCacheHeader:
-            headerbuf += '\n{}: {}\r\n'.format(CACHE_HEADER,self._path(hash))
-        self.headers = http.client.HTTPMessage(policy.default)
-        for line in headerbuf.splitlines():
-            self.headers.add_header(*line.split(':',1)) if line else None
            
     @staticmethod     
     def _hash(plain):

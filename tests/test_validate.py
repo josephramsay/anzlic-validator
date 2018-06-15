@@ -121,9 +121,10 @@ class Test_3_setupremote(unittest.TestCase):
             
     def test_60_access_failure_metadata_ARTEST(self):
         '''test validation of known successful layers'''
-        self.remote.setschema()
         for lid in _testvals('ex'):
-            assertRaises(ValidatorAccessException,self.remote.setmetadata,lid)
+            with self.assertRaises(ValidatorAccessException) as vae:
+                self.remote.setschema()
+            self.assertEqual('TODO SOME MESSAGE', str(vae.exception), 'Expected ValidatorAccessException')
    
                 
     def test_70_validate_failure_metadata(self):

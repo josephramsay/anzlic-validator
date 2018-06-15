@@ -11,6 +11,7 @@ from pprint import pprint
 from lxml import etree
 from lxml.etree import XMLParser, XML, ElementTree, _Element
 from lxml.etree import XMLSyntaxError, XMLSchemaParseError
+
 from io import StringIO
 
 from bs4 import BeautifulSoup as BS
@@ -128,24 +129,27 @@ class SCHMD(object):
         return True
     
     @staticmethod
-    def _bcached(url,enc=ENC):
+    def _bretrieve(url,enc=ENC):
         '''Wrapper for cached url open with bs'''
-        txt = SCHMD._request(url)
-        bst = BS(txt,'lxml-xml')
+        resp = SCHMD._request(url)
+        bst = BS(resp,'lxml-xml')
         return bst
     
     @staticmethod
-    def _xcached(url,enc=ENC):
-        '''Wrapper for cached url open with lxml'''
+    def _xretrieve(url,enc=ENC):
+        '''Wrapper for url open with lxml'''
         resp = SCHMD._request(url)
-        txt = SCHMD._extracttxt(resp,enc)
-        xml = SCHMD._parsetxt(txt,resp,enc)
+        if USE_CACHE:
+            txt = SCHMD._extracttxt(resp,enc)
+            xml = SCHMD._parsetxt(txt,resp,enc)
+        else:
+            xml = etree.parse(resp)
         return xml
     
     @staticmethod
     def _parsetxt(txt,resp=None,enc=None,history=None):#{'cache':[],'fail':[]}):
         '''Parse provided text into XML doc'''
-        if enc and resp and isinstance(resp,CachedResponse): 
+        if enc and resp and isinstance(resp,CachedResponse):
             resolver = resolve.CacheResolver(resp,enc,history)
             parser = RemoteParser(enc)
             parser.resolvers.add(resolver)
@@ -261,7 +265,7 @@ class Remote(SCHMD):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = '{url}gmd/metadataEntity.xsd'.format(url=SL[SLi])
         print (sch_name)
-        sch_doc = cls._xcached(sch_name)
+        sch_doc = cls._xretrieve(sch_name)
         try:
             sch = etree.XMLSchema(sch_doc)
             return sch
@@ -314,7 +318,7 @@ class Remote(SCHMD):
         try: ret
         except NameError: raise CapabilitiesParseException('No matching {} features found'.format(wxs))
             
-        return ret if torl in ('tandl','landt') else ret[lort] 
+        return ret if torl in ('tandl','landt') else ret[torl] 
     
     def _bextract(self,bst,ftx):
         '''regex out id and table/layer type using bsoup'''
@@ -342,25 +346,32 @@ class Remote(SCHMD):
         cap = {'services':'http://data.linz.govt.nz/services;key={key}/{wxs}?service={wxs}&request=GetCapabilities',
                'feeds':'http://data.linz.govt.nz/feeds/csw?service=CSW&version=2.0.2&request=GetRecords&constraintLanguage=CQL_TEXT&typeNames=csw:Record&resultType=results&ElementSetName=summary'}
         #wfs/wms feature paths      
-        ftx = {'services':{'wfs':{'path':'FeatureType',
-                       'name':'Name',
-                       'title':'Title',
-                       'lib':'b'},
-                'wms':{'path':'Capability/Layer/Layer',
-                       'name':'Name',
-                       'title':'Title',
-                       'lib':'x'}
+        ftx = {
+            'services':{
+                'wfs':{
+                    'path'      :'FeatureType',
+                    'name'      :'Name',
+                    'title'     :'Title',
+                    'lib'       :'b'},
+                'wms':{
+                    'path'      :'Capability/Layer/Layer',
+                    'name'      :'Name',
+                    'title'     :'Title',
+                    'lib'       :'x'}
                }[wxs],        
-               'feeds':{'wfs':{'path':'//csw:SearchResults/csw:SummaryRecord',
-                       'name':'./dc:identifier',
-                       'title':'./dc:Title',
-                       'lib':'b'},
-                'wms':{'path':'//csw:SearchResults/csw:SummaryRecord',
-                       'name':'./dc:identifier',
-                       'title':'./dc:Title',
-                       'lib':'x'}
+            'feeds':{
+                'wfs':{
+                    'path'      :'//csw:SearchResults/csw:SummaryRecord',
+                    'name'      :'./dc:identifier',
+                    'title'     :'./dc:Title',
+                    'lib'       :'b'},
+                'wms':{
+                    'path'      :'//csw:SearchResults/csw:SummaryRecord',
+                    'name'      :'./dc:identifier',
+                    'title'     :'./dc:Title',
+                    'lib'       :'x'}
                }[wxs]}
-        borx = {'b':(self._bcached,self._bextract),'x':(self._xcached,self._xextract)}[ftx[src]['lib']]
+        borx = {'b':(self._bretrieve,self._bextract),'x':(self._xretrieve,self._xextract)}[ftx[sorf]['lib']]
         return cap[sorf],ftx[sorf],borx
     
 class Combined(Remote):
