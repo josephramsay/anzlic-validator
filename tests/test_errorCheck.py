@@ -2,20 +2,16 @@ import unittest
 import os
 import sys
 
-sys.path.append('../scripts/')
-
-from validate import Remote, Local, InaccessibleMetadataException
-import errorChecker
-from errorChecker import runChecks, MetadataIncorrectException, \
+sys.path.append('../')
+from scripts.validate import Combined, InaccessibleMetadataException
+from scripts.errorChecker import runChecks, MetadataIncorrectException, \
      MetadataEmptyException, MetadataNoneException, MetadataErrorException, \
      InaccessibleFileException, InvalidConfigException
-
-from typing import List, Tuple
 
 class Test_1_setup(unittest.TestCase):
 
     def setUp(self):
-        self.vdtr = Remote()
+        self.vdtr = Combined()
 
     def tearDown(self):
         del self.vdtr
@@ -28,13 +24,14 @@ class Test_1_setup(unittest.TestCase):
 
     def test_2_correctAllMetadata(self):
         ''' test error check on correct layers '''
-        for lid in _testvals('c'):
-            try:
-                meta = self.vdtr.metadata(lid)
-                runChecks(meta, lid)
-            except Exception as e:
-                self.assertFalse(True)
-                continue
+        try:
+            print (os.getcwd())
+            metafile =  r'{}/testAllCorrect.xml'.format(os.getcwd())
+            con = r'{}/testConfigAll.yaml'.format(os.getcwd())
+            meta = self.vdtr.metadata(name=metafile)
+            runChecks(meta, con=con)
+        except Exception as e:
+            self.assertFalse(True)
 
     def test_3_incorrectMetadata(self):
         ''' test error check on incorrect/invalid layers '''
@@ -86,8 +83,8 @@ class Test_1_setup(unittest.TestCase):
         for lid in _testvals('c'):
             try:
                 meta = self.vdtr.metadata(lid)
-                file = r'../tests/testConfigAll.yaml'
-                runChecks(meta, lid, file)
+                file = r'{}/testConfigAll.yaml'.format(os.getcwd())
+                runChecks(meta, lid=lid, con=file)
             except MetadataNoneException as mne:
                 self.assertIsInstance(mne, MetadataNoneException)
                 continue
@@ -98,15 +95,15 @@ class Test_1_setup(unittest.TestCase):
         for lid in _testvals('c'):
             try:
                 meta = self.vdtr.metadata(lid)
-                file = r'../tests/testConfigInvalid.yaml'
-                runChecks(meta, lid, file)
+                file = r'{}/testConfigInvalid.yaml'.format(os.getcwd())
+                runChecks(meta, lid=lid, con=file)
             except InvalidConfigException as ie:
                 self.assertIsInstance(ie, InvalidConfigException)
                 continue
             self.assertFalse(True, 'Expected InvalidConfigException')
 
         
-def _testvals(type: str = 'sf') -> List[Tuple]:
+def _testvals(type='sf'):
     '''Returns a list of test ids'''
     ids = [] # type: List[Tuple]
     if 'c' in type: ids += [(i, 'correct') for i in ('52233','52141', '52154', '52166', '52167')]
@@ -116,7 +113,7 @@ def _testvals(type: str = 'sf') -> List[Tuple]:
     
     return ids
 
-def _scanxml(sample, snip: str = '') -> bool: 
+def _scanxml(sample, snip=''):
     '''Look for XML snippet in sample'''
     if sample is not None:
         return True

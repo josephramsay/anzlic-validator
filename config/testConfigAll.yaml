@@ -12,7 +12,7 @@
 #   To check if a field exists or is in a range of values ONLY if it exists 
 #   add "NONE" to check if not inside the brackets.
 #   Ie. INDIVIDUALNAME: ["omit", "NONE"]
-#   Adding "EMPTY" will also ignore if there are empty tags existing. 
+#   Adding "EMPTY" will also ignore if there are empty tags existing.
 #
 #   To check if particular text(s)  is included in fields, this can be done by
 #   inclosing the fields in '[]' and adding the text 'CONTAINS' like so:
@@ -44,8 +44,8 @@ VOICE1: ["0800 665 463 or +64 4 460 0110", "04 4600110"]
 VOICE2: ["0800 665 463 or +64 4 460 0110", "04 4600110"]
 
 # True/ False or Value(s) allowed, cannot use 'CONTAINS'
-FACSIMILE1: False
-FACSIMILE2: False
+FACSIMILE1: True
+FACSIMILE2: True
 
 # True/ False or Value(s) allowed, cannot use 'CONTAINS'
 DELIVERYADDRESS1: "155 The Terrace"
@@ -104,12 +104,12 @@ METADATACON: [True, ['CONTAINS','CC BY 4.0']]
 # True/ False or Value(s) allowed, can use 'CONTAINS'
 EXTENTDESCRIPTION: True
 EXTENTBOUNDINGBOX: False
-EXTENTTEMPORAL: False
+EXTENTTEMPORAL: True
 
 #------------------------
 # Note, Cannot be both Scale and Resolution.
 # True/ False or Value(s) allowed, can use 'CONTAINS'
-SCALE: False
+SCALE: True
 
 # True/ False or Value(s) allowed, can use 'CONTAINS'
 RESOLUTION: False
@@ -131,7 +131,7 @@ REFERENCESYS2: True
 TITLE: True
 
 # True/ False or Value(s) allowed, can use 'CONTAINS'
-ALTTITLE: False
+ALTTITLE: True
 
 # True/ False or Value(s) allowed, can use 'CONTAINS'
 ABSTRACT: True
@@ -150,7 +150,7 @@ LINEAGE: True
 
 # Note Doesn't Provide Way To Write.
 # True/ False or Value(s) allowed, can use 'CONTAINS'
-LINKAGE: False
+LINKAGE: True
 
 # True/ False or Value(s) allowed, can use 'CONTAINS'
 SPATIALREPRESENTATION: ['vector', 'grid']
@@ -164,14 +164,14 @@ FID: True
 # True/ False or Value(s) allowed, can use 'CONTAINS'
 MAINTENANCE: True
 # True/ False or Value(s) allowed, can use 'CONTAINS'
-MAINTNEXTUPDATE: False
+MAINTNEXTUPDATE: True
 
 # True/ False or Value(s) allowed, can use 'CONTAINS'
-KEYWORD: False
+KEYWORD: True
 
 # True/ False or 'creation', 'publication', 'revision' value(s) allowed.
 # Note - All items will be checked for.
-KEYDATE: True
+KEYDATE: ['creation', 'publication', 'revision']
 
 #------------------------
 

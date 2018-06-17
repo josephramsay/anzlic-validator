@@ -2,14 +2,14 @@
 import unittest
 import os
 import sys
-import urllib.request
+import urllib
 from numpy.random import sample
 
-sys.path.append('../scripts/')
+sys.path.append('../')
 
-from validate import Remote, Local,ValidatorParseException,ValidatorAccessException
-from cache import CacheHandler,ThrottlingProcessor, CACHE_HEADER,THROTTLE_HEADER
-from authenticate import Authentication
+from scripts.validate import Remote, Local,ValidatorParseException,ValidatorAccessException
+from scripts.cache import CacheHandler,ThrottlingProcessor, CACHE_HEADER,THROTTLE_HEADER
+from scripts.authenticate import Authentication
 
 
 TEST_CACHE = '.test_cache'
@@ -26,7 +26,7 @@ class Test_1_setup(unittest.TestCase):
         del self.ch
         
     def test_10_raw(self):
-        req = urllib.request.Request(TEST_URL)
+        req = urllib.request.urlopen(TEST_URL)
         self.ch.default_open(req)
         
 class Test_2_canned(unittest.TestCase):

@@ -20,11 +20,11 @@ import urllib.parse     as UP
 import urllib.error     as UE
 import pickle
 
-#from validate import NSX, SCHMD, InaccessibleSchemaException
+# from validate import NSX, SCHMD, InaccessibleSchemaException
 import validate
 
 from pprint import pprint
-#from typing import List, Dict, Set
+# from typing import List, Dict, Set
 from lxml import etree
 from lxml.etree import Resolver, XMLParser, XML, ElementTree, _Element
 from lxml.etree import XMLSyntaxError, XMLSchemaParseError
@@ -32,12 +32,12 @@ from io import StringIO
 from functools import wraps, partial
 
 from bs4 import BeautifulSoup as BS
-#from lxml.isoschematron import _schematron_root
+# from lxml.isoschematron import _schematron_root
 
 from abc import ABCMeta, abstractmethod
 
-#Shifting from urllib to urllib2 we lost urlretrieve with its caching features. 
-#One solution was to implement a cache solution but no longer sure that its required
+# Shifting from urllib to urllib2 we lost urlretrieve with its caching features.
+# One solution was to implement a cache solution but no longer sure that its required
 
 from cache import CacheHandler, CachedResponse
 

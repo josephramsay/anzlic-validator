@@ -82,7 +82,7 @@ class CacheHandler(urllib.request.BaseHandler):
         if not os.path.exists(colocated):
             os.mkdir(colocated)
         return colocated
-            
+
     @staticmethod
     def _flush(cacheLocation):
         '''Empty cache contents and the cache directory itself'''
@@ -91,8 +91,8 @@ class CacheHandler(urllib.request.BaseHandler):
             for f in os.listdir(colocated):
                 os.unlink('{}/{}'.format(colocated, f))
             os.rmdir(colocated)
-            
-    def default_open(self,request):
+
+    def default_open(self, request):
         '''Respond to the request by first checking if there is a cached response otherwise defer to http handler'''
         if ((request.get_method() == "GET") and 
             (CachedResponse.ExistsInCache(self.cacheLocation, request.get_full_url()))):

@@ -22,10 +22,12 @@ from abc import ABCMeta, abstractmethod
 #Shifting from urllib to urllib2 we lost urlretrieve with its caching features. 
 #One solution was to implement a cache solution but no longer sure that its required
 
-from cache import CacheHandler, CachedResponse
+#from cache import CacheHandler, CachedResponse
+import cache
 #from resolve import RemoteResolver
 import resolve
-from authenticate import Authentication
+#from authenticate import Authentication
+import authenticate
 
 
 #Raw AS recipe is py2, modified as cache import above
@@ -37,7 +39,7 @@ BORX = 'b'
 ENC = 'utf-8'
 CACHE = '.validator_cache'
 USE_CACHE = False
-KEY = Authentication.apikey('~/.apikey3')
+KEY = authenticate.Authentication.apikey('~/.apikey3')
 NSX = {'xlink'                  : 'http://www.w3.org/1999/xlink',
        'xs'                     : 'http://www.w3.org/2001/XMLSchema',
        'xsi'                    : 'http://www.w3.org/2001/XMLSchema-instance',  
@@ -110,6 +112,7 @@ class SCHMD(object):
     @abstractmethod
     def schema(self):
         '''schema init'''
+
     def setschema(self):
         self.sch = self.schema()
         
@@ -149,7 +152,7 @@ class SCHMD(object):
     @staticmethod
     def _parsetxt(txt,resp=None,enc=None,history=None):#{'cache':[],'fail':[]}):
         '''Parse provided text into XML doc'''
-        if enc and resp and isinstance(resp,CachedResponse):
+        if enc and resp and isinstance(resp,cache.CachedResponse):
             resolver = resolve.CacheResolver(resp,enc,history)
             parser = RemoteParser(enc)
             parser.resolvers.add(resolver)
@@ -170,7 +173,7 @@ class SCHMD(object):
     def _request(url):
         '''Add cachehandler as additional opener and open'''
         if USE_CACHE:
-            opener = UR.build_opener(CacheHandler(CACHE))
+            opener = UR.build_opener(cache.CacheHandler(CACHE))
             UR.install_opener(opener)
         return UR.urlopen(url)
     

@@ -100,8 +100,9 @@ import os
 import requests
 import json
 import yaml
+import traceback
 
-from validate import Remote, KEY, Local
+from validate import Remote, KEY, Local, Combined
 from collections import OrderedDict
 
 class ErrorCheckerException(Exception): pass
@@ -336,7 +337,7 @@ class ConfigReader:
                     'Invalid Config Option: {}'.format(val[0]))
 
 
-def allChecks(meta, xmlPath, name, searchVal, iterCheck=False, allChecks=False):
+def allChecks(meta, xmlPath, name, searchVal, iterCheck=False, allChecks=False, exists=False):
     """
     Perform all checks for a given criteria.
     :param meta: metadata etree.
@@ -353,6 +354,12 @@ def allChecks(meta, xmlPath, name, searchVal, iterCheck=False, allChecks=False):
     noneAllowed, emptyAllowed = False, False
     iterations, count = 0, 0
     allChecksVal = []
+    values = []
+    if exists and type(searchVal) != bool:
+        if type(searchVal) != list:
+            values = [searchVal]
+        else:
+            values = searchVal
 
     # Check if AllChecks is True, everything in search val must exist.
     if allChecks:
@@ -374,13 +381,16 @@ def allChecks(meta, xmlPath, name, searchVal, iterCheck=False, allChecks=False):
             if val.text is None and not emptyAllowed:
                     raise MetadataEmptyException('Empty {}'.format(name))
             if searchVal and val.text is not None:
-                if str(val.text) not in searchVal:
+                if str(val.text) not in searchVal and not exists:
                         raise MetadataIncorrectException(
                             'Invalid/Incorrect' +
                             '{} "{}"\n Valid Field(s): "{}"'.format(
                                 name, val.text, searchVal))
                 elif allChecks:
                     allChecksVal.remove(val.text)
+                elif exists:
+                    if val.text in searchVal:
+                        values.remove(val.text)
     elif not noneAllowed:
         if searchVal:
             raise MetadataNoneException('No {}\n Valid Field(s): {}'.format(
@@ -392,6 +402,10 @@ def allChecks(meta, xmlPath, name, searchVal, iterCheck=False, allChecks=False):
     if allChecks and len(allChecksVal) != 0:
         raise MetadataIncorrectException(
             'Missing {} in {}'.format(allChecksVal, name))
+    if exists and searchVal:
+        if len(values) != 0:
+            raise MetadataIncorrectException(
+                'Missing {} in {}'.format(values, name))
 
 
 def checkAddress(meta, address):
@@ -470,7 +484,7 @@ def checkReferenceSystem(meta, lid, noneCheck=False):
         if val is not None and val.text is not None:
             if str(val.text) != str(crsAct):
                 raise MetadataIncorrectException(
-                    'Invalid/Incorrect Reference System Format,\n should be:' +
+                    'Invalid/Incorrect Reference System Format.\nShould be:' +
                     '" {}", got: "{}"'.format(crsAct, val.text))
 
         elif noneCheck:
@@ -485,6 +499,37 @@ def checkReferenceSystem(meta, lid, noneCheck=False):
         raise InaccessibleLayerException('HTTP {0} calling [{1}]'.format(
             response.status_code, url), e)
 
+def checkSpatialRepresentation(meta, lid):
+
+    headers = {'Content-Type'   : 'application/json',
+               'Authorization'  : 'key {}'.format(KEY)}
+
+    url = 'https://data.linz.govt.nz/services/api/v1/layers/{lid}/'.format(
+        lid = lid)
+    codeListDict = {'raster'    : 'grid',
+                    'grid'      : 'grid',
+                    'table'     : 'textTable',
+                    'vector'    : 'vector'}
+
+    try:
+        response = requests.get(url, headers=headers)
+        spatialRep = (json.loads(response.text)['kind'])
+        val = meta.find(SPATIALREPRESENTATION, namespaces=NSX)
+        if val is not None and val.text is not None:
+            if spatialRep not in codeListDict:
+                raise MetadataIncorrectException(
+                    "Unknown Spatial Representation Set on LDS {}".format(
+                        spatialRep))
+            if codeListDict[spatialRep] != str(val.text):
+                raise MetadataIncorrectException(
+                    "Invalid/Incorrect Spatial Representation." +
+                    "Should be: {}, got: {}".format(
+                        codeListDict[spatialRep], str(val.text)))
+    except MetadataIncorrectException as mie:
+        raise MetadataNoneException(mie)
+    except Exception as e:
+        raise InaccessibleLayerException('HTTP {0} calling [{1}]'.format(
+            response.status_code, url), e)
 
 def emptyTagCheck(meta):
     """
@@ -534,8 +579,7 @@ def runChecks(meta, lid=None, con=None):
         if type(extent[1]) == list:
             for i in extent[1]:
                 if type(i) == list and 'CONTAINS' in i[0]:
-                    checkContains(meta, i[1:], globals().get(extent[0]),
-                                  extent[0])
+                    checkContains(meta, i[1:], globals().get(extent[0]), extent[0])
                     extent[1] = extent[1][0]
         if extent[0] == 'EXTENTTEMPORAL':
             try:
@@ -549,22 +593,18 @@ def runChecks(meta, lid=None, con=None):
         if type(restrict[1]) == list:
             for i in restrict[1]:
                 if type(i) == list and 'CONTAINS' in i[0]:
-                    checkContains(meta, i[1:], globals().get(restrict[0]),
-                                  restrict[0])
+                    checkContains(meta, i[1:], globals().get(restrict[0]), restrict[0])
                     restrict[1] = restrict[1][0]
         if 'RESTRICCODE' in restrict[0] and restrict[1]:
-            allChecks(meta, globals().get(restrict[0]), restrict[0],
-                      restrict[1], allChecks=True)
+            allChecks(meta, globals().get(restrict[0]), restrict[0], restrict[1], allChecks=True)
         else:
-            allChecks(meta, globals().get(restrict[0]), restrict[0],
-                      restrict[1])
+            allChecks(meta, globals().get(restrict[0]), restrict[0], restrict[1])
 
     for hier in config.hv:
         if type(hier[1]) == list:
             for i in hier[1]:
                 if type(i) == list and 'CONTAINS' in i[0]:
-                    checkContains(meta, i[1:], globals().get(hier[0]),
-                                  hier[0])
+                    checkContains(meta, i[1:], globals().get(hier[0]), hier[0])
                     hier[1] = hier[1][0]
         allChecks(meta, globals().get(hier[0]), hier[0], hier[1])
 
@@ -573,39 +613,39 @@ def runChecks(meta, lid=None, con=None):
             if type(refsys[1]) == list:
                 for i in refsys[1]:
                     if type(i) == list and 'CONTAINS' in i[0]:
-                        checkContains(meta, i[1:], globals().get(refsys[0]),
-                                      refsys[0])
+                        checkContains(meta, i[1:], globals().get(refsys[0]), refsys[0])
                         refsys[1] = refsys[1][0]
             if '1' in refsys[0] and '2' in refsys[0]:
-                checkReferenceSystem(meta, lid[0], True)
+                checkReferenceSystem(meta, lid, True)
             elif '1' in refsys[0]:
                 allChecks(meta, REFERENCESYS, refsys[0], refsys[1])
             elif '2' in refsys[0]:
-                checkReferenceSystem(meta, lid[0])
+                checkReferenceSystem(meta, lid)
     else:
         for refsys in config.rsv:
             if type(refsys[1]) == list:
                 for i in refsys[1]:
                     if type(i) == list and 'CONTAINS' in i[0]:
-                        checkContains(meta, i[1:], globals().get(refsys[0]),
-                                      refsys[0])
+                        checkContains(meta, i[1:], globals().get(refsys[0]), refsys[0])
                         refsys[1] = refsys[1][0]
             if '1' in refsys[0]:
                 allChecks(meta, REFERENCESYS, refsys[0], refsys[1])
 
     for otherVal in config.ov:
+        if otherVal[0] == 'SPATIALREPRESENTATION' and lid is not None:
+            checkSpatialRepresentation(meta, lid)
         if type(otherVal[1]) == list:
             for i in otherVal[1]:
                 if type(i) == list and 'CONTAINS' in i[0]:
-                    checkContains(meta, i[1:], globals().get(otherVal[0]),
-                                  otherVal[0])
+                    checkContains(meta, i[1:], globals().get(otherVal[0]), otherVal[0])
                     otherVal[1] = otherVal[1][0]
         if 'KEYDATE' in otherVal[0] and otherVal[1]:
-            allChecks(meta, globals().get(otherVal[0]), otherVal[0],
-                      otherVal[1], allChecks=True)
+            if type(otherVal[1] == list):
+                allChecks(meta, globals().get(otherVal[0]), otherVal[0], otherVal[1], exists=True)
+            else:
+                allChecks(meta, globals().get(otherVal[0]), otherVal[0], otherVal[1])
         else:
-            allChecks(meta, globals().get(otherVal[0]), otherVal[0],
-                      otherVal[1])
+            allChecks(meta, globals().get(otherVal[0]), otherVal[0], otherVal[1])
 
     for formatVal in config.form:
         if 'DATEFORMAT' in formatVal[0]:
@@ -631,10 +671,19 @@ def main():
     #        print (lay, mee, False)
     #    except Exception as e:
     #        print (lay, e, False)
-    vdtr = Local()
-    layer = '/home/aross/outputXML.xml'
-    meta = vdtr.metadata(layer)
+    #vdtr = Local()
+    #meta = vdtr.metadata(layer)
     # runChecks(meta)
+    try:
+        vdtr = Combined()
+        layer = '/home/aross/tempXML.xml'
+        meta = vdtr.metadata(name=layer)
+        config = (os.path.dirname(__file__)[:os.path.dirname(__file__).rfind('/')]+'/config/config-layer.yaml')
+        runChecks(meta, con=config)
+    except Exception as e:
+        print (e)
+        traceback.print_exc()
+
 
 
 if __name__ == '__main__':
