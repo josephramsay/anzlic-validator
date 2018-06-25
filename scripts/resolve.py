@@ -107,12 +107,16 @@ class CacheResolver(Resolver):
         '''Precache imports and includes'''
         for incl in self.doc.findall('xs:include',namespaces=validate.NSX):
             for i,ns in enumerate([self.source,self.target]):
-                if self._getimports(UR.urljoin(self._slash(ns),incl.attrib['schemaLocation']),'include-{}'.format(i)):
+                if self._getimports(self._cachejoin(ns, incl.attrib['schemaLocation']),'include-{}'.format(i)):
                     break
         for impt in self.doc.findall('xs:import',namespaces=validate.NSX):
             for i,ns in enumerate([self.source,self.target,impt.attrib['namespace']]):
-                if self._getimports(UR.urljoin(self._slash(ns),impt.attrib['schemaLocation']),'import-{}'.format(i)):
+                if self._getimports(self._cachejoin(ns, impt.attrib['schemaLocation']),'import-{}'.format(i)):
                     break
+                
+    def _cachejoin(self,ns,ii4sl): # -> str
+        '''URL join a base namespace with a import/include path'''
+        return UR.urljoin(self._slash(ns),ii4sl)
 
     def _getimports(self,url,i): # -> None:
         '''import xsd using selectio of urls including targetNamespace, namespace and url of source'''
@@ -184,9 +188,19 @@ class CacheResolver(Resolver):
 
     @staticmethod
     def _slash(u): # -> str:
+        '''Adds a trailing / if there isnt one and not a page ref'''
         return os.path.join(u,'') if u.rfind('/')>u.rfind('.') else u
 
     def _cached(self,frag): # -> str:
+        '''Check the system_url fragment matches a url saved in the cache
+        First match the target+fragment to a history entry 
+            e.g. "http://website/"+"path/schema.xsd" in hist[u1,u2...]
+        Second search the history for the fragment (could be ambiguous) 
+            e.g. "path/schema.xsd" in hist[u1,u2...]
+        '''
+        first = self._cachejoin(self.target, frag)
+        if first in self.history['cache']:
+            return first
         for u in [h for h in self.history['cache'] if h not in self.history['fail']]:
             if frag.lstrip('.') in u: return u
         return None

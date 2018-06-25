@@ -104,10 +104,12 @@ class SCHMD(object):
     sch = None
     md = None
     
-    def __init__(self):
+    def __init__(self,cache=USE_CACHE):
         #self.schema()
         #self.metadata()
-        pass
+        global USE_CACHE
+        if cache!=USE_CACHE:
+            USE_CACHE = cache
         
     @abstractmethod
     def schema(self):
@@ -228,7 +230,7 @@ class Local(SCHMD):
     SP = '../data/schema/'
     TP = '../data/metadata'
     
-    def __init__(self):
+    def __init__(self,cache=None):
         super(Local,self).__init__()
         
     @classmethod
@@ -247,8 +249,8 @@ class Local(SCHMD):
         
     @classmethod
     def metadata(cls,md_name):
-        md_sample = 'nz-primary-parcels.iso.xml'    
-        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__),cls.TP,md_name or md_sample))
+        #md_sample = 'nz-primary-parcels.iso.xml'    
+        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__),cls.TP,md_name))# or md_sample))
         md = etree.parse(md_path)
         return md
     
@@ -260,14 +262,14 @@ class Local(SCHMD):
             
 class Remote(SCHMD):
     '''Remote parser grabbing remote content but employing caching'''
-    def __init__(self):
-        super(Remote,self).__init__()  
+    def __init__(self,cache=USE_CACHE):
+        super(Remote,self).__init__(cache)  
     
     @classmethod
     def schema(cls):
         '''Fetch and parse the ANZLIC metadata schema'''
         sch_name = '{url}gmd/metadataEntity.xsd'.format(url=SL[SLi])
-        print (sch_name)
+        #print (sch_name)
         sch_doc = cls._xretrieve(sch_name)
         try:
             sch = etree.XMLSchema(sch_doc)
@@ -380,8 +382,8 @@ class Remote(SCHMD):
 class Combined(Remote):
     '''Subclass of the Remote connector but subclassing schema/metadata to attempt local file load first'''
     
-    def __init__(self):
-        super(Combined,self).__init__()
+    def __init__(self,cache=USE_CACHE):
+        super(Combined,self).__init__(cache)
         
     @classmethod
     def schema(cls):
@@ -417,17 +419,14 @@ class RemoteParser(XMLParser):
 def process(opts,args):
     '''Validate all layers'''
     
-    global USE_CACHE
-    
     id = None
     wxs = 'wfs'
     torl = 'layer'
     sorf = 'services'
+    cache = USE_CACHE
     
     if 'cache' in args: 
-        USE_CACHE = True
-    else:
-        USE_CACHE = False
+        cache = True
         
     if 'local' in args:
         Validator = Local
@@ -444,7 +443,7 @@ def process(opts,args):
         
     #v1 = Remote()
     #v1.setschema()
-    v3 = Validator()
+    v3 = Validator(cache=cache)
     v3.setschema()
     
     wxsi = id or v3.getids(wxs=wxs,sorf=sorf,torl=torl)

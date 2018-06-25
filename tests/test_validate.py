@@ -3,63 +3,79 @@ import unittest
 import os
 import sys
 
-sys.path.append('../')
+script_path = os.path.abspath(os.path.join(os.path.dirname(__file__),'../scripts'))
+sys.path.append(script_path)
 
-from scripts.validate import Remote, Local, Combined, NSX
-from scripts.validate import ValidatorParseException, ValidatorAccessException
-from scripts.cache import CacheHandler
-from scripts.authenticate import Authentication
+from validate import Remote, Local, Combined, NSX
+from validate import ValidatorParseException, ValidatorAccessException
+from cache import CacheHandler
+from authenticate import Authentication
 
 #from typing import List, Tuple
+META_TEST = 'gmd:fileIdentifier'
 
 class Test_1_init(unittest.TestCase):
         
     def setUp(self):
-        self.local = Local()
-        self.remote = Remote()
+        pass
         
     def tearDown(self):
-        del self.local
-        del self.remote
+        pass
         
     def test_10_setlocalschema(self):
         '''Test that we can set a local schema'''
         m = 'Failed to setschema on local'
         try: 
-            self.local.setschema()
+            local = Local()
+            local.setschema()
         except Exception as e:  
             m += ' '+str(e)
-        self.assertNotEqual(self.local.sch,None,m)
+        self.assertNotEqual(local.sch,None,m)
         
-    def test_20_setalllocalschema(self):
-        pass
+    #def test_20_setalllocalschema(self):
+    #    pass
         
-    def test_30_setremoteschema(self):
+    def test_20_setremoteschema(self):
         '''Test that we can set a remote schema'''
         m = 'Failed to setschema on remote'
         try:
-            self.remote.setschema()    
-        except Exception as e:  
+            remote = Remote()
+            remote.setschema()    
+        except Exception as e:
             m += ' '+str(e)
-        self.assertNotEqual(self.remote.sch,None,m)
+        self.assertNotEqual(remote.sch,None,m)    
+        
+    def test_30_setremoteschema_withcaching(self):
+        '''Test that we can set a remote schema'''
+        # Schema parser complains; 
+        # "A global complex type definition '{http://www.isotc211.org/2005/gmd}MD_Metadata_Type' does already exist."
+        m = 'Failed to setschema on remote'
+        try:
+            remote = Remote(cache=True)
+            remote.setschema()    
+        except Exception as e:
+            m += ' '+str(e)
+        self.assertNotEqual(remote.sch,None,m)
         
     def test_40_setremotewithlocalschema(self):
         '''Test that we can set a local schema on a remote instance'''
         m = 'Failed remote.sch = Local.sch()'
         try:
-            self.remote.sch = Local.schema()  
+            remote = Remote()
+            remote.sch = Local.schema()  
         except Exception as e:  
             m += ' '+str(e)
-        self.assertNotEqual(self.remote.sch,None,m)    
+        self.assertNotEqual(remote.sch,None,m)    
     
     def test_50_setlocalwithremoteschema(self):
         '''Test that we can set a remote schema on a local instance'''
         m = 'Failed local.sch = Remote.sch()'
         try:
-            self.local.sch = Remote.schema()    
+            local = Local()
+            local.sch = Remote.schema()    
         except Exception as e:  
             m += ' '+str(e)
-        self.assertNotEqual(self.local.sch,None,m)
+        self.assertNotEqual(local.sch,None,m)
 
             
 class Test_2_setuplocal(unittest.TestCase):
@@ -75,7 +91,7 @@ class Test_2_setuplocal(unittest.TestCase):
         '''Test that we can get local metadata'''
         for mdn in _testnames():
             sample = self.local.metadata(mdn[0]) 
-            self.assertTrue(_scanxml(sample,'gmd:MD_Metadata'))
+            self.assertTrue(_scanxml(sample,META_TEST))
            
 class Test_3_setupremote(unittest.TestCase):
     
@@ -98,7 +114,7 @@ class Test_3_setupremote(unittest.TestCase):
         '''test that we can get metadata'''
         for lid in _testvals('s'):
             sample = self.remote.metadata(lid) 
-            self.assertTrue(_scanxml(sample))
+            self.assertTrue(_scanxml(sample,META_TEST))
             
     def test_40_validate_success_metadata(self):
         '''test validation of known successful layers'''
@@ -161,10 +177,10 @@ class Test_4_setupcombined(unittest.TestCase):
         '''test that we can get metadata'''
         for lid in _testvals('s'):
             sample = self.combined.metadata(lid) 
-            self.assertTrue(_scanxml(sample))
+            self.assertTrue(_scanxml(sample,META_TEST))
         
         
-def _testvals(type='sf'):# -> List[Tuple]:
+def _testvals(type='sf'): # -> List[Tuple]:
     '''Returns a list of test ids'''
     ids = [] # type: List[Tuple]
     if 's' in type: ids += [(i,'succeed') for i in ('50772','50845','50789')]
@@ -173,12 +189,12 @@ def _testvals(type='sf'):# -> List[Tuple]:
     if 'x' in type: ids += [(i,'nonexistant') for i in ('98765','12345',)]
     return ids
 
-def _testnames(type=''):# -> List[Tuple]:
+def _testnames(type=''): # -> List[Tuple]:
     return [('nz-primary-parcels.iso.xml','succeed'),]
 
-def _scanxml(sample, snip=''):# -> bool: 
+def _scanxml(sample, snip=''): # -> bool: 
     '''Look for XML snippet in sample'''
-    return sample == True or sample.getroot().find(snip,namespaces=NSX)
+    return sample.getroot().find(snip,namespaces=NSX)
 
 
 if __name__ == "__main__":
