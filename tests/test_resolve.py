@@ -1,33 +1,54 @@
 
 import unittest
 import sys
+import os
+import urllib
 
-sys.path.append('../scripts/')
+script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'../scripts/'))
+sys.path.append(script_dir)
 
 #from resolve import RemoteResolver
 import resolve
+import validate
 
 T = 'https://data.linz.govt.nz/layer/50772-nz-primary-parcels/metadata/iso/xml/'
+E = 'UTF-8'
 
 class Test_1_init(unittest.TestCase):
         
     def setUp(self):  
-        self.resolve = RemoteResolver()
-        self.resolve.response.cacheLocation = '/tmp'
-        self.resolve.PICKLESFX = '.test.history'
+        pass
+#         resp = urllib.request.urlopen(T)
+#         self.resolve = resolve.CacheResolver(resp,E,None)
+#         self.resolve.response.cacheLocation = '/tmp'
+#         self.resolve.PICKLESFX = '.test.history'
         
     def tearDown(self):
-        del self.resolve    
+        pass
+#        del self.resolve    
         
     def test_10_resolve(self):
-        response = urllib.urlopen(T)
+        resp = validate.SCHMD._request(T)
+        #txt = validate.SCHMD._extracttxt(resp,E)
+        #xml = validate.SCHMD._parsetxt(txt,resp,E)
+        rso = resolve.CacheResolver(resp,E,None)
+        rso.response.cacheLocation = '/tmp'
+        rso.PICKLESFX = '.test.history'
+
+        
+    def test_20_noncache(self):
+        '''Test that an HTTP resp raises a non-cached error'''
+        resp = urllib.request.urlopen(T)
+        with self.assertRaises(resolve.NonCachedResponseException) as ncre:
+            rso = resolve.CacheResolver(resp,E,None)
+        self.assertEqual('Provided response object is not from a cached source', str(ncre.exception), 'Not expecting CachedResponse object')
         
 class Test_2_remote(unittest.TestCase):
         
     def setUp(self):
-        self.remote = Remote()
+        self.remote = validate.Remote()
         self.remote.setschema() 
-        self.resolve = RemoteResolver()
+        self.resolve = resolve.CacheResolver()
         self.resolve.response.cacheLocation = '/tmp'
         self.resolve.PICKLESFX = '.test.history'
         
