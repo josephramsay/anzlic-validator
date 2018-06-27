@@ -15,11 +15,13 @@ codeListURL = urllib2.urlopen(url)
 cdl = etree.parse(codeListURL)
 root = cdl.getroot()
 
+
 def finder(root):
     codelist = ()
     for el in root.findall('gmx:codeEntry/gmx:CodeDefinition/gml:identifier', namespaces=NSX):
         codelist += (el.text,)
     return codelist
+
 
 def codeList(name):
     for el in root.findall('gmx:codelistItem/gmx:CodeListDictionary', namespaces=NSX):
