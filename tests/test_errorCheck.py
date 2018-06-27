@@ -2,9 +2,12 @@ import unittest
 import os
 import sys
 
-sys.path.append('../')
-from scripts.validate import Combined, InaccessibleMetadataException
-from scripts.errorChecker import runChecks, MetadataIncorrectException, \
+script_path = os.path.abspath(os.path.join(os.path.dirname(__file__),'../scripts'))
+sys.path.append(script_path)
+
+
+from validate import Combined, InaccessibleMetadataException
+from errorChecker import runChecks, MetadataIncorrectException, \
      MetadataEmptyException, MetadataNoneException, MetadataErrorException, \
      InaccessibleFileException, InvalidConfigException
 
