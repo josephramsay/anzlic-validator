@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
-Publish_MetadataDialog
+Save_Template Dialog
                                  A QGIS plugin
  Plugin to provide a LINZ specific metadata editor and uploader.
                              -------------------
@@ -25,31 +25,17 @@ import os
 from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QApplication
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'publish_metadata.ui'))
+    os.path.dirname(__file__), 'saveTemplate.ui'))
 
 
-class PublishMetadataDialog(QtGui.QDialog, FORM_CLASS):
+class SaveTemplateDialog(QtGui.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor.
         :param parent: parent.
         """
-        super(PublishMetadataDialog, self).__init__(parent)
+        super(SaveTemplateDialog, self).__init__(parent)
         self.setupUi(self)
         sg = QApplication.desktop().screenGeometry()
         x = (sg.width()-self.width()) / 2
         y = (sg.height()-self.height()) / 2
         self.move(x, y)
-        self.titleBox.setTextFormat(2)
-
-    def closeEvent(self, event):
-        """
-        Hide and clear fields on close.
-        :param event: close event.
-        :return: None.
-        """
-        self.hide()
-        self.layerId.clear()
-        self.titleBox.clear()
-        self.errorText.clear()
-        self.accept.setEnabled(False)
-        self.reject.setEnabled(True)

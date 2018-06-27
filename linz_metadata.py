@@ -26,6 +26,7 @@ import qgis
 import yaml
 import re
 import os
+import socket
 import uuid
 import koordinates
 import sys
@@ -37,7 +38,7 @@ from PyQt4.QtCore import QSettings, QCoreApplication, QDate, QTime, Qt, \
     QTranslator, qVersion, QObject
 from PyQt4.QtGui import QIcon, QAction, QFileDialog, QItemSelectionModel, \
     QTextCursor, QFont, QTableWidgetItem as QTWI, QComboBox, QPalette, QColor, \
-    QLabel, QWhatsThis
+    QLabel, QWhatsThis, QCompleter, QSortFilterProxyModel
 from linz_metadata_dialog import LINZ_MetadataDialog
 from scripts.codeList import codeList as CL
 from lxml.etree import parse as PS, SubElement as SE, QName as QN, \
@@ -46,7 +47,9 @@ from shutil import copyfile
 from scripts.validate import Combined, ValidatorException, KEY
 from scripts.errorChecker import runChecks, InvalidConfigException
 from collections import OrderedDict as OD
-from publish_metadata_dialog import Publish_MetadataDialog
+from publish_metadata_dialog import PublishMetadataDialog
+from save_template_dialog import SaveTemplateDialog
+from settings_dialog import SettingsDialog
 from scripts.lds_metadata_updater.metadata_updater.metadata_updater import \
     set_metadata
 
@@ -222,13 +225,31 @@ class LINZ_Metadata:
         :type iface: QgisInterface
         """
         self.dlg = LINZ_MetadataDialog()
-        self.publishDialog = Publish_MetadataDialog(self.dlg)
-        noneVar = ('tF', 'cF', 'cFS', 'palette', 'rcode', 'widget', 'use',
-                   'client', 'lidpub', 'layer', 'resCC', 'configfile', 'title',
-                   'rcopyright', 'metaCL', 'resCL', 'metaCC', 'lid', 'rlicense',
-                   'mcopyright', 'mlicense')
-        for var in noneVar:
-            setattr(self, var, None)
+        temp = self.dlg.testLayer
+        temp.setGeometry(self.dlg.testLayer.geometry())
+        temp.setFont(self.dlg.testLayer.font())
+        self.dlg.testLayer = ExtendedComboBox(self.dlg.testLayer.parentWidget())
+        self.dlg.testLayer.setGeometry(temp.geometry())
+        self.dlg.testLayer.setFont(temp.font())
+        self.dlg.testLayer.show()
+        self.publishDialog = PublishMetadataDialog(self.dlg)
+        self.settingsDialog = SettingsDialog(self.dlg)
+        self.publishSet, self.prev = False, 0
+        self.saveDialog = SaveTemplateDialog(self.dlg)
+
+        self.prevExtentN, self.downloadLocation, self.tF = None, None, None
+        self.mcopyright, self.prevItems, self.items = None, None, None
+        self.prevTemplateLocation, self.mlicense = None, None
+        self.prevDownloadLocation, self.cF, self.prevConfig = None, None, None
+        self.prevExtentS, self.prevExtentW, self.mcopyright = None, None, None
+        self.templateLocation, self.config, self.prevExtentE = None, None, None
+        self.rcopyright, self.rcode, self.use, self.cFS = None, None, None, None
+        self.rlicense, self.resCL, self.client, self.tf = None, None, None, None
+        self.lidpub, self.layer, self.title, self.resCC = None, None, None, None
+        self.widget, self.lid, self.metaCC, self.metaCL = None, None, None, None
+
+        self.reset_settings()
+
         self.MDTEXT, self.iface, self.actions = {}, iface, []
         self.plugin_dir = os.path.dirname(__file__)
         locale = QSettings().value('locale/userLocale')[0:2]
@@ -239,18 +260,20 @@ class LINZ_Metadata:
             self.translator.load(locale_path)
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
-        self.menu = self.tr(u'&LINZ Metadata')
-        self.toolbar = self.iface.addToolBar(u'LINZ_Metadata')
-        self.toolbar.setObjectName(u'LINZ_Metadata')
+        self.menu = self.tr(u'&ANZLIC Metadata')
+        self.toolbar = self.iface.addToolBar(u'ANZLIC Metadata')
+        self.toolbar.setObjectName(u'ANZLIC_Metadata')
+        self.test_layer()
 
-    def tr(self, message):
+    @staticmethod
+    def tr(message):
         """Get the translation for a string using Qt translation API.
         :param message: String for translation.
         :type message: str, QString
         :returns: Translated version of message.
         :rtype: QString
         """
-        return QCoreApplication.translate('LINZ_Metadata', message)
+        return QCoreApplication.translate('ANZLIC_Metadata', message)
 
     def add_action(self, icon_path, text, callback, enabled_flag=True,
                    add_to_menu=True, add_to_toolbar=True, status_tip=None,
@@ -304,15 +327,19 @@ class LINZ_Metadata:
         Create the menu entries and toolbar icons inside the QGIS GUI.
         :return: None.
         """
-        icon_path = ':/plugins/LINZ_Metadata/icon.png'
-        self.add_action(icon_path, text=self.tr(u''), callback=self.run,
-                        parent=self.iface.mainWindow())
+        icon_path = ':/plugins/anzlic-validator/scripts/icon.png'
+        self.add_action(icon_path, text=self.tr(u'Open Metadata Plugin'),
+                        callback=self.run, parent=self.iface.mainWindow())
+
         c = self.dlg.count()
         for i in range(1, c):
             self.dlg.setTabEnabled(i, False)
+
         self.dlg.templateFile.setText(self.dlg.TEMPLATEPATH)
         self.dlg.OUTPUTFILE = TEMPFILE
+        self.MDTEXT = {}
         self.dlg.loadError.hide()
+
         # Set Text Fields
         self.tF = {TITLE: self.dlg.title,
                    ALTTITLE: self.dlg.atitle,
@@ -367,112 +394,403 @@ class LINZ_Metadata:
                       'rad': 'radian',
                       'u': 'unknown'}
 
-        self.MDTEXT = {}
-        # Select Template Clicked
-        self.dlg.selectTemplate.clicked.connect(lambda: self.setFile(1))
-        self.dlg.selectOutputFile.clicked.connect(lambda: self.setFile(2))
-        self.dlg.selectMetadata.clicked.connect(lambda: self.setFile(3))
+        # Home
+        # ----------------------------------------------------------------------
+
+        # Select Template/Output/Metadata Clicked
+        self.dlg.selectTemplate.clicked.connect(lambda: self.set_file(1))
+        self.dlg.selectOutputFile.clicked.connect(lambda: self.set_file(2))
+        self.dlg.selectMetadata.clicked.connect(lambda: self.set_file(3))
+
+        # Load Metadata from ID Clicked
+        self.dlg.loadMetadataID.clicked.connect(self.select_layer)
+
         # Default Template Clicked
-        self.dlg.defaultButton.clicked.connect(self.updateFileText)
-        # Load Metadata Clicked
-        self.dlg.loadTemplate.clicked.connect(lambda: self.loadMetadata(1))
-        self.dlg.loadMetadata.clicked.connect(lambda: self.loadMetadata(2))
+        self.dlg.defaultButton.clicked.connect(self.update_file_text)
+
+        # Load Metadata/ Template Clicked
+        self.dlg.loadTemplate.clicked.connect(lambda: self.load_metadata(1))
+        self.dlg.loadMetadata.clicked.connect(lambda: self.load_metadata(2))
+
+        # Settings Clicked
+        self.dlg.settings.clicked.connect(self.open_settings)
+
+        # Layer Info
+        # ----------------------------------------------------------------------
+
+        # Abstract Text Bold/Italic/Link Clicked
+        self.dlg.boldText.clicked.connect(lambda: self.text_style(1))
+        self.dlg.italicText.clicked.connect(lambda: self.text_style(2))
+        self.dlg.linkText.clicked.connect(lambda: self.text_style(3))
+
+        # Contact
+        # ----------------------------------------------------------------------
+
+        # AutoFill Resource/Metadata Contact Clicked
+        self.dlg.autofillResource.clicked.connect(lambda: self.auto_fill(1))
+        self.dlg.autofillMetadata.clicked.connect(lambda: self.auto_fill(2))
+
+        # Editable Contact Combo Box Text Changed
+
+        self.dlg.iName2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.iName2))
+        self.dlg.iName1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.iName1))
+        self.dlg.oName2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.oName2))
+        self.dlg.oName1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.oName1))
+        self.dlg.pName2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.pName2))
+        self.dlg.pName1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.pName1))
+        self.dlg.dadd2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.dadd2))
+        self.dlg.dadd1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.dadd1))
+        self.dlg.city2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.city2))
+        self.dlg.city1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.city1))
+        self.dlg.country1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.country1))
+        self.dlg.country2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.country2))
+        self.dlg.postCode2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.postCode2))
+        self.dlg.postCode1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.postCode1))
+        self.dlg.email2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.email2))
+        self.dlg.email1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.email1))
+        self.dlg.voice2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.voice2))
+        self.dlg.voice1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.voice1))
+        self.dlg.fas2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.fas2))
+        self.dlg.fas1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.fas1))
+        self.dlg.role2.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.role2))
+        self.dlg.role1.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.role1))
+        self.dlg.testLayer.editTextChanged.connect(
+            lambda: self.set_font(self.dlg.testLayer))
+
+        # Identification
+        # ----------------------------------------------------------------------
+
+        # Scale check box/radio button state changed
+        self.dlg.scale.stateChanged.connect(self.toggle_state)
+        self.dlg.scaleRadioButton.toggled.connect(self.toggle_radio)
 
         # State Changed Of Date of Next Update Check Box
-        self.dlg.dONUCheck.stateChanged.connect(self.toggleDate)
-        self.dlg.scale.stateChanged.connect(self.toggleState)
-        self.dlg.scaleRadioButton.toggled.connect(self.toggleRadio)
+        self.dlg.dONUCheck.stateChanged.connect(self.toggle_date)
 
+        # Key Date Check Box State Changed
+        self.dlg.resourceCreateCheck.stateChanged.connect(self.create_date)
+        self.dlg.resourcePublishCheck.stateChanged.connect(self.publish_date)
+        self.dlg.resourceUpdateCheck.stateChanged.connect(self.update_date)
+
+        # Load Extent Clicked.
+        self.dlg.loadExtent.clicked.connect(self.load_extent)
+        self.dlg.undoExtent.clicked.connect(self.undo_extent)
+
+        # Temporal Extent Check Box State Changed
         self.dlg.temporalCheck.stateChanged.connect(self.temporal)
-        self.dlg.startTimeCheck.stateChanged.connect(self.startTime)
-        self.dlg.endDateCheck.stateChanged.connect(self.endDate)
-        self.dlg.endTimeCheck.stateChanged.connect(self.endTime)
+        self.dlg.startTimeCheck.stateChanged.connect(self.start_time)
+        self.dlg.endDateCheck.stateChanged.connect(self.end_date)
+        self.dlg.endTimeCheck.stateChanged.connect(self.end_time)
 
-        self.dlg.resourceCreateCheck.stateChanged.connect(self.createDate)
-        self.dlg.resourcePublishCheck.stateChanged.connect(self.publishDate)
-        self.dlg.resourceUpdateCheck.stateChanged.connect(self.updateDate)
+        # Legal
+        # ----------------------------------------------------------------------
+
+        # Fill Default Legal Fields/ Undo Fill Clicked
+        self.dlg.fillLegal.clicked.connect(self.auto_fill_legal)
+        self.dlg.undoFill.clicked.connect(self.auto_fill_legal_undo)
+
+        # Summary
+        # ----------------------------------------------------------------------
 
         # Create Metadata Clicked
-        self.dlg.createMetadata.clicked.connect(self.createMeta)
-        # Validate/ Error Check Clicked 
+        self.dlg.createMetadata.clicked.connect(self.create_meta)
+
+        # Validate/ Error Check Clicked
         self.dlg.validateErrorCheck.clicked.connect(self.check)
 
-        self.dlg.autofillResource.clicked.connect(lambda: self.autoFill(1))
-        self.dlg.autofillMetadata.clicked.connect(lambda: self.autoFill(2))
+        # Fix Error Clicked
+        self.dlg.fixError.clicked.connect(self.fix_error)
 
-        self.dlg.boldText.clicked.connect(lambda: self.textStyle(1))
-        self.dlg.italicText.clicked.connect(lambda: self.textStyle(2))
-        self.dlg.linkText.clicked.connect(lambda: self.textStyle(3))
+        # Publish Metadata Clicked
+        self.dlg.publishMetadata.clicked.connect(self.publish_meta)
 
-        self.dlg.fixError.clicked.connect(self.fixError)
+        self.dlg.saveTemplate.clicked.connect(self.save_template)
 
-        self.dlg.loadExtent.clicked.connect(self.loadExtent)
+        # Publish Dialog
+        # ----------------------------------------------------------------------
 
-        self.dlg.publishMetadata.clicked.connect(self.publishMeta)
+        # Publish Dialog Select Layer/ Okay Clicked
+        self.publishDialog.layerButton.clicked.connect(self.update_publish_dlg)
+        self.publishDialog.reject.clicked.connect(self.publishDialog.close)
+        self.publishDialog.accept.clicked.connect(self.publish)
 
-        self.publishDialog.layerButton.clicked.connect(self.updatePublishDlg)
-        self.publishDialog.publishBox.accepted.connect(self.publish)
+        # Settings Dialog
+        # ----------------------------------------------------------------------
 
-        self.dlg.fillLegal.clicked.connect(self.autoFillLegal)
-        self.dlg.undoFill.clicked.connect(self.autoFillLegalUndo)
+        self.settingsDialog.resetDefaults.clicked.connect(self.reset_settings)
+        self.settingsDialog.removeDownloads.clicked.connect(
+            self.remove_downloads)
+        self.settingsDialog.settingsBox.accepted.connect(self.set_settings)
+        self.settingsDialog.settingsBox.rejected.connect(self.undo_settings)
+        self.settingsDialog.selectDownload.clicked.connect(self.select_download)
+        self.settingsDialog.selectTemplate.clicked.connect(self.select_template)
 
-        self.dlg.loadMetadataID.clicked.connect(self.selectLayer)
+        self.dlg.currentChanged.connect(self.test)
+        self.dlg.refresh.clicked.connect(self.test_layer)
 
-        self.dlg.iName2.editTextChanged.connect(lambda: self.test(self.dlg.iName2))
-        self.dlg.iName1.editTextChanged.connect(lambda: self.test(self.dlg.iName1))
-        self.dlg.oName2.editTextChanged.connect(lambda: self.test(self.dlg.oName2))
-        self.dlg.oName1.editTextChanged.connect(lambda: self.test(self.dlg.oName1))
-        self.dlg.pName2.editTextChanged.connect(lambda: self.test(self.dlg.pName2))
-        self.dlg.pName1.editTextChanged.connect(lambda: self.test(self.dlg.pName1))
-        self.dlg.dadd2.editTextChanged.connect(lambda: self.test(self.dlg.dadd2))
-        self.dlg.dadd1.editTextChanged.connect(lambda: self.test(self.dlg.dadd1))
-        self.dlg.city2.editTextChanged.connect(lambda: self.test(self.dlg.city2))
-        self.dlg.city1.editTextChanged.connect(lambda: self.test(self.dlg.city1))
-        self.dlg.postCode2.editTextChanged.connect(lambda: self.test(self.dlg.postCode2))
-        self.dlg.postCode1.editTextChanged.connect(lambda: self.test(self.dlg.postCode1))
-        self.dlg.email2.editTextChanged.connect(lambda: self.test(self.dlg.email2))
-        self.dlg.email1.editTextChanged.connect(lambda: self.test(self.dlg.email1))
-        self.dlg.voice2.editTextChanged.connect(lambda: self.test(self.dlg.voice2))
-        self.dlg.voice1.editTextChanged.connect(lambda: self.test(self.dlg.voice1))
-        self.dlg.fas2.editTextChanged.connect(lambda: self.test(self.dlg.fas2))
-        self.dlg.fas1.editTextChanged.connect(lambda: self.test(self.dlg.fas1))
-        self.dlg.role2.editTextChanged.connect(lambda: self.test(self.dlg.role2))
-        self.dlg.role1.editTextChanged.connect(lambda: self.test(self.dlg.role1))
-        self.dlg.referenceSys.crsChanged.connect(lambda: self.test2(self.dlg.referenceSys))
+        self.saveDialog.accepted.connect(self.set_template)
 
+    def save_template(self):
+        """
+        Save current metadata as template. In template location.
+        :return: None
+        """
+        self.saveDialog.show()
 
+    def set_template(self):
+        text = self.saveDialog.templateName.text()
+        if text is not None and text != '':
+            self.write_xml()
+            if 'xml' not in text:
+                text = text + '.xml'
+            path = os.path.join(self.templateLocation, text)
 
-    def test(self, sender):
+            try:
+                exists = False
+                if os.path.exists(os.path.join(path)):
+                    exists = True
+
+                copyfile(TEMPFILE, path)
+                os.remove(TEMPFILE)
+                if exists:
+                    self.dlg.validationLog.setText(
+                        "Template Overwritten {}".format(path))
+                else:
+                    self.dlg.validationLog.setText(
+                        "Template Created {}".format(path))
+
+            except Exception as e:
+                self.dlg.validationLog.setText(
+                    "Template Creation Error: " + str(e))
+                return
+
+    def test(self, signal):
+        """
+        Fixes bug if user clicks create and then doesn't click publish.
+        Makes sure validate - error check has to be redone to re check any
+        changes before publication.
+
+        If change in tab signal fired, checks if previous tab was 7(Summary Tab)
+        and if publish metadata button is enabled/visible.
+        :param signal: Signal from Change in Tabs.
+        :return: None.
+        """
+        self.prev = signal
+        if self.prev == 7 and self.dlg.publishMetadata.isVisible():
+            self.dlg.publishMetadata.hide()
+            self.dlg.validateErrorCheck.setEnabled(True)
+
+    def unload(self):
+        """Removes the plugin menu item and icon from QGIS GUI."""
+        for action in self.actions:
+            self.iface.removePluginMenu(self.tr(u'&ANZLIC Metadata'), action)
+            self.iface.removeToolBarIcon(action)
+        del self.toolbar
+
+    @staticmethod
+    def set_font(sender):
+        """
+        Set Font to Larger Size than default. Since Editable QtComboBoxes font
+        doesn't update correctly using qt designer, as contain QtLineEdit.
+        :param sender: comboBox that sent the signal (updated)
+        :return: None.
+        """
         font = QFont('Noto Sans', 11)
         sender.setFont(font)
         if sender.isEditable:
             sender.lineEdit().setFont(font)
 
-    def test2(self, sender):
-        font = QFont('Noto Sans', 11)
-        sender.setFont(font)
+    def run(self):
+        """
+        Run Dialog and Show.
+        :return:
+        """
+        self.dlg.show()
+        self.dlg.activateWindow()
 
-    def selectLayer(self):
+    # Settings -----------------------------------------------------------------
+
+    def set_settings(self):
+        """
+        Okay clicked on Settings Dialog Box. Accept Current Settings.
+        :return: None.
+        """
+        self.config = r'{}/{}'.format(os.path.abspath(os.path.join(
+            __file__, '../config')),
+            self.settingsDialog.configSelector.currentText())
+
+    def undo_settings(self):
+        """
+        Cancel clicked on Settings Dialog Box. Clear Changed Settings.
+        If remove all downloads clicked can't undo/ cancel.
+        :return: None.
+        """
+        self.downloadLocation = self.prevDownloadLocation
+        self.settingsDialog.downloadLocation.setText(self.downloadLocation)
+
+        self.templateLocation = self.prevTemplateLocation
+        self.settingsDialog.templateLocation.setText(self.templateLocation)
+
+        self.config = self.prevConfig
+        self.settingsDialog.configSelector.clear()
+        self.settingsDialog.configSelector.addItems(self.prevItems)
+        i = 0
+        for i in range(self.settingsDialog.configSelector.count()):
+            if self.settingsDialog.configSelector.itemText(i) == self.config:
+                break
+        self.settingsDialog.configSelector.setCurrentIndex(i)
+
+    def remove_downloads(self):
+        """
+        Remove All Downloads clicked on Settings Dialog Box. Remove all
+        downloaded files from 'downloads' directory.
+        :return: None.
+        """
+        for f in os.listdir(self.downloadLocation):
+            if f.endswith('.xml'):
+                os.remove(os.path.join(self.downloadLocation, f))
+
+    def reset_settings(self):
+        """
+        Reset Defaults clicked on Settings Dialog Box. Reset Config File and
+        Download Location to Default.
+        Config File - 'config layer'  (If found in config location, else first
+        config file found)
+        Download Location - anzlic-validator/downloads
+        :return: None.
+        """
+        item = None
+        files = []
+        for c, config in enumerate(os.listdir(os.path.join(os.path.dirname(
+                __file__), 'config'))):
+            if '.yaml' in config:
+                files.append(config)
+            if 'layer' in config:
+                item = c
+        if not files:
+            raise Exception('Load Error: No config files found in: {}'.format(
+                str(os.path.join(os.path.dirname(__file__), 'config'))))
+        self.settingsDialog.configSelector.clear()
+        self.settingsDialog.configSelector.addItems(files)
+        self.settingsDialog.configSelector.setCurrentIndex(item)
+        self.config = r'{}/{}'.format(os.path.abspath(os.path.join(
+            __file__, '../config')),
+            self.settingsDialog.configSelector.currentText())
+
+        if not self.prevConfig:
+            self.prevConfig = self.config
+
+        if not os.path.exists('{}/downloads'.format(os.path.dirname(__file__))):
+            os.makedirs('{}/downloads'.format(os.path.dirname(__file__)))
+        self.downloadLocation = '{}/downloads'.format(os.path.dirname(__file__))
+        self.settingsDialog.downloadLocation.setText(self.downloadLocation)
+
+        if not os.path.exists('{}/templates'.format(os.path.dirname(__file__))):
+            os.makedirs('{}/downloads'.format(os.path.dirname(__file__)))
+        self.templateLocation = '{}/templates'.format(os.path.dirname(__file__))
+        self.settingsDialog.templateLocation.setText(self.templateLocation)
+
+    def select_download(self):
+        """
+        Select clicked on Settings Dialog Box. Open File Selector for a
+        directory to use as download location.
+        :return: None.
+        """
+        try:
+            directory = QFileDialog.getExistingDirectory(
+                caption='Select Download Directory')
+            if directory:
+                if type(directory) == list:
+                    directory = directory[0]
+                self.settingsDialog.downloadLocation.setText(directory)
+                self.downloadLocation = directory
+        except Exception as e:
+            print e
+
+    def select_template(self):
+        """
+        Select clicked on Settings Dialog Box. Open File Selector for a
+        directory to use a template location.
+        :return: None.
+        """
+        try:
+            directory = QFileDialog.getExistingDirectory(
+                caption='Select Template Directory')
+            if directory:
+                if type(directory) == list:
+                    directory = directory[0]
+                self.settingsDialog.templateLocation.setText(directory)
+                self.templateLocation = directory
+        except Exception as e:
+            print e
+
+    def open_settings(self):
+        """
+        Show Settings Dialog. For options to change default fields.
+        :return: None.
+        """
+        self.prevItems = []
+        for i in range(self.settingsDialog.configSelector.count()):
+            self.prevItems.append(
+                self.settingsDialog.configSelector.itemText(i))
+        self.prevDownloadLocation = self.downloadLocation
+        self.prevTemplateLocation = self.templateLocation
+        self.prevConfig = self.config
+
+        self.settingsDialog.show()
+
+    # Selection & Loading of Layer ---------------------------------------------
+
+    def select_layer(self):
+        """
+        Load Metadata From the LDS directly and download into 'download'
+        directory.
+        :return: None.
+        """
+        md_handle = None
         self.dlg.loadError.hide()
-        if self.dlg.loadLayerID.text() != '':
-            self.lid = self.dlg.loadLayerID.text()
+        if self.dlg.testLayer.currentText() != '':
+            layer = self.dlg.testLayer.currentText()
+            self.lid = layer.split(' ')[0]
+        # if self.dlg.loadLayerID.text() != '':
+        #   self.lid = self.dlg.loadLayerID.text()
             md_name = 'https://data.linz.govt.nz/layer/{lid}/metadata/iso/xml/'
             try:
                 md_handle = UR.urlopen(md_name.format(lid=self.lid))
-                if not os.path.exists(
-                        '{}/downloads'.format(os.path.dirname(__file__))):
-                    os.makedirs(
-                        '{}/downloads'.format(os.path.dirname(__file__)))
-                filename = '{}/downloads/{}'.format(
-                    os.path.dirname(__file__),
+                if not os.path.exists(self.downloadLocation):
+                    os.makedirs(self.downloadLocation)
+                filename = '{}/{}'.format(
+                    self.downloadLocation,
                     md_handle.info()['content-disposition'].split(
                         "filename*=UTF-8''")[1])
-                with open(filename, 'wb') as file:
-                    file.write(md_handle.read())
+                with open(filename, 'wb') as f:
+                    f.write(md_handle.read())
                 self.dlg.OUTPUTFILE = filename
                 self.dlg.changeTemplate(filename)
                 self.dlg.metadataFile.setText(self.dlg.OUTPUTFILE)
-                self.loadMetadata(2)
+                self.load_metadata(2, True)
             except XMLSyntaxError as xse:
                 # Private layers are inaccessible
                 if 'https://id.koordinates.com/login' in md_handle.url:
@@ -495,28 +813,75 @@ class LINZ_Metadata:
             self.dlg.loadError.setText('Input Layer ID')
             self.dlg.loadError.show()
 
-    def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
-        for action in self.actions:
-            self.iface.removePluginMenu(self.tr(u'&LINZ Metadata'), action)
-            self.iface.removeToolBarIcon(action)
-        del self.toolbar
+    def set_file(self, i):
+        """
+        Select file clicked.
+        Open File Dialog and Update Selection (Template, Output, Existing
+        Metadata File)
+        :param i: Button clicked to set the file.
+        (1 - Template Select, 2 - Output Select, 3 - Existing Select)
+        :return: None.
+        """
+        try:
+            self.dlg.loadError.hide()
+            self.dlg.metadataFile.clear()
+            if i == 1:
+                filename = QFileDialog.getOpenFileName(
+                    None, 'Open File', self.templateLocation,
+                    "XML Template File (*xml)")
+            elif i == 2:
+                filename = QFileDialog.getOpenFileName(
+                    None, 'Open File', os.getenv('HOME'),
+                    "XML Output File (*xml)")
+            else:
+                filename = QFileDialog.getOpenFileName(
+                    None, 'Open File', os.getenv('HOME'),
+                    "XML Metadata File (*xml)")
+            if filename:
+                if type(filename) == list:
+                    filename = filename[0]
+                self.dlg.reset_form()
+                if i == 1:
+                    self.dlg.changeTemplate(filename)
+                    self.dlg.templateFile.setText(self.dlg.TEMPLATEPATH)
+                    self.dlg.outputFile.setText(self.dlg.TEMPLATEPATH)
+                elif i == 2:
+                    self.dlg.OUTPUTFILE = filename
+                    self.dlg.outputFile.setText(self.dlg.OUTPUTFILE)
+                else:
+                    self.dlg.OUTPUTFILE = filename
+                    self.dlg.changeTemplate(filename)
+                    self.dlg.metadataFile.setText(self.dlg.OUTPUTFILE)
+        except Exception as e:
+            self.dlg.loadError.setText("File Selection Error: " + str(e))
+            self.dlg.loadError.show()
 
-    def loadMetadata(self, button):
+    def update_file_text(self):
+        """
+        Default template clicked.
+        Update the template field to the default template location.
+        :return: None.
+        """
+        self.dlg.changeTemplate(self.dlg.DEFAULTTEMP)
+        self.dlg.templateFile.setText(self.dlg.TEMPLATEPATH)
+
+    def load_metadata(self, button, remove=False):
         """
         Load Selectable Combo/List Items from Codelists.
         Load Selectable Contact Items from Config (if given)
         Load metadata template or existing metadata file into associated fields.
         :param button: which button clicked to load the metadata.
         (1 - Load Template Metadata), (2 - Load Existing Metadata)
+        :param remove: remove the file once loaded, True if the file is loaded
+        from LDS, to stop creation of invalid metadata.
         :return: None.
         """
         try:
             lice, copy, metlice, metcopy, = None, None, None, None
             meta, res = None, None
-            crsList = {'NZGD2000/New Zealand Transverse Mercator 2000': 2193,
-                       'WGS 84': 4326}
-            topicCategoryValues = CL('MD_TopicCategoryCode')
+            crs_list = {'NZGD2000/New Zealand Transverse Mercator 2000': 2193,
+                        'WGS 84': 4326}
+            topic_category_values = CL('MD_TopicCategoryCode')
             self.MDTEXT = {}
             if button == 1:
                 if self.dlg.templateFile.text() == '' or \
@@ -534,12 +899,10 @@ class LINZ_Metadata:
                     os.path.dirname(__file__), self.dlg.TEMPLATEPATH)))
             except Exception as e:
                 raise Exception("Metadata Load Error: {}".format(str(e)))
-            self.configfile = r'{}/{}'.format(os.path.abspath(os.path.join(
-                __file__, '../config')), self.dlg.configSelector.currentText())
-            if not os.path.exists(self.configfile):
+            if not os.path.exists(self.config):
                 raise Exception("Cannot Find Config File {}".format(
-                    self.configfile))
-            with open(self.configfile, 'r') as f:
+                    self.config))
+            with open(self.config, 'r') as f:
                 config = yaml.load(f)
             if 'Metadata' not in md.getroot().tag:
                 raise Exception('Metadata Load Error, not ISO Metadata')
@@ -559,41 +922,40 @@ class LINZ_Metadata:
                         self.MDTEXT[key] = m.text
 
             # Add Topic Category Selection Values to UI List.
-            for val in topicCategoryValues:
+            for val in topic_category_values:
                 self.dlg.topicCategory.addItem(val.strip())
             self.dlg.topicCategory.sortItems()
 
-            configDict = {VOICE: 'VOICE1',
-                          POCVOICE: 'VOICE2',
-                          ONAME: 'ORGANISATIONNAME1',
-                          POCONAME: 'ORGANISATIONNAME2',
-                          INAME: 'INDIVIDUALNAME1',
-                          POCINAME: 'INDIVIDUALNAME2',
-                          DELIVERYPOINT: 'DELIVERYADDRESS1',
-                          POCDELIVERYPOINT: 'DELIVERYADDRESS2',
-                          CITY: 'CITY1',
-                          POCCITY: 'CITY2',
-                          POSTALCODE: 'POSTALCODE1',
-                          POCPOSTALCODE: 'POSTALCODE2',
-                          COUNTRY: 'COUNTRY1',
-                          POCCOUNTRY: 'COUNTRY2',
-                          EMAIL: 'EMAIL1',
-                          POCEMAIL: 'EMAIL2',
-                          FACS: 'FACSIMILE1',
-                          POCFACS: 'FACSIMILE2',
-                          PNAME: 'POSITIONNAME1',
-                          POCPNAME: 'POSITIONNAME2',
-                          HLEVEL: 'HIERARCHYLEVEL',
-                          CLASSIFCODE: 'SECURITYCLASSRES',
-                          MCLASSIFCODE: 'SECURITYCLASSMET',
-                          STATUS: 'STATUS',
-                          RMAINTCODE: 'MAINTENANCE',
-                          SPATIALREP: 'SPATIALREPRESENTATION',
-                          ROLE: 'ROLE1',
-                          POCROLE: 'ROLE2'}
+            config_dict = {VOICE:            'VOICE1',
+                           POCVOICE:         'VOICE2',
+                           ONAME:            'ORGANISATIONNAME1',
+                           POCONAME:         'ORGANISATIONNAME2',
+                           INAME:            'INDIVIDUALNAME1',
+                           POCINAME:         'INDIVIDUALNAME2',
+                           DELIVERYPOINT:    'DELIVERYADDRESS1',
+                           POCDELIVERYPOINT: 'DELIVERYADDRESS2',
+                           CITY:             'CITY1',
+                           POCCITY:          'CITY2',
+                           POSTALCODE:       'POSTALCODE1',
+                           POCPOSTALCODE:    'POSTALCODE2',
+                           COUNTRY:          'COUNTRY1',
+                           POCCOUNTRY:       'COUNTRY2',
+                           EMAIL:            'EMAIL1',
+                           POCEMAIL:         'EMAIL2',
+                           FACS:             'FACSIMILE1',
+                           POCFACS:          'FACSIMILE2',
+                           PNAME:            'POSITIONNAME1',
+                           POCPNAME:         'POSITIONNAME2',
+                           HLEVEL:           'HIERARCHYLEVEL',
+                           CLASSIFCODE:      'SECURITYCLASSRES',
+                           MCLASSIFCODE:     'SECURITYCLASSMET',
+                           STATUS:           'STATUS',
+                           RMAINTCODE:       'MAINTENANCE',
+                           SPATIALREP:       'SPATIALREPRESENTATION',
+                           ROLE:             'ROLE1',
+                           POCROLE:          'ROLE2'}
 
             constraints = ('RCOPYRIGHT', 'RLICENSE', 'MCOPYRIGHT', 'MLICENSE')
-            font = QFont('Noto Sans', 11)
             for vals in constraints:
                 text = ''
                 if vals in config:
@@ -607,35 +969,35 @@ class LINZ_Metadata:
                 else:
                     self.mlicense = text
 
-            trueFalseVals = ()
+            true_false_vals = ()
             for i in FIELDS:
                 if i in self.cFS:
-                    if i in configDict:
+                    if i in config_dict:
                         self.cFS[i].addItem('')
-                        if configDict[i] in config and \
-                                type(config[configDict[i]]) == list:
-                            self.cFS[i].addItems(config[configDict[i]])
+                        if config_dict[i] in config and \
+                                type(config[config_dict[i]]) == list:
+                            self.cFS[i].addItems(config[config_dict[i]])
                             for v in range(self.cFS[i].count()):
                                 if self.cFS[i].itemText(v) == 'NONE' or \
                                         self.cFS[i].itemText(v) == 'EMPTY':
                                     self.cFS[i].removeItem(v)
-                        elif configDict[i] in config and \
-                                type(config[configDict[i]]) == str:
-                            self.cFS[i].addItem(config[configDict[i]])
+                        elif config_dict[i] in config and \
+                                type(config[config_dict[i]]) == str:
+                            self.cFS[i].addItem(config[config_dict[i]])
                         else:
-                            trueFalseVals += (i,)
+                            true_false_vals += (i,)
 
                 if i in self.cF:
                     self.cF[i][0].addItem('')
                     items = self.cF[i][1]
-                    if i in configDict and configDict[i] in config:
-                        if type(config[configDict[i]]) == list:
+                    if i in config_dict and config_dict[i] in config:
+                        if type(config[config_dict[i]]) == list:
                             values = ()
-                            for v in config[configDict[i]]:
+                            for v in config[config_dict[i]]:
                                 values += (v,)
-                        elif type(config[configDict[i]]) == str and \
-                                config[configDict[i]] in items:
-                                    values = (config[configDict[i]],)
+                        elif type(config[config_dict[i]]) == str and \
+                                config[config_dict[i]] in items:
+                                    values = (config[config_dict[i]],)
                         else:
                             values = self.cF[i][1]
                     else:
@@ -659,7 +1021,7 @@ class LINZ_Metadata:
                     elif i == TSINGLE or i == TBEGIN or i == TEND:
                         self.dlg.temporalCheck.setChecked(True)
                         date, time = self.MDTEXT[i], None
-                        y, M, d = None, None, None
+                        y, mon, d = None, None, None
                         h, m, s = None, None, None
                         if self.MDTEXT[i].find('T') != -1:
                             date = self.MDTEXT[i].split('T')[0]
@@ -669,9 +1031,9 @@ class LINZ_Metadata:
                         if len(date) == 1:
                             y = date[0]
                         elif len(date) == 2:
-                            y, M = date[0], date[1]
+                            y, mon = date[0], date[1]
                         else:
-                            y, M, d = date[0], date[1], date[2]
+                            y, mon, d = date[0], date[1], date[2]
                         if time is not None:
                             time = time.split(':')
                             if len(time) == 1:
@@ -680,11 +1042,11 @@ class LINZ_Metadata:
                                 h, m = time[0], time[1]
                             else:
                                 h, m, s = time[0], time[1], time[2]
-                        if M is None:
-                            M = 1
+                        if mon is None:
+                            mon = 1
                         if d is None:
                             d = 1
-                        date = QDate(int(y), int(M), int(d))
+                        date = QDate(int(y), int(mon), int(d))
 
                         if i == TSINGLE or i == TBEGIN:
                             self.dlg.startDate.setDate(date)
@@ -707,10 +1069,10 @@ class LINZ_Metadata:
                     # Load Keywords
                     elif i == KEYWORDS:
                         if type(self.MDTEXT[i]) != tuple:
-                            valList = [self.MDTEXT[i]]
+                            val_list = [self.MDTEXT[i]]
                         else:
-                            valList = self.MDTEXT[i]
-                        for val in valList:
+                            val_list = self.MDTEXT[i]
+                        for val in val_list:
                             val = val.replace('-', ' ')
                             if 'non specific' in val:
                                 val = val.replace('non specific',
@@ -746,10 +1108,10 @@ class LINZ_Metadata:
                                  'revision': (self.dlg.resourceUpdate,
                                               self.dlg.resourceUpdateCheck)}
                         if type(self.MDTEXT[i]) == tuple:
-                            valList = self.MDTEXT[i]
+                            val_list = self.MDTEXT[i]
                         else:
-                            valList = [self.MDTEXT[i]]
-                        for num, el in enumerate(valList):
+                            val_list = [self.MDTEXT[i]]
+                        for num, el in enumerate(val_list):
                             dt = el.split('-')
                             if len(dt) == 1:
                                 dt = (dt[0], 1, 1)
@@ -783,8 +1145,8 @@ class LINZ_Metadata:
                             crs = QCRS(int(self.MDTEXT[i].split('EPSG::')[1]))
                             self.dlg.referenceSys.setCrs(crs)
                         else:
-                            if self.MDTEXT[i] in crsList:
-                                crs = QCRS(crsList[self.MDTEXT[i]])
+                            if self.MDTEXT[i] in crs_list:
+                                crs = QCRS(crs_list[self.MDTEXT[i]])
                                 self.dlg.referenceSys.setCrs(crs)
                             else:
                                 print("WARNING unknown CRS " + self.MDTEXT[i])
@@ -894,6 +1256,8 @@ class LINZ_Metadata:
                 self.dlg.metadataConLicense.setText(meta[metlice])
             if metcopy is not None and meta is not None and metcopy < len(meta):
                 self.dlg.metadataConCopyright.setText(meta[metcopy])
+            if remove:
+                os.remove(self.dlg.OUTPUTFILE)
         except Exception as e:
             self.dlg.reset_form()
             self.dlg.loadError.setText(str(e))
@@ -909,7 +1273,9 @@ class LINZ_Metadata:
         for i in range(self.dlg.count()):
             self.dlg.setTabEnabled(i, True)
 
-    def formatSummary(self, tree):
+    # Write Metadata & Output Summary ------------------------------------------
+
+    def format_summary(self, tree):
         """
         Write Update XML Metadata fields to the formatted summary tab.
         :param tree: XML tree to write information from.
@@ -917,23 +1283,24 @@ class LINZ_Metadata:
         """
         general = (FID, LAN, CHSET, HLEVEL, DSTAMP, MSN, MSV, RFORMATN,
                    RFORMATV)
-        metAdd = (INAME, ONAME, PNAME, VOICE, FACS, DELIVERYPOINT, CITY, ROLE,
-                  POSTALCODE, COUNTRY, EMAIL)
-        resAdd = (POCINAME, POCONAME, POCPNAME, POCVOICE, POCFACS, POCEMAIL,
-                  POCDELIVERYPOINT, POCCITY, POCPOSTALCODE, POCCOUNTRY, POCROLE)
-        resFields = (TITLE, ALTTITLE, ABSTRACT, PURPOSE, CITDATE, CITDATETYPE,
-                     LINEAGE, LINKAGE, KEYWORDS, TOPIC)
-        systemInfo = (RS, STATUS, RMAINTCODE, RMAINTDATE, SPATIALREP, SCALE,
-                      RESOLUTION, EXTENTDES, EXTENTBBW, EXTENTBBE, EXTENTBBN,
-                      EXTENTBBS, TSINGLE, TBEGIN, TEND)
+        met_add = (INAME, ONAME, PNAME, VOICE, FACS, DELIVERYPOINT, CITY, ROLE,
+                   POSTALCODE, COUNTRY, EMAIL)
+        res_add = (POCINAME, POCONAME, POCPNAME, POCVOICE, POCFACS, POCEMAIL,
+                   POCDELIVERYPOINT, POCCITY, POCPOSTALCODE, POCCOUNTRY,
+                   POCROLE)
+        res_fields = (TITLE, ALTTITLE, ABSTRACT, PURPOSE, CITDATE, CITDATETYPE,
+                      LINEAGE, LINKAGE, KEYWORDS, TOPIC)
+        system_info = (RS, STATUS, RMAINTCODE, RMAINTDATE, SPATIALREP, SCALE,
+                       RESOLUTION, EXTENTDES, EXTENTBBW, EXTENTBBE, EXTENTBBN,
+                       EXTENTBBS, TSINGLE, TBEGIN, TEND)
         rconstraints = (CLASSIFCODE, RESOURCELIMIT, RESOURCEUSE)
         mconstraints = (MCLASSIFCODE, METALIMIT, METAUSE)
         j, k = 0, 0
         li = {general: (),
-              metAdd: (),
-              resAdd: (),
-              resFields: (),
-              systemInfo: (),
+              met_add: (),
+              res_add: (),
+              res_fields: (),
+              system_info: (),
               rconstraints: (),
               mconstraints: ()}
 
@@ -949,10 +1316,10 @@ class LINZ_Metadata:
 
         # Set default values for formatted table
         vals = OD([('General', li[general]),
-                   ('Metadata Address', li[metAdd]),
-                   ('Resource Address', li[resAdd]),
-                   ('Resource Fields', li[resFields]),
-                   ('System Info', li[systemInfo]),
+                   ('Metadata Address', li[met_add]),
+                   ('Resource Address', li[res_add]),
+                   ('Resource Fields', li[res_fields]),
+                   ('System Info', li[system_info]),
                    ('Resource Constraints', li[rconstraints]),
                    ('Metadata Constraints', li[mconstraints])])
         for i in vals:
@@ -969,17 +1336,17 @@ class LINZ_Metadata:
         self.dlg.metadataTable.setWordWrap(True)
         font = QFont('Noto Sans', 15, QFont.Bold, True)
         font2 = QFont('Noto Sans', 11)
-        changeVals = {'Code'                 : 'Extent Description',
-                      'Classification'       : 'Security Classification',
-                      'Denominator'          : 'Scale',
-                      'Distance'             : 'Resolution',
-                      'Statement'            : 'History',
-                      'East Bound Longitude' : '        East Bound Longitude',
-                      'West Bound Longitude' : '        West Bound Longitude',
-                      'South Bound Latitude' : '        South Bound Latitude',
-                      'North Bound Latitude' : '        North Bound Latitude',
-                      'Date'                 : ' Date - ',
-                      'Use Limitation'       : ' Use Limitation - '}
+        change_vals = {'Code':                 'Extent Description',
+                       'Classification':       'Security Classification',
+                       'Denominator':          'Scale',
+                       'Distance':             'Resolution',
+                       'Statement':            'History',
+                       'East Bound Longitude': '        East Bound Longitude',
+                       'West Bound Longitude': '        West Bound Longitude',
+                       'South Bound Latitude': '        South Bound Latitude',
+                       'North Bound Latitude': '        North Bound Latitude',
+                       'Date':                 ' Date - ',
+                       'Use Limitation':       ' Use Limitation - '}
         # Update formatted table to include text and text 'title' values.
         for i in vals:
             self.dlg.metadataTable.setItem(k, 0, QTWI(i))
@@ -987,7 +1354,7 @@ class LINZ_Metadata:
             k += 1
             for num, j in enumerate(vals[i]):
                 add, item0, item1 = False, j[0], j[1]
-                if j[0] in changeVals:
+                if j[0] in change_vals:
                     if j[0] == 'West Bound Longitude':
                         self.dlg.metadataTable.setItem(
                             k, 0, QTWI('Extent Bounding Box'))
@@ -997,11 +1364,11 @@ class LINZ_Metadata:
                         item1 += ' - ' + \
                                  self.dlg.referenceSys.crs().description()
                     elif j[0] == 'Date':
-                        item0 = changeVals[j[0]] + vals[i][num+1][1].title()
+                        item0 = change_vals[j[0]] + vals[i][num+1][1].title()
                     elif j[0] == 'Use Limitation':
-                        item0 = changeVals[j[0]] + vals[i][num+1][1].title()
+                        item0 = change_vals[j[0]] + vals[i][num+1][1].title()
                     else:
-                        item0 = changeVals[j[0]]
+                        item0 = change_vals[j[0]]
                 if j[0] != 'Date Type' and j[0] != 'Use Constraints':
                     if j[0] == 'Abstract':
                         text = item1
@@ -1048,7 +1415,8 @@ class LINZ_Metadata:
                     k += 1
         self.dlg.metadataTable.resizeRowsToContents()
 
-    def write(self, i, tree, text, many=None, con=None):
+    @staticmethod
+    def write(i, tree, text, many=None, con=None):
         """
         Write text value to the xml tree, tree, with a given path.
         Determines if the path (or part of) already exists and enters all
@@ -1064,8 +1432,8 @@ class LINZ_Metadata:
         :return: tree.
         """
         base, found = '', None
-        codeUrl = 'http://standards.iso.org/ittf/PubliclyAvailableStandards' + \
-                  '/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#'
+        code_url = 'http://standards.iso.org/ittf/PubliclyAvailableStand' + \
+                   'ards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#'
 
         # Is a template field, so don't add.
         if text[0] == '[' and text[len(text) - 1] == ']':
@@ -1108,7 +1476,7 @@ class LINZ_Metadata:
             if con is not None and j[1] == 'useLimitation':
                 sib = EL(QN(NSX['gmd'], 'useConstraints'))
                 code = SE(sib, QN(NSX['gmd'], 'MD_RestrictionCode'))
-                code.attrib['codeList'] = codeUrl + 'MD_RestrictionCode'
+                code.attrib['codeList'] = code_url + 'MD_RestrictionCode'
                 code.attrib['codeListValue'] = con
                 code.text = con
                 f.addnext(sib)
@@ -1119,19 +1487,19 @@ class LINZ_Metadata:
 
         if 'gco' not in f.tag and 'URL' not in f.tag and 'Position' \
                 not in f.tag and 'Topic' not in f.tag:
-            f.attrib['codeList'] = codeUrl + f.tag[f.tag.rfind('}') + 1:]
+            f.attrib['codeList'] = code_url + f.tag[f.tag.rfind('}') + 1:]
             f.attrib['codeListValue'] = text
         f.text = text
         return tree
 
-    def writeXML(self):
+    def write_xml(self):
         """
         Iterate through XML fields and if they contain text/ are selected,
         or multiple are selected. Write them to the xml tree using the write()
         method.
         :return: None.
         """
-        extentDesc = OD(
+        extent_desc = OD(
             [('/gmd:title' + CS, (
                 'ANZLIC Geographic Extent Name Register',
                 'gmd:identificationInfo/gmd:MD_DataIdentification')),
@@ -1148,7 +1516,7 @@ class LINZ_Metadata:
               ('ANZLIC the Spatial Information Council', None)),
              ('/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:role/' +
               'gmd:CI_RoleCode', ('custodian', None))])
-        extentDesv1 = OD(
+        extent_desv1 = OD(
             [('/gmd:title' + CS, (
                 'ANZMet Lite Country codelist',
                 'gmd:identificationInfo/gmd:MD_DataIdentification')),
@@ -1165,7 +1533,7 @@ class LINZ_Metadata:
               ('ANZLIC the Spatial Information Council', None)),
              ('/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:role/' +
               'gmd:CI_RoleCode', ('custodian', None))])
-        keywordDict = OD(
+        keyword_dict = OD(
             [('/gmd:title' + CS, ('ANZLIC Jursidictions', None)),
              ('/gmd:date/gmd:CI_Date/gmd:date' + DT, ('2008-10-29', None)),
              ('/gmd:date/gmd:CI_Date/gmd:dateType/gmd:CI_DateTypeCode',
@@ -1180,7 +1548,7 @@ class LINZ_Metadata:
               ('ANZLIC the Spatial Information Council', None)),
              ('/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:role/' +
               'gmd:CI_RoleCode', ('custodian', None))])
-        iD = ID.split(MD+'/')[1]
+        iden = ID.split(MD+'/')[1]
         url = 'http://standards.iso.org/ittf/PubliclyAvailableStandards/' + \
               'ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#'
         try:
@@ -1195,7 +1563,7 @@ class LINZ_Metadata:
                 # Date Stamp
                 elif i == DSTAMP and self.dlg.outputFile.text() != '':
                     date = QDate.currentDate().toString('yyyy-MM-dd')
-                    tree = self.write(i, tree, date, iD)
+                    tree = self.write(i, tree, date, iden)
 
                 # Scale
                 elif i == SCALE:
@@ -1234,11 +1602,11 @@ class LINZ_Metadata:
                         idn = SE(md, QN(NSX['gmd'], 'identificationInfo'))
                         idn = SE(idn, QN(NSX['gmd'], 'MD_DataIdentification'))
                     for s in self.dlg.geogDesList.selectedItems():
-                        exDesc = extentDesc
+                        ex_desc = extent_desc
                         if s.text() == 'nzl':
-                            exDesc = extentDesv1
+                            ex_desc = extent_desv1
                         extent = SE(idn, QN(NSX['gmd'], 'extent'))
-                        for value in exDesc:
+                        for value in ex_desc:
                             base, found = '', None
                             for val in (ex+value).split('/'):
                                 if extent.find(
@@ -1267,11 +1635,11 @@ class LINZ_Metadata:
                                             sel.text = s.text()
                                             f.addnext(el)
                                         num += 1
-                            f.text = exDesc[value][0]
+                            f.text = ex_desc[value][0]
                             if 'gco' not in f.tag:
                                 f.attrib['codeList'] = url + f.tag[f.tag.rfind(
                                     '}') + 1:]
-                                f.attrib['codeListValue'] = exDesc[value][0]
+                                f.attrib['codeListValue'] = ex_desc[value][0]
 
                 # Reference System
                 elif i == RS:
@@ -1303,7 +1671,7 @@ class LINZ_Metadata:
                 # Topic Category
                 elif i == TOPIC:
                     for j in self.dlg.topicCategory.selectedItems():
-                        tree = self.write(i, tree, j.text(), iD)
+                        tree = self.write(i, tree, j.text(), iden)
 
                 # Resource Maintenance Date
                 elif i == RMAINTDATE:
@@ -1315,12 +1683,12 @@ class LINZ_Metadata:
                 elif i == RESOURCELIMIT:
                     if self.dlg.resourceConLicense.toPlainText() != '':
                         tx = self.dlg.resourceConLicense.toPlainText()
-                        tree = self.write(i, tree, tx, iD, con='license')
+                        tree = self.write(i, tree, tx, iden, con='license')
                     if self.dlg.resourceConCopyright.toPlainText() != '':
                         tx = self.dlg.resourceConCopyright.toPlainText()
-                        tree = self.write(i, tree, tx, iD, con='copyright')
+                        tree = self.write(i, tree, tx, iden, con='copyright')
 
-                # Metadata Limitaiton
+                # Metadata Limitation
                 elif i == METALIMIT:
                     if self.dlg.metadataConLicense.toPlainText() != '':
                         tx = self.dlg.metadataConLicense.toPlainText()
@@ -1342,7 +1710,7 @@ class LINZ_Metadata:
                             if self.dlg.startTimeCheck.isChecked():
                                 date += 'T' + self.dlg.startTime.time(
                                 ).toString('hh:mm:ss')
-                            tree = self.write(i, tree, date, iD)
+                            tree = self.write(i, tree, date, iden)
 
                 # Temporal End Range
                 elif i == TEND:
@@ -1361,26 +1729,26 @@ class LINZ_Metadata:
                 elif i == KEYWORDS or i == KEYWORDSTYPE:
                     mdk = None
                     if i == KEYWORDS:
-                        keywordUrl = url + 'MD_KeywordTypeCode'
+                        keyword_url = url + 'MD_KeywordTypeCode'
                         mt = KEYWORDS.split('/gmd:keyword')[0].split(MD)[1]
                         tree = self.write(i, tree, 'New Zealand', mt[1:])
 
                         kt = EL(QN(NSX['gmd'], 'type'))
                         ktc = SE(kt, QN(NSX['gmd'], 'MD_KeywordTypeCode'))
-                        ktc.attrib['codeList'] = keywordUrl
+                        ktc.attrib['codeList'] = keyword_url
                         ktc.attrib['codeListValue'] = 'theme'
                         h = tree.find(i[17:], namespaces=NSX)
                         h.getparent().addnext(kt)
 
                         path = MD + mt + '/gmd:thesaurusName/gmd:CI_Citation'
 
-                        for k in keywordDict:
+                        for k in keyword_dict:
                             tree = self.write(path + k, tree,
-                                              keywordDict[k][0],
-                                              keywordDict[k][1])
+                                              keyword_dict[k][0],
+                                              keyword_dict[k][1])
                         found = False
                         if len(self.dlg.keywordList.selectedItems()) > 0:
-                            desc = tree.find(iD + '/gmd:descriptiveKeywords',
+                            desc = tree.find(iden + '/gmd:descriptiveKeywords',
                                              namespaces=NSX)
                             desckey = EL(QN(NSX['gmd'], 'descriptiveKeywords'))
                             desc.addnext(desckey)
@@ -1395,7 +1763,7 @@ class LINZ_Metadata:
                         if found:
                             kt = EL(QN(NSX['gmd'], 'type'))
                             ktc = SE(kt, QN(NSX['gmd'], 'MD_KeywordTypeCode'))
-                            ktc.attrib['codeList'] = keywordUrl
+                            ktc.attrib['codeList'] = keyword_url
                             ktc.attrib['codeListValue'] = 'theme'
                             t = tree.findall(i[17:], namespaces=NSX)
                             t = t[len(tree.findall(i[17:], namespaces=NSX)) - 1]
@@ -1404,9 +1772,9 @@ class LINZ_Metadata:
                 # Key Resource Date & Type
                 elif i == CITDATE or i == CITDATETYPE:
                     if i == CITDATE:
-                        dateUrl = url + 'CI_DateTypeCode'
+                        date_url = url + 'CI_DateTypeCode'
 
-                        codeListVal = {self.dlg.resourceCreateCheck: (
+                        code_list_val = {self.dlg.resourceCreateCheck: (
                             'creation', self.dlg.resourceCreate),
                                        self.dlg.resourceUpdateCheck: (
                                            'revision', self.dlg.resourceUpdate),
@@ -1418,22 +1786,22 @@ class LINZ_Metadata:
                                     self.dlg.resourcePublishCheck,
                                     self.dlg.resourceUpdateCheck):
                             if val.isChecked():
-                                date = codeListVal[val][1].date()
+                                date = code_list_val[val][1].date()
                                 date = date.toString('yyyy-MM-dd')
                                 tree = self.write(
                                     i, tree, date,
-                                    iD + '/gmd:citation/gmd:CI_Citation')
-                                citD = EL(QN(NSX['gmd'], 'dateType'))
-                                citDCode = SE(citD, QN(NSX['gmd'],
-                                                       'CI_DateTypeCode'))
-                                citDCode.attrib['codeList'] = dateUrl
-                                citDCode.attrib['codeListValue'] = codeListVal[
-                                    val][0]
-                                citDCode.text = codeListVal[val][0]
+                                    iden + '/gmd:citation/gmd:CI_Citation')
+                                cit_d = EL(QN(NSX['gmd'], 'dateType'))
+                                cit_d_code = SE(cit_d, QN(NSX['gmd'],
+                                                          'CI_DateTypeCode'))
+                                cit_d_code.attrib['codeList'] = date_url
+                                cit_d_code.attrib[
+                                    'codeListValue'] = code_list_val[val][0]
+                                cit_d_code.text = code_list_val[val][0]
                                 t = tree.findall(i[17:], namespaces=NSX)
                                 t = t[len(tree.findall(
                                     i[17:], namespaces=NSX)) - 1]
-                                t.getparent().addnext(citD)
+                                t.getparent().addnext(cit_d)
 
                 elif EXTENTBB in i:
                     if self.dlg.northExtent.displayText() != '' and \
@@ -1451,7 +1819,8 @@ class LINZ_Metadata:
                                 i, tree, self.dlg.eastExtent.displayText())
                         elif 'west' in i:
                             tree = self.write(
-                                i, tree, self.dlg.westExtent.displayText(), iD)
+                                i, tree, self.dlg.westExtent.displayText(),
+                                iden)
 
                 # Default Values
                 elif i in DEFAULTTEXT:
@@ -1466,7 +1835,7 @@ class LINZ_Metadata:
                         val = self.MDTEXT[i]
                     if val != '':
                         if 'extent' in i:
-                            tree = self.write(i, tree, self.MDTEXT[i], iD)
+                            tree = self.write(i, tree, self.MDTEXT[i], iden)
                         else:
                             tree = self.write(i, tree, self.MDTEXT[i])
 
@@ -1478,12 +1847,14 @@ class LINZ_Metadata:
             with open(TEMPFILE, 'wb') as f:
                 f.write(md_text)
             self.dlg.summary.setText(md_text)
-            self.formatSummary(tree)
+            self.format_summary(tree)
 
         except Exception as e:
             raise Exception("Write Error: " + str(e))
 
-    def createMeta(self):
+    # Run Checks, Create, Publish Metadata -------------------------------------
+
+    def create_meta(self):
         """
         Create metadata Clicked.
         Copies the temp file to the selected output file, removes the temp file,
@@ -1507,27 +1878,28 @@ class LINZ_Metadata:
         self.dlg.publishMetadata.show()
         self.dlg.createMetadata.setEnabled(False)
 
-    def publishMeta(self):
+    def publish_meta(self):
         """
         Publish metadata Clicked.
         Sets the koordinates client, clears any previous information in the
-        publish dialog and diplays.
+        publish dialog and displays.
         :return: None.
         """
         try:
+            self.publishSet = False
             domain = 'data.linz.govt.nz'
             self.client = koordinates.Client(domain, KEY)
             self.publishDialog.errorText.clear()
             self.publishDialog.titleBox.clear()
             self.publishDialog.layerId.clear()
-            self.publishDialog.publishBox.setEnabled(False)
+            self.publishDialog.accept.setEnabled(False)
             self.publishDialog.show()
             if self.lid:
                 self.publishDialog.layerId.setText(self.lid)
         except Exception as e:
             self.dlg.validationLog.setText('Publication Error: ' + str(e))
 
-    def updatePublishDlg(self):
+    def update_publish_dlg(self):
         """
         Enter is clicked on the Publish dialog, the layer associated to the
         layer ID is searched if valid, enabled the user to continue with
@@ -1542,12 +1914,14 @@ class LINZ_Metadata:
                 self.layer = self.client.layers.get(self.lidpub)
                 self.title = self.layer.title
                 self.publishDialog.titleBox.setText(self.title)
-                self.publishDialog.publishBox.setEnabled(True)
+                self.publishDialog.accept.setEnabled(True)
+                self.publishSet = True
             else:
                 self.publishDialog.errorText.setText('Enter Layer ID to Update')
+                self.publishSet = True
         except Exception as e:
             self.publishDialog.errorText.setText(str(e))
-            self.publishDialog.publishBox.setEnabled(False)
+            self.publishDialog.accept.setEnabled(False)
 
     def publish(self):
         """
@@ -1556,6 +1930,7 @@ class LINZ_Metadata:
         from lds_metadata_updater.
         :return: None
         """
+        # NOTE: Currently Commented Out - Not tested.
         publish = '''
         try:
             xmlfile = self.dlg.OUTPUTFILE
@@ -1572,12 +1947,431 @@ class LINZ_Metadata:
         '''
         print (publish)
         xmlfile = self.dlg.OUTPUTFILE
-        layerID = self.lidpub
-        print (xmlfile, layerID)
+        layer_id = self.lidpub
+        print (xmlfile, layer_id)
         text = 'Publication Complete - ' + self.lidpub + ' - ' + self.title
         self.dlg.validationLog.setText(text)
+        self.publishDialog.close()
 
-    def toggleDate(self, state):
+    def check(self):
+        """
+        Validate/ Error Check Clicked.
+        Perform Error Checks from errorChecker.py - If error found and contains
+        text 'Expected is' then will show fix error button which will link to
+        to the tab that contains the error, along with an asterisks showing
+        which field.
+        Perform Validation Checks from validate.py
+        All Validation/ Error checks will be displayed in the validation log.
+        If no validation or error checker errors are found, allow the user to
+        create the metadata.
+        :return: None
+        """
+        if self.dlg.publishMetadata.isVisible():
+            return
+        contact = ('Individual Name', 'Organisation Name', 'Position Name',
+                   'Role', 'Telephone', 'Facsimile', 'Delivery Address', 'City',
+                   'Country', 'Post Code', 'Email')
+        basic = ('Hierarchy Level', 'Title', 'Alternate Title', 'Abstract',
+                 'Purpose')
+        security = ('Resource Security Classification',
+                    'Metadata Security Classification', 'Metadata Restriction',
+                    'Resource Restriction')
+        extent = ('Extent Description', 'Extent Bounding Box',
+                  'Extent Temporal')
+        ident = ('Reference System', 'Status', 'History',
+                 'Spatial Representation', 'Maintenance',
+                 'Maintenance Next Update Date', 'Scale', 'Resolution',
+                 'Reference System Format')
+        other = ('Keyword', 'Key Date', 'Topic Category')
+
+        dic = {'Individual Name':       (self.dlg.iNameError1,
+                                         self.dlg.iNameError2),
+               'Organisation Name':     (self.dlg.oNameError1,
+                                         self.dlg.oNameError2),
+               'Position Name':         (self.dlg.pNameError1,
+                                         self.dlg.pNameError2),
+               'Telephone':             (self.dlg.voiceError1,
+                                         self.dlg.voiceError2),
+               'Facsimile':             (self.dlg.fasError1,
+                                         self.dlg.fasError2),
+               'Delivery Address':      (self.dlg.dadd1Error,
+                                         self.dlg.dadd2Error),
+               'City':                  (self.dlg.cityError1,
+                                         self.dlg.cityError2),
+               'Country':               (self.dlg.countryError1,
+                                         self.dlg.countryError2),
+               'Post Code':             (self.dlg.postCode1Error,
+                                         self.dlg.postCode2Error),
+               'Email':                 (self.dlg.emailError1,
+                                         self.dlg.emailError2),
+               'Role':                  (self.dlg.roleError1,
+                                         self.dlg.roleError2),
+               'Hierarchy Level':        self.dlg.hlNameError,
+               'Title':                  self.dlg.titleError,
+               'Abstract':               self.dlg.absError,
+               'Purpose':                self.dlg.purposeError,
+               'Resource Security Classification': self.dlg.resSecClassError,
+               'Metadata Security Classification': self.dlg.metSecClassError,
+               'Resource Restriction':  (self.dlg.resourceConCopyrightError,
+                                         self.dlg.resourceConLicenseError),
+               'Metadata Restriction':  (self.dlg.metadataConCopyrightError,
+                                         self.dlg.metadataConLicenseError),
+               'Extent Description':     self.dlg.geogDesListError,
+               'Extent Bounding Box':    self.dlg.geoBBNorthLabelError,
+               'Extent Temporal':        self.dlg.temporalCheckError,
+               'Reference System':       self.dlg.referenceSysError,
+               'Status':                 self.dlg.statusError,
+               'History':                self.dlg.lineageError,
+               'Spatial Representation': self.dlg.spatialrepError,
+               'Maintenance':            self.dlg.maintenanceError,
+               'Keyword':                self.dlg.keywordListError,
+               'Topic Category':         self.dlg.topicCategoryError,
+               'Alternate Title':        self.dlg.atitleError,
+               'Scale':                  self.dlg.scaleRadioButtonError,
+               'Resolution':             self.dlg.resolutionRadioButtonError,
+               'Key Date':               self.dlg.resourceCreateCheckError,
+               'Maintenance Next Update Date': self.dlg.dONUCheckError,
+               'Reference System Format': self.dlg.referenceSysError}
+
+        convert = {'SECURITYCLASSMET':       'Metadata Security Classification',
+                   'SECURITYCLASSRES':       'Resource Security Classification',
+                   'RESTRICCODERES':         'Resource Restriction',
+                   'RESTRICCODEMET':         'Metadata Restriction',
+                   'REFERENCESYS1':          'Reference System',
+                   'ALTTITLE':               'Alternate Title',
+                   'MAINTNEXTUPDATE':        'Maintenance Next Update Date',
+                   'INDIVIDUALNAME':         'Individual Name',
+                   'ORGANISATIONNAME':       'Organisation Name',
+                   'POSITIONNAME':           'Position Name',
+                   'VOICE':                  'Telephone',
+                   'FACSIMILE':              'Facsimile',
+                   'DELIVERYADDRESS':        'Delivery Address',
+                   'CITY':                   'City',
+                   'COUNTRY':                'Country',
+                   'POSTALCODE':             'Post Code',
+                   'EMAIL':                  'Email',
+                   'ROLE':                   'Role',
+                   'HIERARCHYLEVEL':         'Hierarchy Level',
+                   'HIERARCHYLEVELNAME':     'Hierarchy Level',
+                   'TITLE':                  'Title',
+                   'ABSTRACT':               'Abstract',
+                   'PURPOSE':                'Purpose',
+                   'EXTENTDESCRIPTION':      'Extent Description',
+                   'EXTENTBOUNDINGBOX':      'Extent Bounding Box',
+                   'EXTENTTEMPORAL':         'Extent Temporal',
+                   'STATUS':                 'Status',
+                   'LINEAGE':                'History',
+                   'SPATIALREPRESENTATION':  'Spatial Representation',
+                   'MAINTENANCE':            'Maintenance',
+                   'KEYWORD':                'Keyword',
+                   'TOPICCATEGORY':          'Topic Category',
+                   'SCALE':                  'Scale',
+                   'RESOLUTION':             'Resolution',
+                   'KEYDATE':                'Key Date',
+                   'RESOURCECON':            'Resource Restriction',
+                   'METADATACON':            'Metadata Restriction'}
+
+        self.dlg.validationLog.clear()
+        vdtr = None
+        # Write input to xml tree.
+        try:
+            self.write_xml()
+        except Exception as e:
+            self.dlg.validationLog.setText(str(e))
+            return
+        try:
+            metafile, vdtr = r'{}/{}'.format(os.getcwd(), TEMPFILE), Combined()
+            meta = vdtr.metadata(name=metafile)
+            if self.dlg.check != 0 and self.use:
+                self.use.hide()
+
+            # Run Error Checks
+            runChecks(meta, self.lid, con=self.config)
+
+            self.dlg.fixError.hide()
+            self.dlg.validationLog.setText('Error Checks Complete')
+
+            # Run Validation
+            vdtr.setschema()
+            vdtr.validate(meta)
+            vdtr.conditional(meta)
+
+            self.dlg.validationLog.setText(
+                'Error Checks Complete\nValidation Checks Complete')
+            self.dlg.createMetadata.setEnabled(True)
+
+        except ValidatorException as ve:
+            text = ""
+            if vdtr:
+                if 'Expected is (' in str(vdtr.sch.error_log):
+                    error_log = str(vdtr.sch.error_log)
+                    el = error_log[str(vdtr.sch.error_log).rfind('}')+1:len(
+                        str(vdtr.sch.error_log))-3]
+                    text = ' - Missing: ' + el
+                self.dlg.validationLog.setText(
+                    'Validation Error: ' + str(ve) + text + '\n' + str(
+                        vdtr.sch.error_log))
+            else:
+                self.dlg.validationLog.setText('Validation Error: ' + str(ve))
+            self.dlg.createMetadata.setEnabled(False)
+        except InvalidConfigException as ice:
+            self.dlg.validationLog.setText(
+                'Checker Error, Invalid Config: {}'.format(str(ice)))
+            self.dlg.createMetadata.setEnabled(False)
+        except Exception as e:
+            for code in convert:
+                if code in str(e):
+                    e = str(e).replace(code, convert[code])
+            try:
+                self.dlg.check += 1
+                self.widget = self.dlg.widget(7)
+                val_found = None
+                self.dlg.fixError.show()
+                self.dlg.validationLog.setText('Checker Error: {}'.format(
+                    str(e)))
+
+                dt = {contact:   self.dlg.widget(2),
+                      basic:     self.dlg.widget(1),
+                      security:  self.dlg.widget(6),
+                      extent:    self.dlg.widget(5),
+                      ident:     self.dlg.widget(3),
+                      other:     self.dlg.widget(4)}
+
+                for val in contact, basic, security, extent, ident, other:
+                    for v in val:
+                        if v in str(e):
+                            self.widget, val_found = dt[val], v
+                            break
+                widget = None
+                if val_found is None:
+                    self.dlg.fixError.hide()
+                elif val_found not in dic:
+                    pass
+                elif type(dic[val_found]) == tuple:
+                    if 'copyright' in str(e):
+                        self.use = dic[val_found][0]
+                        attr = self.use.objectName().replace('Error', '')
+                        if hasattr(self.dlg, attr):
+                            widget = getattr(self.dlg, attr)
+                    elif 'license' in str(e):
+                        self.use = dic[val_found][1]
+                        attr = self.use.objectName().replace('Error', '')
+                        if hasattr(self.dlg, attr):
+                            widget = getattr(self.dlg, attr)
+                    elif val_found + '2' in str(e):
+                        self.use = dic[val_found][0]
+                        attr = self.use.objectName().replace('Error', '')
+                        if hasattr(self.dlg, attr):
+                            widget = getattr(self.dlg, attr)
+                    else:
+                        self.use = dic[val_found][1]
+                        attr = self.use.objectName().replace('Error', '')
+                        if hasattr(self.dlg, attr):
+                            widget = getattr(self.dlg, attr)
+                else:
+                    self.use = dic[val_found]
+                    attr = self.use.objectName().replace('Error', '')
+                    if hasattr(self.dlg, attr):
+                        widget = getattr(self.dlg, attr)
+                if widget:
+                    widget.setFocus()
+                self.use.show()
+            except Exception as e:
+                self.dlg.validationLog.setText('Checker Error: {}'.format(
+                    str(e)))
+                traceback.print_exc()
+                self.dlg.fixError.hide()
+                self.dlg.createMetadata.setEnabled(False)
+            self.dlg.createMetadata.setEnabled(False)
+
+    def fix_error(self):
+        """
+        Fix error button clicked.
+        Hide the fix error button again, and switch to tab with the recorded
+        error.
+        :return: None.
+        """
+        self.dlg.fixError.hide()
+        self.dlg.setCurrentWidget(self.widget)
+
+    # Auto Fill ----------------------------------------------------------------
+
+    def auto_fill_legal(self):
+        """
+        Auto Fill Clicked on the Legal Tab.
+        Auto fill resource/metadata constraint values with default values, and
+        update the original values for undo operation.
+        :return: None.
+        """
+        if self.metaCC is None:
+            self.metaCC = self.dlg.metadataConCopyright.toPlainText()
+            self.metaCL = self.dlg.metadataConLicense.toPlainText()
+            self.resCC = self.dlg.resourceConCopyright.toPlainText()
+            self.resCL = self.dlg.resourceConLicense.toPlainText()
+        self.dlg.metadataConCopyright.setText(
+            self.mcopyright.replace('\\n', '\n'))
+        self.dlg.metadataConLicense.setText(
+            self.mlicense.replace('\\n', '\n'))
+        self.dlg.resourceConCopyright.setText(
+            self.rcopyright.replace('\\n', '\n'))
+        self.dlg.resourceConLicense.setText(
+            self.rlicense.replace('\\n', '\n'))
+
+    def auto_fill_legal_undo(self):
+        """
+        Undo Clicked on the Legal Tab.
+        Undo the actions of Auto fill. If the original values have been set,
+        update the resource/ metadata
+        constraints accordingly.
+        :return: None.
+        """
+        if self.metaCC is not None:
+            self.dlg.metadataConCopyright.setText(self.metaCC)
+            self.dlg.metadataConLicense.setText(self.metaCL)
+            self.dlg.resourceConCopyright.setText(self.resCC)
+            self.dlg.resourceConLicense.setText(self.resCL)
+
+    def auto_fill(self, i):
+        """
+        Auto Fill Clicked on the Contact Tab.
+        Auto fill (resource(1) or metadata(2) clicked.
+        Copy fields existing in other contact to current contact.
+        :param i: Which auto fill button clicked.
+        :return: None.
+        """
+        try:
+            self.dlg.autoFillError.hide()
+            resource, metadata = {}, {}
+            if i == 2:
+                fill_name, from_name = resource, metadata
+                fill_val, from_val = '1', '2'
+            else:
+                fill_name, from_name = metadata, resource
+                fill_val, from_val = '2', '1'
+            for i in self.dlg.contact:
+                if '1' in i.objectName():
+                    resource[i.objectName()] = i.currentText()
+                else:
+                    metadata[i.objectName()] = i.currentText()
+            for val in fill_name:
+                text = fill_name[val]
+                for i in self.dlg.contact:
+                    if i.objectName() in from_name and i.objectName().split(
+                            from_val)[0] == val.split(fill_val)[0]:
+                        if i.findText(text) == -1:
+                            i.addItem(text)
+                        i.setCurrentIndex(i.findText(text))
+        except Exception as e:
+            self.dlg.autoFillError.setText("Auto Fill Error: " + str(e))
+            self.dlg.autoFillError.show()
+
+    def text_style(self, i):
+        """
+        Text style button clicked, bold(1), italic(2), link(3).
+        Add **selected text** around selected text if bold clicked.
+        Add *selected text* around selected text if italic clicked.
+        Add [selected text](LINK HERE) around selected text if link clicked.
+        :param i: which style button clicked.
+        :return: None.
+        """
+        style = '**'
+        try:
+            if i == 1:
+                style = "**"
+            if i == 2:
+                style = "*"
+            cursor = self.dlg.abs.textCursor()
+            text_selected = cursor.selectedText()
+            select_start = cursor.selectionStart()
+            select_end = cursor.selectionEnd()
+            if len(text_selected) > 1:
+                if i == 3:
+                    ts = "[" + text_selected + "](LINK HERE)"
+                else:
+                    ts = style + text_selected + style
+            else:
+                if i == 3:
+                    ts = "[TEXT HERE](LINK HERE)"
+                else:
+                    ts = style + "TEXT HERE" + style
+            if select_start != 0:
+                start = self.dlg.abs.toPlainText()[:select_start]
+            else:
+                start = ""
+            if select_end != len(self.dlg.abs.toPlainText()) - 1:
+                end = self.dlg.abs.toPlainText()[select_end:]
+            else:
+                end = ""
+            text = start + ts + end
+            self.dlg.abs.setText(text)
+            if i == 3:
+                style = 'LINK HERE)'
+            else:
+                style = 'TEXT HERE' + style
+            if self.dlg.abs.toPlainText().find(style) != -1:
+                new_start = self.dlg.abs.toPlainText().find(style)
+                new_end = new_start + 9
+                cursor.setPosition(new_start)
+                cursor.setPosition(new_end, QTextCursor.KeepAnchor)
+                self.dlg.abs.setTextCursor(cursor)
+            elif i != 3:
+                if i == 1:
+                    move = 2
+                else:
+                    move = 1
+                cursor.setPosition(select_start + move)
+                cursor.setPosition(select_end + move, QTextCursor.KeepAnchor)
+                self.dlg.abs.setTextCursor(cursor)
+        except Exception as e:
+            print ("Text Style Error: " + str(e))
+
+    # Load Extent --------------------------------------------------------------
+
+    def load_extent(self):
+        """
+        Load Extent clicked.
+        Load the extent of the current layer into the extent bounding box fields
+        shows error label if no layer selected.
+        :return: None
+        """
+        self.prevExtentN = self.dlg.northExtent.text()
+        self.prevExtentS = self.dlg.southExtent.text()
+        self.prevExtentE = self.dlg.eastExtent.text()
+        self.prevExtentW = self.dlg.westExtent.text()
+
+        canvas = self.iface.mapCanvas()
+        layer = canvas.currentLayer()
+        if layer is not None:
+            try:
+                self.dlg.bbError.hide()
+                extent = layer.extent()
+                self.dlg.northExtent.setText(str(extent.yMaximum()))
+                self.dlg.southExtent.setText(str(extent.yMinimum()))
+                self.dlg.eastExtent.setText(str(extent.xMaximum()))
+                self.dlg.westExtent.setText(str(extent.xMinimum()))
+            except Exception as e:
+                self.dlg.bbError.setText('Error: ', str(e))
+                self.dlg.bbError.show()
+        else:
+            self.dlg.bbError.show()
+
+    def undo_extent(self):
+        """
+        Undo Extent from previous load_extent
+        :return: None.
+        """
+        if self.prevExtentN is not None:
+            self.dlg.northExtent.setText(self.prevExtentN)
+        if self.prevExtentS is not None:
+            self.dlg.southExtent.setText(self.prevExtentS)
+        if self.prevExtentE is not None:
+            self.dlg.eastExtent.setText(self.prevExtentE)
+        if self.prevExtentW is not None:
+            self.dlg.westExtent.setText(self.prevExtentW)
+
+    # Toggle Check Box/ Radio Button States ------------------------------------
+
+    def toggle_date(self, state):
         """
         Date of next update check box state changed. Enable/Disable Date field
         depending on state.
@@ -1589,7 +2383,7 @@ class LINZ_Metadata:
         else:
             self.dlg.date.setEnabled(False)
 
-    def toggleState(self, state):
+    def toggle_state(self, state):
         """
         Scale check box state changed. Enable/Disable Scale Frame depending on
         state.
@@ -1601,7 +2395,7 @@ class LINZ_Metadata:
         else:
             self.dlg.scaleFrame.setEnabled(False)
 
-    def toggleRadio(self, checked):
+    def toggle_radio(self, checked):
         """
         Scale/ Resolution radio buttons state changed. Enable/Disable Scale -
         (Scale Widget)/ Resolution - (Resolution Text, R Units) depending on
@@ -1618,7 +2412,7 @@ class LINZ_Metadata:
             self.dlg.resolutionText.setEnabled(True)
             self.dlg.rUnits.setEnabled(True)
 
-    def toggleRadioRes(self, checked):
+    def toggle_radio_res(self, checked):
         """
         Resolution radio button state changed. Enable/Disable Scale -
         (Scale Widget)/ Resolution - (Resolution Text, R Units) depending on
@@ -1653,7 +2447,7 @@ class LINZ_Metadata:
             self.dlg.endDateCheck.setChecked(False)
             self.dlg.endDateCheck.setEnabled(False)
 
-    def startTime(self, state):
+    def start_time(self, state):
         """
         Start time check box state changed. Enable/Disable Temporal Start Time
         depending on state.
@@ -1665,7 +2459,7 @@ class LINZ_Metadata:
         else:
             self.dlg.startTime.setEnabled(False)
 
-    def endTime(self, state):
+    def end_time(self, state):
         """
         End time check box state changed. Enable/Disable Temporal End Time
         depending on state.
@@ -1677,7 +2471,7 @@ class LINZ_Metadata:
         else:
             self.dlg.endTime.setEnabled(False)
 
-    def endDate(self, state):
+    def end_date(self, state):
         """
         End date check box state changed. Enable/Disable and Check/Uncheck
         Temporal End Date
@@ -1692,7 +2486,7 @@ class LINZ_Metadata:
             self.dlg.endTimeCheck.setEnabled(False)
             self.dlg.endTimeCheck.setChecked(False)
 
-    def createDate(self, state):
+    def create_date(self, state):
         """
         Creation date check box state changed. Enable/Disable Resource Creation
         Key Date, depending on state.
@@ -1704,7 +2498,7 @@ class LINZ_Metadata:
         else:
             self.dlg.resourceCreate.setEnabled(False)
 
-    def publishDate(self, state):
+    def publish_date(self, state):
         """
         Publish date check box state changed. Enable/Disable Resource Publish
         Key Date, depending on state.
@@ -1716,7 +2510,7 @@ class LINZ_Metadata:
         else:
             self.dlg.resourcePublish.setEnabled(False)
 
-    def updateDate(self, state):
+    def update_date(self, state):
         """
         Update date check box state changed. Enabled/Disable Resource Update
         Key Date, depending on state.
@@ -1728,406 +2522,138 @@ class LINZ_Metadata:
         else:
             self.dlg.resourceUpdate.setEnabled(False)
 
-    def loadExtent(self):
+    def test_layer(self):
         """
-        Load Extent clicked.
-        Load the extent of the current layer into the extent bounding box fields
-        shows error label if no layer selected.
-        :return: None
+        Add Combo Box of all current Layer/Tables on LDS. (Accessible From KEY
+        Given)
+        Sets Combo -> ID | NAME | LAYER/TABLE
+        Uses ExtendedComboBox so that user can search and filter results,
+        ID or NAME or Layer/Table
+        :return: None.
         """
-        canvas = self.iface.mapCanvas()
-        layer = canvas.currentLayer()
-        if layer is not None:
-            try:
-                self.dlg.bbError.hide()
-                extent = layer.extent()
-                self.dlg.northExtent.setText(str(extent.yMaximum()))
-                self.dlg.southExtent.setText(str(extent.yMinimum()))
-                self.dlg.eastExtent.setText(str(extent.xMaximum()))
-                self.dlg.westExtent.setText(str(extent.xMinimum()))
-            except Exception as e:
-                self.dlg.bbError.setText('Error: ', str(e))
-                self.dlg.bbError.show()
-        else:
-            self.dlg.bbError.show()
-
-    def check(self):
-        """
-        Validate/ Error Check Clicked.
-        Perform Error Checks from errorChecker.py - If error found and contains
-        text 'Expected is' then will show fix error button which will link to
-        to the tab that contains the error, along with an asterisks showing
-        which field.
-        Perform Validation Checks from validate.py
-        All Validation/ Error checks will be displayed in the validation log.
-        If no validation or error checker errors are found, allow the user to
-        create the metadata.
-        :return: None
-        """
-        contact = ('INDIVIDUALNAME', 'ORGANISATIONNAME', 'POSITIONNAME', 'ROLE',
-                   'VOICE', 'FACSIMILE', 'DELIVERYADDRESS', 'CITY', 'COUNTRY',
-                   'POSTALCODE', 'EMAIL')
-        basic = ('HIERARCHYLEVEL', 'TITLE', 'ALTTITLE', 'ABSTRACT', 'PURPOSE')
-        security = ('SECURITYCLASSRES', 'SECURITYCLASSMET', 'RESTRICCODERES',
-                    'RESTRICCODEMET', 'RESOURCECON', 'METADATACON')
-        extent = ('EXTENTDESCRIPTION', 'EXTENTBOUNDINGBOX', 'EXTENTTEMPORAL',
-                  'EXTENTVERTICAL')
-        ident = ('REFERENCESYS1', 'STATUS', 'LINEAGE', 'SPATIALREPRESENTATION',
-                 'MAINTENANCE', 'MAINTNEXTUPDATE', 'SCALE', 'RESOLUTION')
-        other = ('KEYWORD', 'KEYDATE', 'TOPICCATEGORY')
-
-        tabDict = {'INDIVIDUALNAME'       : (self.dlg.iNameError1,
-                                             self.dlg.iNameError2),
-                   'ORGANISATIONNAME'     : (self.dlg.oNameError1,
-                                             self.dlg.oNameError2),
-                   'POSITIONNAME'         : (self.dlg.pNameError1,
-                                             self.dlg.pNameError2),
-                   'VOICE'                : (self.dlg.voiceError1,
-                                             self.dlg.voiceError2),
-                   'FACSIMILE'            : (self.dlg.fasError1,
-                                             self.dlg.fasError2),
-                   'DELIVERYADDRESS'      : (self.dlg.dadd1Error,
-                                             self.dlg.dadd2Error),
-                   'CITY'                 : (self.dlg.cityError1,
-                                             self.dlg.cityError2),
-                   'COUNTRY'              : (self.dlg.countryError1,
-                                             self.dlg.countryError2),
-                   'POSTALCODE'           : (self.dlg.postCode1Error,
-                                             self.dlg.postCode2Error),
-                   'EMAIL'                : (self.dlg.emailError1,
-                                             self.dlg.emailError2),
-                   'ROLE'                 : (self.dlg.roleError1,
-                                             self.dlg.roleError2),
-                   'HIERARCHYLEVEL'       : self.dlg.hlNameError,
-                   'TITLE'                : self.dlg.titleError,
-                   'ABSTRACT'             : self.dlg.absError,
-                   'PURPOSE'              : self.dlg.purposeError,
-                   'SECURITYCLASSRES'     : self.dlg.resSecClassError,
-                   'SECURITYCLASSMET'     : self.dlg.metSecClassError,
-                   'RESTRICCODERES'       : (self.dlg.resourceConCopyrightError,
-                                             self.dlg.resourceConLicenseError),
-                   'RESTRICCODEMET'       : (self.dlg.metadataConCopyrightError,
-                                             self.dlg.metadataConLicenseError),
-                   'EXTENTDESCRIPTION'    : self.dlg.geogDesListError,
-                   'EXTENTBOUNDINGBOX'    : self.dlg.geoBBNorthLabelError,
-                   'EXTENTTEMPORAL'       : self.dlg.temporalCheckError,
-                   'REFERENCESYS1'        : self.dlg.referenceSysError,
-                   'STATUS'               : self.dlg.statusError,
-                   'LINEAGE'              : self.dlg.lineageError,
-                   'SPATIALREPRESENTATION': self.dlg.spatialrepError,
-                   'MAINTENANCE'          : self.dlg.maintenanceError,
-                   'KEYWORD'              : self.dlg.keywordListError,
-                   'TOPICCATEGORY'        : self.dlg.topicCategoryError,
-                   'ALTTITLE'             : self.dlg.atitleError,
-                   'SCALE'                : self.dlg.scaleRadioButtonError,
-                   'RESOLUTION'           : self.dlg.resolutionRadioButtonError,
-                   'KEYDATE'              : self.dlg.resourceCreateCheckError,
-                   'MAINTNEXTUPDATE'      : self.dlg.dONUCheckError}
-
-        self.dlg.validationLog.clear()
-        vdtr = None
-        # Write input to xml tree.
+        i = {'lnz':     'http://data.linz.govt.nz',
+             'xs':      'http://www.w3.org/2001/XMLSchema',
+             'null':    '',
+             'ows':     'http://www.opengis.net/ows/1.1',
+             'gml':     'http://www.opengis.net/gml/3.2',
+             'wms':     'http://www.opengis.net/wms',
+             'xlink':   'http://www.w3.org/1999/xlink',
+             'gco':     'http://www.isotc211.org/2005/gco',
+             'gmd':     'http://www.isotc211.org/2005/gmd',
+             'gts':     'http://www.isotc211.org/2005/gts',
+             'fes':     'http://www.opengis.net/fes/2.0',
+             'csw':     'http://www.opengis.net/cat/csw/2.0.2',
+             'dc':      'http://purl.org/dc/elements/1.1/',
+             'ogc':     'http://www.opengis.net/ogc',
+             'gss':     'http://www.isotc211.org/2005/gss',
+             'gsr':     'http://www.isotc211.org/2005/gsr',
+             'g':       'http://data.linz.govt.nz/ns/g',
+             'f':       'http://www.w3.org/2005/Atom',
+             'gmx':     'http://www.isotc211.org/2005/gmx',
+             'r':       'http://data.linz.govt.nz/ns/r',
+             'v':       'http://wfs.data.linz.govt.nz',
+             'wfs':     'http://www.opengis.net/wfs/2.0',
+             'xsi':     'http://www.w3.org/2001/XMLSchema-instance',
+             'data.linz.govt.nz': 'http://data.linz.govt.nz'}
+        timeout, add = 0, None
         try:
-            self.writeXML()
+            self.items = []
+            self.dlg.testLayer.addItem('')
+            self.dlg.testLayer.clear()
+            address = 'http://data.linz.govt.nz/services;key={key}/wfs?' + \
+                      'service=wfs&request=GetCapabilities'
+            address = address.format(key=KEY)
+            while timeout <= 3:
+                try:
+                    add = UR.urlopen(address, timeout=15)
+                    break
+                except Exception as e:
+                    if isinstance(e, socket.timeout):
+                        timeout += 1
+                        print ('Connection Timeout: {}.\nTrying Again'.format(
+                            timeout))
+            if add:
+                p = PS(address)
+                for ft in p.findall('wfs:FeatureTypeList/wfs:FeatureType',
+                                    namespaces=i):
+                    match = re.search('(layer|table)-(\d+)', ft.find(
+                        'wfs:Name', namespaces=i).text)
+                    name = match.group(1)
+                    lid = match.group(2)
+                    title = ft.find('wfs:Title', namespaces=i).text
+                    self.items.append('{} | {} | {}'.format(
+                        lid.encode('utf-8'), title.encode('utf-8'),
+                        name.encode('utf-8').capitalize()))
+                self.items = sorted(self.items)
+                self.dlg.testLayer.addItems(self.items)
+            else:
+                print 'Unable to Connect to: {}'.format(address)
         except Exception as e:
-            self.dlg.validationLog.setText(str(e))
-            return
-        try:
-            metafile, vdtr = r'{}/{}'.format(os.getcwd(), TEMPFILE), Combined()
-            meta = vdtr.metadata(name=metafile)
-            if self.dlg.check != 0 and self.use:
-                self.use.hide()
+            print e
 
-            # Run Error Checks
-            runChecks(meta, self.lid, con=self.configfile)
 
-            self.dlg.fixError.hide()
-            self.dlg.validationLog.setText('Error Checks Complete')
+class ExtendedComboBox(QComboBox):
+    """
+    Extended Combo Box adapted from.
+    'https://stackoverflow.com/questions/4827207/how-do-i-filter-the-pyqt-
+    qcombobox-items-based-on-the-text-input'
 
-            # Run Validation
-            vdtr.setschema()
-            vdtr.validate(meta)
-            vdtr.conditional(meta)
+    Used to have Filterable Combo Box for ID/NAME/Type on LDS Download combobox.
 
-            self.dlg.validationLog.setText(
-                'Error Checks Complete\nValidation Checks Complete')
-            self.dlg.createMetadata.setEnabled(True)
-
-        except ValidatorException as ve:
-            text = ""
-            if vdtr:
-                if 'Expected is (' in str(vdtr.sch.error_log):
-                    errorLog = str(vdtr.sch.error_log)
-                    eL = errorLog[str(vdtr.sch.error_log).rfind('}')+1:len(
-                        str(vdtr.sch.error_log))-3]
-                    text = ' - Missing: ' + eL
-                self.dlg.validationLog.setText(
-                    'Validation Error: ' + str(ve) + text + '\n' + str(
-                        vdtr.sch.error_log))
-            else:
-                self.dlg.validationLog.setText('Validation Error: ' + str(ve))
-            self.dlg.createMetadata.setEnabled(False)
-        except InvalidConfigException as ice:
-            self.dlg.validationLog.setText(
-                'Checker Error, Invalid Config: {}'.format(str(ice)))
-            self.dlg.createMetadata.setEnabled(False)
-        except Exception as e:
-            try:
-                self.dlg.check += 1
-                self.widget = self.dlg.widget(7)
-                valFound = None
-                self.dlg.fixError.show()
-                self.dlg.validationLog.setText('Checker Error: {}'.format(
-                    str(e)))
-
-                dt = {contact   : self.dlg.widget(2),
-                      basic     : self.dlg.widget(1),
-                      security  : self.dlg.widget(6),
-                      extent    : self.dlg.widget(5),
-                      ident     : self.dlg.widget(3),
-                      other     : self.dlg.widget(4)}
-
-                for val in contact, basic, security, extent, ident, other:
-                    for v in val:
-                        if v in str(e):
-                            self.widget, valFound = dt[val], v
-                            break
-                widget = None
-                if valFound is None:
-                    self.dlg.fixError.hide()
-                elif valFound not in tabDict:
-                    pass
-                elif type(tabDict[valFound]) == tuple:
-                    if 'copyright' in str(e):
-                        self.use = tabDict[valFound][0]
-                        attr = self.use.objectName().replace('Error', '')
-                        if hasattr(self.dlg, attr):
-                            widget = getattr(self.dlg, attr)
-                    elif 'license' in str(e):
-                        self.use = tabDict[valFound][1]
-                        attr = self.use.objectName().replace('Error', '')
-                        if hasattr(self.dlg, attr):
-                            widget = getattr(self.dlg, attr)
-                    elif valFound + '2' in str(e):
-                        self.use = tabDict[valFound][0]
-                        attr = self.use.objectName().replace('Error', '')
-                        if hasattr(self.dlg, attr):
-                            widget = getattr(self.dlg, attr)
-                    else:
-                        self.use = tabDict[valFound][1]
-                        attr = self.use.objectName().replace('Error', '')
-                        if hasattr(self.dlg, attr):
-                            widget = getattr(self.dlg, attr)
-                else:
-                    self.use = tabDict[valFound]
-                    attr = self.use.objectName().replace('Error', '')
-                    if hasattr(self.dlg, attr):
-                        widget = getattr(self.dlg, attr)
-                if widget:
-                    widget.setFocus()
-                self.use.show()
-            except Exception as e:
-                self.dlg.validationLog.setText('Checker Error: {}'.format(
-                    str(e)))
-                traceback.print_exc()
-                self.dlg.fixError.hide()
-                self.dlg.createMetadata.setEnabled(False)
-            self.dlg.createMetadata.setEnabled(False)
-
-    def fixError(self):
+    """
+    def __init__(self, parent=None):
         """
-        Fix error button clicked.
-        Hide the fix error button again, and switch to tab with the recorded
-        error.
+        Create Extended Combo Box Object with Filters. Set Font to default font
+        for both line edit and popup options.
+        :param parent: Parent Widget.
+        """
+        super(ExtendedComboBox, self).__init__(parent)
+
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setEditable(True)
+
+        self.pFilterModel = QSortFilterProxyModel(self)
+        self.pFilterModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.pFilterModel.setSourceModel(self.model())
+
+        self.completer = QCompleter(self.pFilterModel, self)
+
+        self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+        self.setCompleter(self.completer)
+
+        self.lineEdit().textEdited[unicode].connect(
+            self.pFilterModel.setFilterFixedString)
+        self.completer.activated.connect(self.on_completer_activated)
+        font = QFont('Noto Sans', 11)
+        self.completer.popup().setFont(font)
+
+    def on_completer_activated(self, text):
+        """
+        On selection of item from the completer popup update selection in combo
+        box.
+        :param text: Text Entered.
         :return: None.
         """
-        self.dlg.fixError.hide()
-        self.dlg.setCurrentWidget(self.widget)
+        if text:
+            index = self.findText(text)
+            self.setCurrentIndex(index)
 
-    def setFile(self, i):
+    def setModel(self, model):
         """
-        Select file clicked.
-        Open File Dialog and Update Selection (Template, Output, Existing
-        Metadata File)
-        :param i: Button clicked to set the file.
-        (1 - Template Select, 2 - Output Select, 3 - Existing Select)
+        When model changed, update filter/completer models also.
+        :param model: New Model
         :return: None.
         """
-        try:
-            self.dlg.loadError.hide()
-            self.dlg.metadataFile.clear()
-            if i == 1:
-                filename = QFileDialog.getOpenFileName(
-                    None, 'Open File', os.getenv('HOME'),
-                    "XML Template File (*xml)")
-            elif i == 2:
-                filename = QFileDialog.getOpenFileName(
-                    None, 'Open File', os.getenv('HOME'),
-                    "XML Output File (*xml)")
-            else:
-                filename = QFileDialog.getOpenFileName(
-                    None, 'Open File', os.getenv('HOME'),
-                    "XML Metadata File (*xml)")
-            if filename:
-                if type(filename) == list:
-                    filename = filename[0]
-                self.dlg.reset_form()
-                if i == 1:
-                    self.dlg.changeTemplate(filename)
-                    self.dlg.templateFile.setText(self.dlg.TEMPLATEPATH)
-                    self.dlg.outputFile.setText(self.dlg.TEMPLATEPATH)
-                elif i == 2:
-                    self.dlg.OUTPUTFILE = filename
-                    self.dlg.outputFile.setText(self.dlg.OUTPUTFILE)
-                else:
-                    self.dlg.OUTPUTFILE = filename
-                    self.dlg.changeTemplate(filename)
-                    self.dlg.metadataFile.setText(self.dlg.OUTPUTFILE)
-        except Exception as e:
-            self.dlg.loadError.setText("File Selection Error: " + str(e))
-            self.dlg.loadError.show()
+        super(ExtendedComboBox, self).setModel(model)
+        self.pFilterModel.setSourceModel(model)
+        self.completer.setModel(self.pFilterModel)
 
-    def updateFileText(self):
+    def setModelColumn(self, column):
         """
-        Default template clicked.
-        Update the template field to the default template location.
+        When model column changed, update filter/completer model columns also.
+        :param column: New column
         :return: None.
         """
-        self.dlg.changeTemplate(self.dlg.DEFAULTTEMP)
-        self.dlg.templateFile.setText(self.dlg.TEMPLATEPATH)
-
-    def autoFillLegal(self):
-        """
-        Auto Fill Clicked on the Legal Tab.
-        Auto fill resource/metadata constraint values with default values, and
-        update the original values for undo operation.
-        :return: None.
-        """
-        if self.metaCC is None:
-            self.metaCC = self.dlg.metadataConCopyright.toPlainText()
-            self.metaCL = self.dlg.metadataConLicense.toPlainText()
-            self.resCC = self.dlg.resourceConCopyright.toPlainText()
-            self.resCL = self.dlg.resourceConLicense.toPlainText()
-        self.dlg.metadataConCopyright.setText(
-            self.mcopyright.replace('\\n', '\n'))
-        self.dlg.metadataConLicense.setText(
-            self.mlicense.replace('\\n', '\n'))
-        self.dlg.resourceConCopyright.setText(
-            self.rcopyright.replace('\\n', '\n'))
-        self.dlg.resourceConLicense.setText(
-            self.rlicense.replace('\\n', '\n'))
-
-    def autoFillLegalUndo(self):
-        """
-        Undo Clicked on the Legal Tab.
-        Undo the actions of Auto fill. If the original values have been set,
-        update the resource/ metadata
-        constraints accordingly.
-        :return: None.
-        """
-        if self.metaCC is not None:
-            self.dlg.metadataConCopyright.setText(self.metaCC)
-            self.dlg.metadataConLicense.setText(self.metaCL)
-            self.dlg.resourceConCopyright.setText(self.resCC)
-            self.dlg.resourceConLicense.setText(self.resCL)
-
-    def autoFill(self, i):
-        """
-        Auto Fill Clicked on the Contact Tab.
-        Auto fill (resource(1) or metadata(2) clicked.
-        Copy fields existing in other contact to current contact.
-        :param i: Which auto fill button clicked.
-        :return: None.
-        """
-        try:
-            self.dlg.autoFillError.hide()
-            resource, metadata = {}, {}
-            if i == 2:
-                fillName, fromName = resource, metadata
-                fillVal, fromVal = '1', '2'
-            else:
-                fillName, fromName = metadata, resource
-                fillVal, fromVal = '2', '1'
-            for i in self.dlg.contact:
-                if '1' in i.objectName():
-                    resource[i.objectName()] = i.currentText()
-                else:
-                    metadata[i.objectName()] = i.currentText()
-            for val in fillName:
-                text = fillName[val]
-                for i in self.dlg.contact:
-                    if i.objectName() in fromName and i.objectName().split(
-                            fromVal)[0] == val.split(fillVal)[0]:
-                        if i.findText(text) == -1:
-                            i.addItem(text)
-                        i.setCurrentIndex(i.findText(text))
-        except Exception as e:
-            self.dlg.autoFillError.setText("Auto Fill Error: " + str(e))
-            self.dlg.autoFillError.show()
-
-    def textStyle(self, i):
-        """
-        Text style button clicked, bold(1), italic(2), link(3).
-        Add **selected text** around selected text if bold clicked.
-        Add *selected text* around selected text if italic clicked.
-        Add [selected text](LINK HERE) around selected text if link clicked.
-        :param i: which style button clicked.
-        :return: None.
-        """
-        textStyle = '**'
-        try:
-            if i == 1:
-                textStyle = "**"
-            if i == 2:
-                textStyle = "*"
-            cursor = self.dlg.abs.textCursor()
-            textSelected = cursor.selectedText()
-            selectStart = cursor.selectionStart()
-            selectEnd = cursor.selectionEnd()
-            if len(textSelected) > 1:
-                if i == 3:
-                    tS = "[" + textSelected + "](LINK HERE)"
-                else:
-                    tS = textStyle + textSelected + textStyle
-            else:
-                if i == 3:
-                    tS = "[TEXT HERE](LINK HERE)"
-                else:
-                    tS = textStyle + "TEXT HERE" + textStyle
-            if selectStart != 0:
-                start = self.dlg.abs.toPlainText()[:selectStart]
-            else:
-                start = ""
-            if selectEnd != len(self.dlg.abs.toPlainText()) - 1:
-                end = self.dlg.abs.toPlainText()[selectEnd:]
-            else:
-                end = ""
-            text = start + tS + end
-            self.dlg.abs.setText(text)
-            if i == 3:
-                textStyle = 'LINK HERE)'
-            else:
-                textStyle = 'TEXT HERE' + textStyle
-            if self.dlg.abs.toPlainText().find(textStyle) != -1:
-                newStart = self.dlg.abs.toPlainText().find(textStyle)
-                newEnd = newStart + 9
-                cursor.setPosition(newStart)
-                cursor.setPosition(newEnd, QTextCursor.KeepAnchor)
-                self.dlg.abs.setTextCursor(cursor)
-            elif i != 3:
-                if i == 1:
-                    move = 2
-                else:
-                    move = 1
-                cursor.setPosition(selectStart + move)
-                cursor.setPosition(selectEnd + move, QTextCursor.KeepAnchor)
-                self.dlg.abs.setTextCursor(cursor)
-        except Exception as e:
-            print ("Text Style Error: " + str(e))
-
-    def run(self):
-        """
-        Run Dialog and Show.
-        :return:
-        """
-        self.dlg.show()
+        self.completer.setCompletionColumn(column)
+        self.pFilterModel.setFilterKeyColumn(column)
+        super(ExtendedComboBox, self).setModelColumn(column)

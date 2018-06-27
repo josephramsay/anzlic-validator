@@ -21,8 +21,8 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>707</width>
-    <height>533</height>
+    <width>851</width>
+    <height>741</height>
    </size>
   </property>
   <property name="maximumSize">
@@ -154,31 +154,11 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QLabel" name="label_15">
-    <property name="geometry">
-     <rect>
-      <x>450</x>
-      <y>680</y>
-      <width>81</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>11</pointsize>
-      <weight>50</weight>
-      <bold>false</bold>
-     </font>
-    </property>
-    <property name="text">
-     <string>Config File</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="newMetadataButton">
     <property name="geometry">
      <rect>
       <x>270</x>
-      <y>190</y>
+      <y>200</y>
       <width>131</width>
       <height>51</height>
      </rect>
@@ -198,7 +178,7 @@
     <property name="geometry">
      <rect>
       <x>410</x>
-      <y>190</y>
+      <y>200</y>
       <width>131</width>
       <height>51</height>
      </rect>
@@ -218,9 +198,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>650</y>
+      <y>280</y>
       <width>791</width>
-      <height>41</height>
+      <height>71</height>
      </rect>
     </property>
     <property name="palette">
@@ -276,34 +256,11 @@
      <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
     </property>
    </widget>
-   <widget class="QComboBox" name="configSelector">
-    <property name="geometry">
-     <rect>
-      <x>530</x>
-      <y>681</y>
-      <width>271</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>121</width>
-      <height>32</height>
-     </size>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>11</pointsize>
-      <weight>50</weight>
-      <bold>false</bold>
-     </font>
-    </property>
-   </widget>
    <widget class="QWidget" name="editMetadata" native="true">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>300</y>
+      <y>340</y>
       <width>791</width>
       <height>351</height>
      </rect>
@@ -312,7 +269,7 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>20</y>
+       <y>50</y>
        <width>791</width>
        <height>51</height>
       </rect>
@@ -440,30 +397,11 @@
       <bool>false</bool>
      </property>
     </widget>
-    <widget class="QLabel" name="editMetadataLabel_5">
-     <property name="geometry">
-      <rect>
-       <x>220</x>
-       <y>110</y>
-       <width>71</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <weight>75</weight>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Layer ID</string>
-     </property>
-    </widget>
     <widget class="QPushButton" name="loadMetadataID">
      <property name="geometry">
       <rect>
-       <x>420</x>
-       <y>110</y>
+       <x>580</x>
+       <y>150</y>
        <width>201</width>
        <height>41</height>
       </rect>
@@ -526,7 +464,7 @@
      <property name="geometry">
       <rect>
        <x>380</x>
-       <y>170</y>
+       <y>180</y>
        <width>21</width>
        <height>31</height>
       </rect>
@@ -540,23 +478,6 @@
      </property>
      <property name="text">
       <string>Or</string>
-     </property>
-    </widget>
-    <widget class="QLineEdit" name="loadLayerID">
-     <property name="geometry">
-      <rect>
-       <x>300</x>
-       <y>110</y>
-       <width>111</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>11</pointsize>
-       <weight>50</weight>
-       <bold>false</bold>
-      </font>
      </property>
     </widget>
     <widget class="QLineEdit" name="metadataFile">
@@ -576,12 +497,53 @@
       </font>
      </property>
     </widget>
+    <widget class="QPushButton" name="refresh">
+     <property name="geometry">
+      <rect>
+       <x>700</x>
+       <y>100</y>
+       <width>81</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Refresh</string>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="testLayer">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>681</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+      </font>
+     </property>
+     <property name="editable">
+      <bool>true</bool>
+     </property>
+     <property name="insertPolicy">
+      <enum>QComboBox::InsertAlphabetically</enum>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="newMetadata" native="true">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>300</y>
+      <y>340</y>
       <width>791</width>
       <height>351</height>
      </rect>
@@ -733,7 +695,7 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>30</y>
+       <y>70</y>
        <width>791</width>
        <height>20</height>
       </rect>
@@ -856,15 +818,25 @@
      </property>
     </widget>
    </widget>
-   <zorder>MetadataTitle</zorder>
-   <zorder>label_15</zorder>
-   <zorder>newMetadataButton</zorder>
-   <zorder>editMetadataButton</zorder>
-   <zorder>loadError</zorder>
-   <zorder>configSelector</zorder>
-   <zorder>editMetadata</zorder>
-   <zorder>newMetadata</zorder>
-   <zorder>templateInstuctions</zorder>
+   <widget class="QPushButton" name="settings">
+    <property name="geometry">
+     <rect>
+      <x>730</x>
+      <y>10</y>
+      <width>71</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Settings</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QWidget" name="layerInfoTab">
    <property name="enabled">
@@ -1043,9 +1015,6 @@
       <height>41</height>
      </rect>
     </property>
-    <property name="editable">
-        <bool>True</bool>
-    </property>
     <property name="font">
      <font>
       <pointsize>11</pointsize>
@@ -1144,7 +1113,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3">
+   <widget class="QLabel" name="atitleLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -1165,7 +1134,7 @@
      <string>(Alternate or short name by which the layer is known)</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_4">
+   <widget class="QLabel" name="absLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -1186,7 +1155,7 @@
      <string>(A brief narrative summary of the content of the dataset)</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_5">
+   <widget class="QLabel" name="purposeExLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -1224,6 +1193,12 @@
       <bold>false</bold>
      </font>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal;&quot;&gt;Change selected Abstract Text to Italic, as it would be displayed on the LDS.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal;&quot;&gt;Change selected Abstract Text to Italic, as it would be displayed on the LDS.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>I</string>
     </property>
@@ -1251,6 +1226,12 @@
       <underline>true</underline>
      </font>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Change selected Abstract Text to a Link, as it would be displayed on the LDS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Change selected Abstract Text to a link, as it would be displayed on the LDS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>LINK</string>
     </property>
@@ -1277,6 +1258,12 @@
       <italic>false</italic>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Change selected Abstract Text to Bold, as it would be displayed on the LDS.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Change selected Abstract Text to Bold, as it would be displayed on the LDS.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
      <string>B</string>
@@ -2196,6 +2183,12 @@
       <height>31</height>
      </rect>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Auto Fill 'Resource Contact' fields into 'Metadata Contact' fields.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Auto Fill 'Resource Contact' fields into 'Metadata Contact' fields.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>&lt;</string>
     </property>
@@ -2214,6 +2207,12 @@
       <width>31</width>
       <height>31</height>
      </rect>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Auto Fill 'Metadata Contact' fields into 'Resource Contact' fields.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:400;&quot;&gt;Auto Fill 'Metadata Contact' fields into 'Resource Contact' fields.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
      <string>&gt;</string>
@@ -2653,7 +2652,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="label_16">
+   <widget class="QLabel" name="autoFillLabel">
     <property name="geometry">
      <rect>
       <x>390</x>
@@ -4477,7 +4476,7 @@
      <string>Identification Details</string>
     </property>
    </widget>
-   <widget class="Line" name="line_2">
+   <widget class="Line" name="identificationSplitLine">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -4490,7 +4489,7 @@
      <enum>Qt::Horizontal</enum>
     </property>
    </widget>
-   <widget class="QLabel" name="label_6">
+   <widget class="QLabel" name="lineageLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -5461,7 +5460,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="label_10">
+   <widget class="QLabel" name="scaleLabel">
     <property name="geometry">
      <rect>
       <x>430</x>
@@ -6417,7 +6416,7 @@
       <bool>true</bool>
      </property>
     </widget>
-    <widget class="QLabel" name="label_11">
+    <widget class="QLabel" name="scaledefLabel">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -6441,7 +6440,7 @@
       <bool>true</bool>
      </property>
     </widget>
-    <widget class="QLabel" name="label_12">
+    <widget class="QLabel" name="resolutiondefLabel">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -6657,7 +6656,7 @@
      <string>Scale</string>
     </property>
    </widget>
-   <widget class="Line" name="line_6">
+   <widget class="Line" name="scaleLeftLine">
     <property name="geometry">
      <rect>
       <x>420</x>
@@ -6670,7 +6669,7 @@
      <enum>Qt::Vertical</enum>
     </property>
    </widget>
-   <widget class="Line" name="line">
+   <widget class="Line" name="scaleBottomLine">
     <property name="geometry">
      <rect>
       <x>430</x>
@@ -6683,7 +6682,7 @@
      <enum>Qt::Horizontal</enum>
     </property>
    </widget>
-   <widget class="Line" name="line_5">
+   <widget class="Line" name="scaleRightLine">
     <property name="geometry">
      <rect>
       <x>790</x>
@@ -6696,7 +6695,7 @@
      <enum>Qt::Vertical</enum>
     </property>
    </widget>
-   <widget class="Line" name="line_7">
+   <widget class="Line" name="scaleTopLine">
     <property name="geometry">
      <rect>
       <x>560</x>
@@ -6709,12 +6708,12 @@
      <enum>Qt::Horizontal</enum>
     </property>
    </widget>
-   <zorder>line_7</zorder>
+   <zorder>scaleTopLine</zorder>
    <zorder>lineage</zorder>
    <zorder>historyLabel</zorder>
    <zorder>identificationTitle</zorder>
-   <zorder>line_2</zorder>
-   <zorder>label_6</zorder>
+   <zorder>identificationSplitLine</zorder>
+   <zorder>lineageLabel</zorder>
    <zorder>lineageError</zorder>
    <zorder>referenceSys</zorder>
    <zorder>referenceSysError</zorder>
@@ -6731,12 +6730,12 @@
    <zorder>statusLabel</zorder>
    <zorder>dONUCheck</zorder>
    <zorder>date</zorder>
-   <zorder>label_10</zorder>
+   <zorder>scaleLabel</zorder>
    <zorder>scaleFrame</zorder>
    <zorder>scale</zorder>
-   <zorder>line_6</zorder>
-   <zorder>line</zorder>
-   <zorder>line_5</zorder>
+   <zorder>scaleLeftLine</zorder>
+   <zorder>scaleBottomLine</zorder>
+   <zorder>scaleRightLine</zorder>
   </widget>
   <widget class="QWidget" name="tab">
    <property name="enabled">
@@ -6772,7 +6771,7 @@
      <string>Identification Details</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_59">
+   <widget class="QLabel" name="keywordTitle">
     <property name="geometry">
      <rect>
       <x>440</x>
@@ -6795,7 +6794,7 @@
      <string>Keywords</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_53">
+   <widget class="QLabel" name="keywordLabel">
     <property name="geometry">
      <rect>
       <x>440</x>
@@ -7706,7 +7705,7 @@
      <enum>QAbstractItemView::MultiSelection</enum>
     </property>
    </widget>
-   <widget class="QLabel" name="label_7">
+   <widget class="QLabel" name="topicCategoryExLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -9053,7 +9052,7 @@
      <string>When Was The Resource Last Updated?</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_52">
+   <widget class="QLabel" name="keydateExLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -9353,6 +9352,12 @@
        <bold>false</bold>
       </font>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load extent from currently selected layer. If no layer layer is selected the extent will not be updated.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="whatsThis">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load extent from currently selected layer. If no layer layer is selected the extent will not be updated.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Load From Layer</string>
      </property>
@@ -9416,8 +9421,28 @@
       <bool>true</bool>
      </property>
     </widget>
+    <widget class="QPushButton" name="undoExtent">
+     <property name="geometry">
+      <rect>
+       <x>540</x>
+       <y>150</y>
+       <width>88</width>
+       <height>34</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>11</pointsize>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Undo</string>
+     </property>
+    </widget>
    </widget>
-   <widget class="QLabel" name="label_2">
+   <widget class="QLabel" name="geoBBExLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -10712,7 +10737,7 @@
      <string>Temporal Information</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_8">
+   <widget class="QLabel" name="temporalLabel">
     <property name="geometry">
      <rect>
       <x>390</x>
@@ -10733,7 +10758,7 @@
      <string>Specifiy the time or time period represented by the data.</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_9">
+   <widget class="QLabel" name="geogDesLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -10757,7 +10782,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="Line" name="line_3">
+   <widget class="Line" name="extentLine">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -11310,7 +11335,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>12</pointsize>
+      <pointsize>11</pointsize>
       <weight>75</weight>
       <bold>true</bold>
      </font>
@@ -11379,7 +11404,7 @@
      <string>Classification for the dataset.</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_14">
+   <widget class="QLabel" name="legalLable">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -11881,6 +11906,12 @@
       <bold>false</bold>
      </font>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fill the Legal Resource and Metadata constraints with the default LINZ fields. This action can be undone by 'Undo'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fill the Legal Resource and Metadata constraints with the default LINZ fields. This action can be undone by 'Undo'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>Fill Default</string>
     </property>
@@ -11900,6 +11931,12 @@
       <weight>50</weight>
       <bold>false</bold>
      </font>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Undo the actions of 'Fill Default'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Undo the actions of 'Fill Default'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
      <string>Undo</string>
@@ -11929,6 +11966,12 @@
       <bold>false</bold>
      </font>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will run validation and error checks against the current metadata, if errors are found they will display in the validation log. If no errors are found then the metadata is able to be created.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will run validation and error checks against the current metadata, if errors are found they will display in the validation log. If no errors are found then the metadata is able to be created.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>Validate-Error Check</string>
     </property>
@@ -11954,6 +11997,12 @@
       <weight>50</weight>
       <bold>false</bold>
      </font>
+    </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create or Update the existing XML metadata.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create or Update the existing XML metadata.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
     <property name="text">
      <string>Create Metadata</string>
@@ -12029,7 +12078,7 @@
      </font>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="summaryTab1">
      <attribute name="title">
@@ -12143,6 +12192,12 @@
       <bold>false</bold>
      </font>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will take you back to where the current error shown in the validation log was found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="whatsThis">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will take you back to where the current error shown in the validation log was found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>Fix Error</string>
     </property>
@@ -12190,6 +12245,9 @@ p, li { white-space: pre-wrap; }
       <bold>false</bold>
      </font>
     </property>
+    <property name="toolTip">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open the publish dialog to publish the current metadata to the LDS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
     <property name="text">
      <string>Publish Metadata</string>
     </property>
@@ -12203,6 +12261,25 @@ p, li { white-space: pre-wrap; }
      <bool>false</bool>
     </property>
    </widget>
+   <widget class="QPushButton" name="saveTemplate">
+    <property name="geometry">
+     <rect>
+      <x>657</x>
+      <y>30</y>
+      <width>141</width>
+      <height>34</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <weight>50</weight>
+      <bold>false</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>Save As Template</string>
+    </property>
+   </widget>
    <zorder>validateErrorCheck</zorder>
    <zorder>createMetadata</zorder>
    <zorder>validationLabel</zorder>
@@ -12211,6 +12288,7 @@ p, li { white-space: pre-wrap; }
    <zorder>validationLog</zorder>
    <zorder>fixError</zorder>
    <zorder>publishMetadata</zorder>
+   <zorder>saveTemplate</zorder>
   </widget>
  </widget>
  <customwidgets>
@@ -12226,6 +12304,7 @@ p, li { white-space: pre-wrap; }
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>settings</tabstop>
   <tabstop>newMetadataButton</tabstop>
   <tabstop>editMetadataButton</tabstop>
   <tabstop>templateFile</tabstop>
@@ -12234,12 +12313,12 @@ p, li { white-space: pre-wrap; }
   <tabstop>outputFile</tabstop>
   <tabstop>selectOutputFile</tabstop>
   <tabstop>loadTemplate</tabstop>
-  <tabstop>loadLayerID</tabstop>
+  <tabstop>testLayer</tabstop>
+  <tabstop>refresh</tabstop>
   <tabstop>loadMetadataID</tabstop>
   <tabstop>metadataFile</tabstop>
   <tabstop>selectMetadata</tabstop>
   <tabstop>loadMetadata</tabstop>
-  <tabstop>configSelector</tabstop>
   <tabstop>hlName</tabstop>
   <tabstop>title</tabstop>
   <tabstop>atitle</tabstop>
@@ -12296,6 +12375,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>westExtent</tabstop>
   <tabstop>eastExtent</tabstop>
   <tabstop>southExtent</tabstop>
+  <tabstop>undoExtent</tabstop>
   <tabstop>loadExtent</tabstop>
   <tabstop>geogDesList</tabstop>
   <tabstop>temporalCheck</tabstop>
@@ -12314,14 +12394,15 @@ p, li { white-space: pre-wrap; }
   <tabstop>metadataConCopyright</tabstop>
   <tabstop>resourceConLicense</tabstop>
   <tabstop>metadataConLicense</tabstop>
+  <tabstop>saveTemplate</tabstop>
   <tabstop>summaryMainTab</tabstop>
   <tabstop>metadataTable</tabstop>
   <tabstop>validationLog</tabstop>
   <tabstop>fixError</tabstop>
   <tabstop>validateErrorCheck</tabstop>
-  <tabstop>publishMetadata</tabstop>
   <tabstop>createMetadata</tabstop>
   <tabstop>summary</tabstop>
+  <tabstop>publishMetadata</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -12417,23 +12498,7 @@ p, li { white-space: pre-wrap; }
     </hint>
     <hint type="destinationlabel">
      <x>156</x>
-     <y>229</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>editMetadataButton</sender>
-   <signal>clicked()</signal>
-   <receiver>loadLayerID</receiver>
-   <slot>setFocus()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>450</x>
-     <y>206</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>369</x>
-     <y>443</y>
+     <y>489</y>
     </hint>
    </hints>
   </connection>
@@ -12461,11 +12526,11 @@ p, li { white-space: pre-wrap; }
    <hints>
     <hint type="sourcelabel">
      <x>806</x>
-     <y>234</y>
+     <y>494</y>
     </hint>
     <hint type="destinationlabel">
      <x>690</x>
-     <y>290</y>
+     <y>550</y>
     </hint>
    </hints>
   </connection>
@@ -12477,11 +12542,11 @@ p, li { white-space: pre-wrap; }
    <hints>
     <hint type="sourcelabel">
      <x>783</x>
-     <y>298</y>
+     <y>558</y>
     </hint>
     <hint type="destinationlabel">
      <x>775</x>
-     <y>356</y>
+     <y>616</y>
     </hint>
    </hints>
   </connection>
@@ -12770,22 +12835,6 @@ p, li { white-space: pre-wrap; }
     <hint type="destinationlabel">
      <x>602</x>
      <y>655</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>loadLayerID</sender>
-   <signal>returnPressed()</signal>
-   <receiver>loadMetadataID</receiver>
-   <slot>setFocus()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>425</x>
-     <y>446</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>549</x>
-     <y>435</y>
     </hint>
    </hints>
   </connection>
