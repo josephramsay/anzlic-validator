@@ -213,6 +213,9 @@ class CacheResolver(Resolver):
         print (system_url,'->',cached_url)
         resp = validate.SCHMD._request(cached_url)
         txt = validate.SCHMD._extracttxt(resp,self.encoding)
+        f = str(txt).find('MD_Metadata_Type')
+        if f>0:
+            print(txt[f-50:f+50])
         try:
             rstr = self.resolve_string(txt.decode(self.encoding),context) if txt else None
         except Exception as e:
