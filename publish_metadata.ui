@@ -25,34 +25,7 @@
   <property name="windowTitle">
    <string>Publish Metadata</string>
   </property>
-  <widget class="QDialogButtonBox" name="publishBox">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>180</y>
-     <width>341</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-    </font>
-   </property>
-   <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will publish the current metadata to the LDS, on the layer entered.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-   <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Will publish the current metadata to the LDS, on the layer entered.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Horizontal</enum>
-   </property>
-   <property name="standardButtons">
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="layerIDLabel">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -184,45 +157,39 @@
     <set>Qt::TextSelectableByMouse</set>
    </property>
   </widget>
+  <widget class="QPushButton" name="accept">
+   <property name="geometry">
+    <rect>
+     <x>210</x>
+     <y>170</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>OK</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="reject">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>170</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Cancel</string>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>layerId</tabstop>
   <tabstop>layerButton</tabstop>
-  <tabstop>publishBox</tabstop>
+  <tabstop>accept</tabstop>
+  <tabstop>reject</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>publishBox</sender>
-   <signal>accepted()</signal>
-   <receiver>PublishMetadata</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>258</x>
-     <y>194</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>151</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>publishBox</sender>
-   <signal>rejected()</signal>
-   <receiver>PublishMetadata</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>326</x>
-     <y>200</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>151</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

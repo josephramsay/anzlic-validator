@@ -43,17 +43,10 @@ class LINZ_MetadataDialog(QtGui.QTabWidget, FORM_CLASS):
         self.updateDefaults()
         self.check = 0
         self.editMetadata.hide()
-        setFields = ('home', 'layInfo', 'contact', 'idenInfo', 'security',
-                     'summaryF', 'clear', 'checked', 'enabled', 'curDate',
-                     'curIndex', 'hideF')
-        for var in setFields:
-            setattr(self, var, [])
-
-        font = QFont('Noto Sans', 11)
-        for var in self.contact:
-            var.setFont(font)
-            if var.lineEdit() != 0:
-                var.lineEdit.setFont(font)
+        self.home, self.layInfo, self.hideF, self.clear = None, None, None, None
+        self.contact, self.idenInfo, self.security = None, None, None
+        self.summaryF, self.checked, self.enabled = None, None, None
+        self.curDate, self.curIndex, self.curTime = None, None, None
 
     def closeEvent(self, event):
         """
@@ -81,20 +74,6 @@ class LINZ_MetadataDialog(QtGui.QTabWidget, FORM_CLASS):
         self.move(x, y)
         self.changeTemplate(self.DEFAULTTEMP)
         self.templateFile.setText(self.TEMPLATEPATH)
-        files = []
-        self.configSelector.clear()
-        item = 0
-        for c, config in enumerate(os.listdir(os.path.join(os.path.dirname(
-                __file__), 'config'))):
-            if '.yaml' in config:
-                files.append(config)
-            if 'layer' in config:
-                item = c
-        if not files:
-            raise Exception('Load Error: No config files found in: {}'.format(
-                str(os.path.join(os.path.dirname(__file__), 'config'))))
-        self.configSelector.addItems(files)
-        self.configSelector.setCurrentIndex(item)
 
     def reset_form(self):
         """
@@ -102,7 +81,7 @@ class LINZ_MetadataDialog(QtGui.QTabWidget, FORM_CLASS):
         :return: None
         """
         self.check = 0
-        self.home = [self.loadError, self.autoFillError, self.loadLayerID]
+        self.home = [self.loadError, self.autoFillError]
         
         self.layInfo = [self.abs, self.atitle, self.hlName, self.purpose,
                         self.title]
@@ -126,25 +105,25 @@ class LINZ_MetadataDialog(QtGui.QTabWidget, FORM_CLASS):
         self.summaryF = [self.validationLog, self.summary, self.metadataTable]
 
         self.hideF = [self.iNameError1, self.iNameError2, self.oNameError1,
-                     self.oNameError2, self.pNameError1, self.pNameError2,
-                     self.voiceError1, self.voiceError2, self.fasError1,
-                     self.fasError2, self.dadd1Error, self.cityError1,
-                     self.cityError2, self.countryError1, self.postCode2Error,
-                     self.emailError1, self.emailError2, self.roleError1,
-                     self.roleError2, self.hlNameError, self.titleError,
-                     self.purposeError, self.resSecClassError, self.dadd2Error,
-                     self.metSecClassError, self.resourceConCopyrightError,
-                     self.statusError, self.resourceConLicenseError,
-                     self.lineageError, self.metadataConCopyrightError,
-                     self.atitleError, self.metadataConLicenseError,
-                     self.dONUCheckError, self.geogDesListError, self.absError,
-                     self.geoBBNorthLabelError, self.temporalCheckError,
-                     self.referenceSysError, self.spatialrepError,
-                     self.maintenanceError, self.keywordListError,
-                     self.topicCategoryError, self.scaleRadioButtonError,
-                     self.postCode1Error, self.resolutionRadioButtonError,
-                     self.countryError2, self.resourceCreateCheckError,
-                     self.fixError, self.publishMetadata, self.bbError]
+                      self.oNameError2, self.pNameError1, self.pNameError2,
+                      self.voiceError1, self.voiceError2, self.fasError1,
+                      self.fasError2, self.dadd1Error, self.cityError1,
+                      self.cityError2, self.countryError1, self.postCode2Error,
+                      self.emailError1, self.emailError2, self.roleError1,
+                      self.roleError2, self.hlNameError, self.titleError,
+                      self.purposeError, self.resSecClassError, self.dadd2Error,
+                      self.metSecClassError, self.resourceConCopyrightError,
+                      self.statusError, self.resourceConLicenseError,
+                      self.lineageError, self.metadataConCopyrightError,
+                      self.atitleError, self.metadataConLicenseError,
+                      self.dONUCheckError, self.geogDesListError, self.absError,
+                      self.geoBBNorthLabelError, self.temporalCheckError,
+                      self.referenceSysError, self.spatialrepError,
+                      self.maintenanceError, self.keywordListError,
+                      self.topicCategoryError, self.scaleRadioButtonError,
+                      self.postCode1Error, self.resolutionRadioButtonError,
+                      self.countryError2, self.resourceCreateCheckError,
+                      self.fixError, self.publishMetadata, self.bbError]
 
         self.clear = (self.layInfo + self.contact + self.idenInfo + self.home +
                       self.security + self.summaryF)

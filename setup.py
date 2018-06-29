@@ -26,6 +26,7 @@ try:
 except Exception as e:
     print ("Error Incorrect PyQt Version {}".format(e))
 
+
 def install():
     """
     Check Python, QGIS Version, create .apikey file if doesn't already exist,
@@ -41,10 +42,8 @@ def install():
         if '2.18' not in qgis.utils.QGis.QGIS_VERSION:
             raise Exception(
                 "Got Version {}".format(qgis.utils.QGis.QGIS_VERSION))
-            return
-    except Exception as e:
-        raise Exception("Error Incorrect QGIS Version {}".format(e))
-        return
+    except Exception as er:
+        raise Exception("Error Incorrect QGIS Version {}".format(er))
 
     # Koordinates Module (Exists or is installed)
     try:
@@ -54,22 +53,22 @@ def install():
             print ('Installing Koordinates')
             subprocess.call("sudo python2.7 -m pip install koordinates",
                             shell=True)
-    except Exception as e:
-        raise Exception("Error Installing Koordinates Module: {}".format(e))
-        return
+    except Exception as er:
+        raise Exception("Error Installing Koordinates Module: {}".format(er))
 
     # .apikey File (Exists or is created)
+    home = None
     try:
         home = os.getenv('HOME')
         if not os.path.isfile(home+'/.apikey'):
             print ('Creating File .apikey in {}'.format(home))
-            with open(home+'/.apikey') as file:
-                file.write('key0=API_KEY')
+            with open(home+'/.apikey') as f:
+                f.write('key0=API_KEY')
             print ('Remember to change text "API_KEY" in ' +
                    '{} to your LDS API KEY'.format(home+'/.apikey'))
-    except Exception as e:
+    except Exception as er:
         raise Exception(
-            "Error Creating .apikey file in {}./n{}".format(home, e))
+            "Error Creating .apikey file in {}./n{}".format(home, er))
 
     # Move anzlic-validator from current directory to QGIS Plugin Directory
     try:
@@ -77,17 +76,17 @@ def install():
         home = os.getenv('HOME')
         name = cwd.split('/')[len(cwd.split('/'))-1]
 
-        fromDir = cwd
-        toDir = '{}/.qgis2/python/plugins/{}'.format(home, name)
-        if fromDir != toDir:
-            print ('Moving From "{}" To "{}"'.format(fromDir, toDir))
+        from_dir = cwd
+        to_dir = '{}/.qgis2/python/plugins/{}'.format(home, name)
+        if from_dir != to_dir:
+            print ('Moving From "{}" To "{}"'.format(from_dir, to_dir))
             os.system(
-                'sudo -u "$SUDO_USER" cp -rf {} {}'.format(fromDir, toDir))
-            os.system('sudo rm -r {}'.format(fromDir))
-    except Exception as e:
+                'sudo -u "$SUDO_USER" cp -rf {} {}'.format(from_dir, to_dir))
+            os.system('sudo rm -r {}'.format(from_dir))
+    except Exception as er:
         raise Exception("Error Moving anzlic-validator to qgis2 plugin " +
-                        "directory./n{}".format(e))
-        return
+                        "directory./n{}".format(er))
+
 
 if __name__ == "__main__":
     try:

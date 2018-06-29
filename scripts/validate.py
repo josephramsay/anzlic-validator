@@ -39,7 +39,7 @@ BORX = 'b'
 ENC = 'utf-8'
 CACHE = '.validator_cache'
 USE_CACHE = False
-KEY = authenticate.Authentication.apikey('~/.apikey3')
+KEY = authenticate.Authentication.apikey('~/.apikey')
 NSX = {'xlink'                  : 'http://www.w3.org/1999/xlink',
        'xs'                     : 'http://www.w3.org/2001/XMLSchema',
        'xsi'                    : 'http://www.w3.org/2001/XMLSchema-instance',  
